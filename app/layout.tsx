@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://aster-tutor.openai.site"),
+  metadataBase: new URL("https://aster-spatial-tutor.tanyak897.chatgpt.site"),
   title: "Aster — Your screen becomes the whiteboard",
   description:
     "A spatial AI tutor for macOS that sees what you see, teaches by voice, and draws explanations exactly where they belong.",
