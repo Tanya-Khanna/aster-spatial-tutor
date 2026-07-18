@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var hotKey: HotKeyManager?
     private var observer: NSObjectProtocol?
+    private var escapeMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
@@ -21,12 +22,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onHidePanel = { [weak self] in self?.tutorPanel?.orderOut(nil) }
         model.onShowWelcome = { [weak self] in self?.showWelcome() }
         observer = NotificationCenter.default.addObserver(forName: .asterHotKey, object: nil, queue: .main) { _ in
-            Task { @MainActor in TutorModel.shared.activate() }
+            Task { @MainActor in TutorModel.shared.activateFromHotKey() }
+        }
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53, TutorModel.shared.isPanelVisible {
+                Task { @MainActor in TutorModel.shared.clearLesson() }
+                return nil
+            }
+            return event
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         if let observer { NotificationCenter.default.removeObserver(observer) }
+        if let escapeMonitor { NSEvent.removeMonitor(escapeMonitor) }
     }
 
     private func createWelcomeWindow() {
@@ -43,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
         window.contentViewController = controller
+        window.sharingType = .none
         window.center()
         window.minSize = NSSize(width: 980, height: 680)
         window.makeKeyAndOrderFront(nil)
@@ -54,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let view = TutorPanelView(model: TutorModel.shared)
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 390, height: 620),
-            styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
+            styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -65,6 +75,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
+        panel.hidesOnDeactivate = false
+        panel.sharingType = .none
         tutorPanel = panel
     }
 
@@ -80,7 +92,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
     }
 
-    @objc private func askAster() { TutorModel.shared.activate() }
+    @objc private func askAster() { TutorModel.shared.activateFromHotKey() }
     @objc private func showWelcomeMenu() { showWelcome() }
 
     private func showWelcome() {

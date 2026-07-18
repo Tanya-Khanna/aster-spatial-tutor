@@ -18,10 +18,10 @@ final class VoiceServices: NSObject, AVSpeechSynthesizerDelegate {
         synthesizer.delegate = self
     }
 
-    func speak(_ text: String) {
+    func speak(_ text: String, rate: Float = 0.48) {
         synthesizer.stopSpeaking(at: .immediate)
         let utterance = AVSpeechUtterance(string: text)
-        utterance.rate = 0.48
+        utterance.rate = min(max(rate, 0.34), 0.62)
         utterance.pitchMultiplier = 1.02
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         synthesizer.speak(utterance)

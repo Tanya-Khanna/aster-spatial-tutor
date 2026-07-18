@@ -18,8 +18,14 @@ let package = Package(
                 .linkedFramework("CoreGraphics"),
                 .linkedFramework("Security"),
                 .linkedFramework("Speech"),
-                .linkedFramework("SwiftUI")
+                .linkedFramework("SwiftUI"),
+                .linkedFramework("WebKit")
             ]
+        ),
+        .testTarget(
+            name: "AsterTests",
+            dependencies: ["Aster"],
+            path: "Tests/AsterTests"
         )
     ]
 )

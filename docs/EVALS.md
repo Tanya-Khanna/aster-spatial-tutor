@@ -55,6 +55,15 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - app refuses a live request after the $4.80 reserve threshold;
 - API key never appears in process logs or repository files.
 
+### 4. Adaptation and memory
+
+- a diagnostic choice occurs before every new explanation;
+- an answer is assessed against the lesson’s explicit success criteria;
+- mastery changes only after learner evidence, never merely after viewing a lesson;
+- demonstrated strengths and shaky areas survive app restart;
+- the next diagnostic accurately references stored evidence without inventing prior knowledge;
+- “Explain more simply” changes the requested strategy while preserving the concept and selected context.
+
 ## Comparison experiment
 
 For five visual questions, compare two flows with the same learner:

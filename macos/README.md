@@ -1,15 +1,17 @@
 # Aster for macOS
 
-Aster is a native spatial STEM tutor for macOS. Press **Option–Space**, point at an equation, research figure, graph, circuit, or educational anatomy diagram, and ask a question. Aster captures the current screen with explicit permission, sends a budget-controlled vision request to GPT-5.6, and renders the returned lesson as voice, a persistent notebook, and normalized on-screen annotations.
+Aster is a native spatial tutor for macOS. Press **Option–Space**, drag around the exact learning context, and ask by voice or text. Aster follows that region locally, diagnoses before explaining, teaches through synchronized voice and staged annotations, checks an independent answer, and persists concept-level mastery evidence across launches.
 
 ## Product loop
 
-1. See the selected screen and cursor halo.
-2. Diagnose the misconception before solving.
-3. Point with precise, structured annotations.
-4. Teach one idea through voice and the persistent lesson notebook.
-5. Ask the learner to predict or explain the next step.
-6. Fade the scaffolding and verify understanding.
+1. Select an exact region or click for a cursor-centered context.
+2. Follow that region locally without spending API tokens.
+3. Diagnose with one short question and concrete misconception choices.
+4. Reveal a spatial lesson step-by-step through voice, notebook, and overlays.
+5. Fade the scaffolding and collect an independent transfer answer.
+6. Assess against explicit success criteria.
+7. Save mastery, strengths, shaky areas, and the next strategy.
+8. Adapt the next lesson or open an approved Desmos/Manim demonstration.
 
 ## Build and package
 
@@ -24,9 +26,9 @@ The packaged application is written to `macos/dist/Aster.app` and the downloadab
 
 ## API and privacy
 
-- GPT-5.6 Terra is the default model; Precision mode uses GPT-5.6 Sol.
-- Responses are schema-constrained into an annotation lesson plan.
-- Screen capture is user-triggered; there is no continuous background recording.
+- GPT-5.6 Terra diagnoses and teaches; Precision mode uses GPT-5.6 Sol; GPT-5.6 Luna assesses answers.
+- Diagnosis, spatial lessons, and mastery assessment use separate strict schemas.
+- Visible follow mode refreshes only the selected region locally; API capture is question-triggered.
 - The API key is stored in the macOS Keychain.
 - Voice input and narration use macOS frameworks, avoiding additional API spend.
 - The app keeps a local estimated-cost ledger and stops at $5.
@@ -34,6 +36,6 @@ The packaged application is written to `macos/dist/Aster.app` and the downloadab
 
 ## Current prototype boundaries
 
-- Main-display capture is implemented; per-window and multi-display anchoring are next.
-- Desmos and Manim are represented in the lesson schema and interface as safe preview actions. Production tool execution should use a controlled sandbox and require confirmation before modifying another app.
+- Exact main-display region capture is implemented; multi-display anchoring is next.
+- Desmos is an embedded sandbox populated from a structured payload. Manim runs one of four fixed local templates after confirmation and requires a local Manim CLI.
 - Aster teaches labeled educational anatomy diagrams. It is not for radiology, diagnosis, or medical advice.

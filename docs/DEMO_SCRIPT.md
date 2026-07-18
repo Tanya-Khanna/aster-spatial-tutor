@@ -16,14 +16,15 @@ Launch Aster and briefly show its welcome screen.
 
 ## 0:33–1:18 — Hero research-paper flow
 
-1. Hover the cursor around the denominator or scaling factor.
-2. Press **⌥ Space**.
+1. Press **⌥ Space** and drag tightly around the equation.
+2. Show the visible local Follow state.
 3. Ask: “Why are we dividing by the square root of the key dimension?”
-4. Show the visible seeing/thinking state.
-5. Let the overlay circle the term, highlight its role, and draw one causal arrow while Aster narrates.
-6. Show the persistent notebook note and mastery question.
+4. Choose Aster’s diagnostic option: “Why softmax needs scaling.”
+5. Let the overlay reveal two synchronized teaching steps while Aster narrates.
+6. Answer the independent transfer question.
+7. Show the assessment and the persisted memory: understood softmax purpose; scaling still shaky—or mastered if answered correctly.
 
-> “The cursor halo gives Aster spatial context. GPT-5.6 returns a schema-constrained lesson—not free-form drawing commands—with at most four normalized annotations. Voice carries the explanation; the overlay carries the reference; the final question hands the reasoning back to the learner.”
+> “Aster first separates likely misconceptions instead of guessing. GPT-5.6 then returns a schema-constrained, staged lesson—not free-form drawing commands. Voice carries the explanation, the overlay carries the reference, and a separate assessment updates evidence about what this learner actually understands.”
 
 ## 1:18–1:48 — Breadth without losing the story
 
@@ -35,13 +36,13 @@ Use Demo mode to switch to Anatomy, then Math. Do not run three full lessons.
 
 Show the “Show in graph sandbox” preview row.
 
-> “When seeing a change matters, Aster can recommend a Desmos demonstration; when time or transformation matters, it can recommend Manim. These are learner-approved previews. Aster demonstrates, but never silently takes over the student’s computer or completes graded work.”
+> “When seeing a change matters, Aster opens a real embedded Desmos sandbox with comparison expressions and sliders. For temporal concepts it can render one fixed local Manim template. Both use structured payloads and learner confirmation; Aster never executes model-authored code or modifies graded work.”
 
 ## 2:15–2:35 — Technical proof and budget
 
 Quickly show the README architecture diagram and the local budget line in the app.
 
-> “The app is native SwiftUI and AppKit: a global hotkey, explicit Screen Recording capture, a click-through overlay, Keychain storage, native speech, and the OpenAI Responses API. Terra is the budget default; Sol is an explicit precision mode. A local reserve guard keeps the total project under five dollars, and the deterministic demo costs zero.”
+> “The app is native SwiftUI and AppKit: exact context cropping, Retina coordinate mapping, local follow mode, a click-through overlay, native speech, Keychain, persistent concept memory, and three strict Responses API contracts. Terra handles vision, Luna checks answers, and Sol is an explicit precision mode. The deterministic demo costs zero.”
 
 ## 2:35–2:45 — Close
 

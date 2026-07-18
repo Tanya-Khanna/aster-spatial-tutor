@@ -6,7 +6,7 @@ final class OverlayController {
     private let canvas = AnnotationCanvas(frame: .zero)
     private var revealTimer: Timer?
 
-    func show(_ annotations: [ScreenAnnotation], on frame: CGRect) {
+    func show(_ annotations: [ScreenAnnotation], on frame: CGRect, within region: ContextRegion) {
         clear()
         let panel = NSPanel(
             contentRect: frame,
@@ -20,8 +20,11 @@ final class OverlayController {
         panel.ignoresMouseEvents = true
         panel.level = .screenSaver
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.sharingType = .none
         canvas.frame = NSRect(origin: .zero, size: frame.size)
         canvas.annotations = []
+        canvas.contextRegion = region
+        canvas.alphaValue = 1
         panel.contentView = canvas
         panel.orderFrontRegardless()
         self.panel = panel
@@ -36,6 +39,13 @@ final class OverlayController {
         }
     }
 
+    func fadeScaffolding() {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.65
+            canvas.animator().alphaValue = 0.22
+        }
+    }
+
     func clear() {
         revealTimer?.invalidate()
         revealTimer = nil
@@ -47,6 +57,7 @@ final class OverlayController {
 
 final class AnnotationCanvas: NSView {
     var annotations: [ScreenAnnotation] = []
+    var contextRegion: ContextRegion = .fullScreen
 
     override var isFlipped: Bool { true }
 
@@ -57,12 +68,7 @@ final class AnnotationCanvas: NSView {
 
     private func draw(_ annotation: ScreenAnnotation) {
         let color = NSColor.aster(annotation.color)
-        let rect = NSRect(
-            x: annotation.x * bounds.width,
-            y: annotation.y * bounds.height,
-            width: max(annotation.width * bounds.width, 18),
-            height: max(annotation.height * bounds.height, 18)
-        )
+        let rect = mappedRect(for: annotation)
 
         switch annotation.type {
         case "highlight":
@@ -82,9 +88,12 @@ final class AnnotationCanvas: NSView {
             path.fill()
             path.stroke()
         case "arrow":
-            let start = NSPoint(x: annotation.x * bounds.width, y: annotation.y * bounds.height)
-            let end = NSPoint(x: annotation.endX * bounds.width, y: annotation.endY * bounds.height)
+            let start = mappedPoint(x: annotation.x, y: annotation.y)
+            let end = mappedPoint(x: annotation.endX, y: annotation.endY)
             drawArrow(from: start, to: end, color: color)
+        case "mask":
+            NSColor.windowBackgroundColor.withAlphaComponent(0.84).setFill()
+            NSBezierPath(roundedRect: rect, xRadius: 9, yRadius: 9).fill()
         default:
             drawLabel(annotation.text, at: rect.origin, color: color)
         }
@@ -93,6 +102,21 @@ final class AnnotationCanvas: NSView {
             let anchor = NSPoint(x: min(rect.maxX + 10, bounds.width - 220), y: max(rect.minY - 4, 16))
             drawLabel(annotation.text, at: anchor, color: color)
         }
+    }
+
+    private func mappedPoint(x: Double, y: Double) -> NSPoint {
+        let normalized = AnnotationGeometry.normalizedPoint(x: x, y: y, within: contextRegion)
+        return NSPoint(x: normalized.x * bounds.width, y: normalized.y * bounds.height)
+    }
+
+    private func mappedRect(for annotation: ScreenAnnotation) -> NSRect {
+        let normalized = AnnotationGeometry.normalizedRect(for: annotation, within: contextRegion)
+        return NSRect(
+            x: normalized.minX * bounds.width,
+            y: normalized.minY * bounds.height,
+            width: max(normalized.width * bounds.width, 18),
+            height: max(normalized.height * bounds.height, 18)
+        )
     }
 
     private func drawArrow(from start: NSPoint, to end: NSPoint, color: NSColor) {

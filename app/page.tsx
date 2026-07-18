@@ -230,8 +230,8 @@ export default function Home() {
           <div className="eyebrow"><span className="eyebrow-dot" /> A spatial tutor for macOS</div>
           <h1>Your screen becomes<br />the <span>whiteboard.</span></h1>
           <p>
-            Point at an equation, figure, or diagram. Aster sees what you see, teaches by voice, and draws the
-            explanation exactly where it belongs.
+            Select an equation, figure, paragraph, chart, code block, or diagram. Aster diagnoses first, teaches by
+            voice and on-target drawing, checks your understanding, and remembers what still needs work.
           </p>
           <div className="hero-actions">
             <a className="primary-button" href="/Aster-macOS.zip" download>
@@ -242,9 +242,9 @@ export default function Home() {
             <a className="text-button" href="#demo"><span className="play-icon">▶</span> See it teach</a>
           </div>
           <div className="hero-meta">
-            <span><i /> Hotkey activated</span>
-            <span><i /> Voice + text</span>
-            <span><i /> $5 hard limit</span>
+            <span><i /> Exact context selection</span>
+            <span><i /> Local live follow</span>
+            <span><i /> Persistent mastery</span>
           </div>
         </div>
 
@@ -319,10 +319,35 @@ export default function Home() {
             “that variable over there” in working memory.
           </p>
           <div className="principle-list">
-            <div><span>1</span><p><b>Diagnose</b> the exact point of confusion.</p></div>
-            <div><span>2</span><p><b>Annotate</b> only what advances the explanation.</p></div>
-            <div><span>3</span><p><b>Verify</b> with one short mastery question.</p></div>
+            <div><span>1</span><p><b>Diagnose</b> with one short choice before explaining.</p></div>
+            <div><span>2</span><p><b>Annotate</b> one synchronized visual step at a time.</p></div>
+            <div><span>3</span><p><b>Verify</b> independently, then update mastery evidence.</p></div>
           </div>
+        </div>
+      </section>
+
+      <section className="memory-section">
+        <div className="memory-copy">
+          <span className="section-kicker">REMEMBERS THE LEARNER, NOT JUST THE CHAT</span>
+          <h2>Every explanation changes what comes next.</h2>
+          <p>
+            Aster stores compact learning evidence on your Mac: what you demonstrated, what is still shaky, and the
+            next teaching strategy. Mastery changes only after you answer—not simply because you watched.
+          </p>
+          <div className="memory-loop" aria-label="Adaptive learning loop">
+            <span>Diagnose</span><i>→</i><span>Teach</span><i>→</i><span>Predict</span><i>→</i><span>Assess</span><i>→</i><span>Adapt</span>
+          </div>
+        </div>
+        <div className="learner-model-card">
+          <div className="learner-card-top">
+            <div><span>LEARNER MODEL</span><b>Attention mechanisms</b></div>
+            <strong>68%</strong>
+          </div>
+          <div className="mastery-track"><i /></div>
+          <div className="evidence-row understood"><span>✓</span><div><b>Understands</b><p>Softmax purpose · dot products</p></div></div>
+          <div className="evidence-row shaky"><span>~</span><div><b>Still shaky</b><p>Why variance grows · square-root scaling</p></div></div>
+          <div className="next-strategy"><span>NEXT STRATEGY</span><p>Connect dimension growth to softmax saturation with two visual comparisons.</p></div>
+          <div className="memory-quote">“You understood softmax last time. Let’s connect it to the scaling term.”</div>
         </div>
       </section>
 
@@ -330,7 +355,7 @@ export default function Home() {
         <div className="section-heading centered-heading">
           <span className="section-kicker">DEMONSTRATES, NEVER TAKES OVER</span>
           <h2>An agent with a teacher’s restraint.</h2>
-          <p>Aster can prepare the next learning surface, but every external action is previewed and learner-approved.</p>
+          <p>Aster can open a real teaching surface, but every action is bounded, previewed, and learner-approved.</p>
         </div>
         <div className="action-grid">
           {actions.map((action, index) => (
@@ -355,20 +380,20 @@ export default function Home() {
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
             <h2>Quiet until invited.</h2>
             <p>
-              No invisible background watching. Aster captures one screen state only when you press the hotkey, shows
-              its capture status, and stores your API key in macOS Keychain.
+              No invisible API surveillance. Aster visibly follows only the region you selected, refreshes it locally,
+              and sends a screen image only after you ask. Your API key stays in macOS Keychain.
             </p>
             <div className="privacy-points">
-              <span><i>✓</i> Hotkey-only capture</span>
+              <span><i>✓</i> Selected-region capture</span>
               <span><i>✓</i> Native speech on-device</span>
-              <span><i>✓</i> Visible $5 spend guard</span>
+              <span><i>✓</i> Local learner memory</span>
             </div>
           </div>
           <div className="budget-widget">
             <div className="budget-top"><span>Project budget</span><b>$0.37 used</b></div>
             <div className="budget-bar"><i /></div>
             <div className="budget-scale"><span>$0</span><span>Hard stop at $5</span></div>
-            <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Screen capture is off</b><small>Press ⌥ Space when you need Aster</small></div></div>
+            <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following selected context locally</b><small>No API request until you ask Aster</small></div></div>
           </div>
         </div>
       </section>

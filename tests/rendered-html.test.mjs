@@ -28,6 +28,9 @@ test("server-renders Aster's complete product story", async () => {
   assert.match(html, /Calculus/);
   assert.match(html, /Anatomy/);
   assert.match(html, /Quiet until invited/);
+  assert.match(html, /REMEMBERS THE LEARNER/);
+  assert.match(html, /Diagnose/);
+  assert.match(html, /Persistent mastery/);
   assert.match(html, /Aster-macOS\.zip/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });

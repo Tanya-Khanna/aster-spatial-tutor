@@ -202,6 +202,7 @@ struct TutorPanelView: View {
             canvas.opacity(0.97).ignoresSafeArea()
             VStack(spacing: 0) {
                 panelHeader
+                contextBar
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 11) {
@@ -215,6 +216,11 @@ struct TutorPanelView: View {
                     .onChange(of: model.messages.count) { _ in
                         if let id = model.messages.last?.id { withAnimation { proxy.scrollTo(id, anchor: .bottom) } }
                     }
+                }
+                if let diagnostic = model.diagnostic {
+                    DiagnosticChoiceCard(diagnostic: diagnostic) { model.chooseDiagnostic($0) }
+                        .padding(.horizontal, 13)
+                        .padding(.bottom, 8)
                 }
                 composer
             }
@@ -237,6 +243,14 @@ struct TutorPanelView: View {
                 Text(model.phase.label).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
             }
             Spacer()
+            if let lesson = model.lastLesson, let concept = model.learnerProfile.memory(for: lesson.conceptID) {
+                Text("\(Int(concept.mastery * 100))%")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundStyle(violet)
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background(violet.opacity(0.1), in: Capsule())
+                    .help("Persistent mastery for \(concept.title)")
+            }
             Button { model.precisionMode.toggle() } label: {
                 Image(systemName: model.precisionMode ? "scope" : "leaf")
             }
@@ -250,17 +264,87 @@ struct TutorPanelView: View {
         .onAppear { pulse = true }
     }
 
+    private var contextBar: some View {
+        HStack(spacing: 9) {
+            Button { model.selectContext() } label: {
+                Label(model.contextRegion == nil ? "Select context" : "Reselect", systemImage: "viewfinder")
+            }
+            Button { model.toggleFollowing() } label: {
+                Label(model.isFollowing ? "Following" : "Follow", systemImage: model.isFollowing ? "dot.radiowaves.left.and.right" : "pause.circle")
+            }
+            Spacer()
+            if model.isFollowing {
+                HStack(spacing: 5) {
+                    Circle().fill(mint).frame(width: 6, height: 6)
+                    Text("Local refresh · no API")
+                }
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 10, weight: .semibold))
+        .padding(.horizontal, 15).padding(.vertical, 9)
+        .background(ink.opacity(0.035))
+    }
+
     private var composer: some View {
         VStack(spacing: 10) {
             if let lesson = model.lastLesson, lesson.toolSuggestion != "none" {
-                HStack {
-                    Image(systemName: lesson.toolSuggestion == "desmos" ? "function" : "play.rectangle")
-                    Text(lesson.toolSuggestion == "desmos" ? "Show in graph sandbox" : "Animate this idea")
-                    Spacer()
-                    Text("Preview").font(.system(size: 10, weight: .bold)).foregroundStyle(violet)
+                Button { model.runSuggestedTool() } label: {
+                    HStack {
+                        Image(systemName: lesson.toolSuggestion == "desmos" ? "function" : "play.rectangle")
+                        Text(lesson.toolSuggestion == "desmos" ? "Show in Desmos sandbox" : "Animate with Manim")
+                        Spacer()
+                        Text("Preview →").font(.system(size: 10, weight: .bold)).foregroundStyle(violet)
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .font(.system(size: 12, weight: .semibold))
                 .padding(11).background(violet.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
+            }
+            if model.phase == .teaching, let lesson = model.lastLesson {
+                HStack {
+                    Button { model.previousStep() } label: { Image(systemName: "chevron.left") }.disabled(model.lessonStepIndex == 0)
+                    Text("Step \(model.lessonStepIndex + 1) of \(lesson.steps.count)")
+                    Button { model.replayCurrentStep() } label: { Label("Replay", systemImage: "arrow.counterclockwise") }
+                    Spacer()
+                    Button { model.nextStep() } label: { Text("Next →") }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+                HStack(spacing: 7) {
+                    Image(systemName: "tortoise")
+                    Slider(value: $model.narrationRate, in: 0.34...0.62)
+                    Image(systemName: "hare")
+                }
+                .foregroundStyle(.secondary)
+            }
+            if model.phase == .awaitingUnderstanding {
+                HStack(spacing: 7) {
+                    Button("Explain more simply") { model.requestReteach("more simply") }
+                    Button("Ask a follow-up") { model.askFollowUpInstead() }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            if let assessment = model.lastAssessment, !assessment.correct {
+                HStack(spacing: 7) {
+                    Button("Explain more simply") { model.requestReteach("more simply") }
+                    Button("Use an analogy") { model.requestReteach("with a concrete analogy") }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            if let assessment = model.lastAssessment, assessment.correct {
+                Button { model.tryTransferProblem() } label: {
+                    Label("Try a transfer problem", systemImage: "arrow.up.right")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(violet)
+                .controlSize(.small)
             }
             HStack(spacing: 10) {
                 Button { model.toggleListening() } label: {
@@ -268,7 +352,7 @@ struct TutorPanelView: View {
                         .frame(width: 34, height: 34)
                         .background(model.isListening ? Color.red.opacity(0.15) : Color.white, in: Circle())
                 }
-                TextField("Ask about what you see…", text: $model.query, axis: .vertical)
+                TextField(model.phase == .awaitingUnderstanding ? "Answer the mastery check…" : "Ask about the selected context…", text: $model.query, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .onSubmit { model.submit() }
@@ -283,11 +367,45 @@ struct TutorPanelView: View {
             HStack {
                 Text("$\(model.estimatedSpend, specifier: "%.3f") of $5.00")
                 Spacer()
-                Text("⌥ Space · Esc to clear")
+                Text("⌥ Space · Context stays on top")
             }
             .font(.system(size: 9, weight: .medium, design: .monospaced)).foregroundStyle(.tertiary)
         }
         .padding(13).background(.white.opacity(0.45))
+    }
+}
+
+struct DiagnosticChoiceCard: View {
+    let diagnostic: DiagnosticPlan
+    let choose: (DiagnosticOption) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Label("DIAGNOSE FIRST", systemImage: "scope")
+                Spacer()
+                Text(diagnostic.conceptTitle).foregroundStyle(.secondary)
+            }
+            .font(.system(size: 8, weight: .bold, design: .monospaced))
+            .foregroundStyle(violet)
+            Text(diagnostic.question).font(.system(size: 12, weight: .semibold))
+            ForEach(diagnostic.options) { option in
+                Button { choose(option) } label: {
+                    HStack {
+                        Text(option.label)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                    }
+                    .padding(.horizontal, 11).padding(.vertical, 9)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 10))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 10, weight: .medium))
+            }
+        }
+        .padding(13)
+        .background(violet.opacity(0.08), in: RoundedRectangle(cornerRadius: 15))
     }
 }
 
@@ -301,6 +419,14 @@ struct MessageBubble: View {
                     Label("KEEP", systemImage: "bookmark.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
                 } else if message.kind == .check {
                     Label("YOUR TURN", systemImage: "arrow.turn.down.right").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(Color.green)
+                } else if message.kind == .diagnostic {
+                    Label("DIAGNOSIS", systemImage: "scope").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
+                } else if message.kind == .assessment {
+                    Label("UNDERSTANDING", systemImage: "checkmark.seal.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(Color.green)
+                } else if message.kind == .memory {
+                    Label("REMEMBERED", systemImage: "brain.head.profile").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
+                } else if message.kind == .tool {
+                    Label("DEMONSTRATION", systemImage: "play.rectangle.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
                 }
                 Text(message.text)
                     .font(.system(size: 13))
@@ -317,6 +443,10 @@ struct MessageBubble: View {
         if message.role == .learner { return ink }
         if message.kind == .insight { return violet.opacity(0.1) }
         if message.kind == .check { return mint.opacity(0.34) }
+        if message.kind == .diagnostic { return violet.opacity(0.07) }
+        if message.kind == .assessment { return mint.opacity(0.28) }
+        if message.kind == .memory { return Color.blue.opacity(0.08) }
+        if message.kind == .tool { return Color.orange.opacity(0.10) }
         return .white
     }
 }

@@ -7,9 +7,9 @@ enum TutorAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidResponse: return "The lesson response was incomplete. Try once more."
+        case .invalidResponse: return "Aster received an incomplete teaching plan. Try once more."
         case .service(let message): return message
-        case .budgetReached: return "Your $5 demo budget limit has been reached."
+        case .budgetReached: return "Your $5 project budget guard has been reached."
         }
     }
 }
@@ -17,48 +17,156 @@ enum TutorAPIError: LocalizedError {
 final class OpenAIClient {
     private let endpoint = URL(string: "https://api.openai.com/v1/responses")!
 
-    func makeLesson(
+    func diagnose(
         apiKey: String,
         question: String,
         screen: CapturedScreen,
         recentContext: String,
-        precisionMode: Bool
-    ) async throws -> TutorResult {
+        learnerMemory: String,
+        safetyIdentifier: String
+    ) async throws -> TutorResult<DiagnosticPlan> {
+        let prompt = """
+        Learner question: \(question)
+
+        Recent notebook:
+        \(recentContext.isEmpty ? "No current-session notes." : recentContext)
+
+        Persistent learner memory:
+        \(learnerMemory)
+
+        The image is the exact context the learner selected. A violet cursor halo may indicate the object they mean.
+        Before teaching, identify the visible object and ask ONE short diagnostic question with 2–3 concrete options that distinguish likely misconceptions. Do not explain or solve yet. Use priorConnection only when the stored evidence genuinely supports it; otherwise leave it empty. Use a stable lowercase conceptID such as function-horizontal-translation or attention-scaling.
+        """
+        return try await structuredRequest(
+            apiKey: apiKey,
+            model: "gpt-5.6-terra",
+            reasoningEffort: "low",
+            instructions: Self.diagnosticInstructions,
+            prompt: prompt,
+            image: screen,
+            imageDetail: "high",
+            maxOutputTokens: 500,
+            format: Self.diagnosticFormat,
+            safetyIdentifier: safetyIdentifier
+        )
+    }
+
+    func makeLesson(
+        apiKey: String,
+        originalQuestion: String,
+        selectedDiagnosis: DiagnosticOption,
+        diagnostic: DiagnosticPlan,
+        screen: CapturedScreen,
+        recentContext: String,
+        learnerMemory: String,
+        precisionMode: Bool,
+        safetyIdentifier: String
+    ) async throws -> TutorResult<LessonPlan> {
         let model = precisionMode ? "gpt-5.6-sol" : "gpt-5.6-terra"
         let prompt = """
-        The learner asked: \(question)
+        Original question: \(originalQuestion)
+        Visible object: \(diagnostic.observedObject)
+        Learner selected: \(selectedDiagnosis.label)
+        Diagnosed misconception: \(selectedDiagnosis.misconception)
+        Concept ID: \(diagnostic.conceptID)
+        Concept title: \(diagnostic.conceptTitle)
+        Prior connection: \(diagnostic.priorConnection)
 
-        Recent lesson context:
-        \(recentContext.isEmpty ? "No prior context." : recentContext)
+        Recent notebook:
+        \(recentContext)
 
-        The attached image is the learner's current Mac screen. A violet cursor halo marks what they may be pointing at. Build one short teaching turn. Diagnose before solving. Use at most 4 precise annotations. Coordinates are normalized 0...1 relative to the image with origin at TOP LEFT. If localization is uncertain, use fewer annotations and ask the learner to point again. Never pretend certainty. For graded-looking work, teach the next concept rather than giving the final answer. Recommend desmos only when graphing materially helps; recommend manim only when temporal animation materially helps.
+        Persistent learner memory:
+        \(learnerMemory)
+
+        Build a synchronized spatial lesson over the selected image. Use 1–4 short steps. Every step must coordinate narration, one notebook insight, and 0–4 precise annotations. Coordinates are normalized 0...1 relative to THIS CROPPED IMAGE, origin TOP LEFT. Reveal only what advances that step. Prefer arrows for relationships, circles for one object, highlights for a span, and labels beside—not over—the source. If localization is uncertain, use fewer marks and say where the learner should point more tightly.
+
+        End with an independent prediction or transfer question. Do not give the answer to that check. Never complete a graded-looking problem. Suggest desmos only when graphing materially improves the prediction–demonstration loop. Suggest manim only for one of these safe templates: derivative, vector, matrix, circuit. Tool payloads are data, never executable code.
         """
+        return try await structuredRequest(
+            apiKey: apiKey,
+            model: model,
+            reasoningEffort: precisionMode ? "medium" : "low",
+            instructions: Self.lessonInstructions,
+            prompt: prompt,
+            image: screen,
+            imageDetail: precisionMode ? "original" : "high",
+            maxOutputTokens: 1_400,
+            format: Self.lessonFormat,
+            safetyIdentifier: safetyIdentifier
+        )
+    }
+
+    func assess(
+        apiKey: String,
+        lesson: LessonPlan,
+        learnerAnswer: String,
+        learnerMemory: String,
+        safetyIdentifier: String
+    ) async throws -> TutorResult<AssessmentResult> {
+        let prompt = """
+        Concept: \(lesson.conceptTitle) (\(lesson.conceptID))
+        Diagnosis: \(lesson.diagnosis)
+        Independent check: \(lesson.check.question)
+        Success criteria: \(lesson.check.successCriteria)
+        Transfer goal: \(lesson.check.transferPrompt)
+        Learner answer: \(learnerAnswer)
+
+        Existing memory:
+        \(learnerMemory)
+
+        Evaluate conceptual understanding, not exact wording. Give concise feedback without revealing more than necessary. Score from 0 to 1. Record only abilities evidenced by this answer. Name remaining shaky areas specifically. nextStrategy must tell the next tutor turn how to teach differently if needed.
+        """
+        return try await structuredRequest(
+            apiKey: apiKey,
+            model: "gpt-5.6-luna",
+            reasoningEffort: "low",
+            instructions: Self.assessmentInstructions,
+            prompt: prompt,
+            image: nil,
+            imageDetail: "low",
+            maxOutputTokens: 450,
+            format: Self.assessmentFormat,
+            safetyIdentifier: safetyIdentifier
+        )
+    }
+
+    private func structuredRequest<Value: Decodable>(
+        apiKey: String,
+        model: String,
+        reasoningEffort: String,
+        instructions: String,
+        prompt: String,
+        image: CapturedScreen?,
+        imageDetail: String,
+        maxOutputTokens: Int,
+        format: [String: Any],
+        safetyIdentifier: String
+    ) async throws -> TutorResult<Value> {
+        var content: [[String: Any]] = [["type": "input_text", "text": prompt]]
+        if let image {
+            content.append([
+                "type": "input_image",
+                "image_url": "data:image/jpeg;base64,\(image.jpegData.base64EncodedString())",
+                "detail": imageDetail
+            ])
+        }
 
         let requestBody: [String: Any] = [
             "model": model,
             "store": false,
-            "reasoning": ["effort": precisionMode ? "medium" : "low"],
-            "max_output_tokens": 900,
-            "instructions": Self.tutorInstructions,
-            "input": [[
-                "role": "user",
-                "content": [
-                    ["type": "input_text", "text": prompt],
-                    [
-                        "type": "input_image",
-                        "image_url": "data:image/jpeg;base64,\(screen.jpegData.base64EncodedString())",
-                        "detail": precisionMode ? "original" : "high"
-                    ]
-                ]
-            ]],
-            "text": ["format": Self.lessonFormat]
+            "safety_identifier": safetyIdentifier,
+            "reasoning": ["effort": reasoningEffort],
+            "max_output_tokens": maxOutputTokens,
+            "instructions": instructions,
+            "input": [["role": "user", "content": content]],
+            "text": ["verbosity": "low", "format": format]
         ]
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 45
+        request.timeoutInterval = 55
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -73,61 +181,140 @@ final class OpenAIClient {
         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let output = root["output"] as? [[String: Any]],
               let message = output.first(where: { $0["type"] as? String == "message" }),
-              let content = message["content"] as? [[String: Any]],
-              let outputText = content.first(where: { $0["type"] as? String == "output_text" })?["text"] as? String,
-              let lessonData = outputText.data(using: .utf8) else {
+              let messageContent = message["content"] as? [[String: Any]],
+              let outputText = messageContent.first(where: { $0["type"] as? String == "output_text" })?["text"] as? String,
+              let valueData = outputText.data(using: .utf8) else {
             throw TutorAPIError.invalidResponse
         }
 
-        let lesson = try JSONDecoder().decode(LessonPlan.self, from: lessonData)
+        let value = try JSONDecoder().decode(Value.self, from: valueData)
         let usageObject = root["usage"] as? [String: Any]
         let usage = APIUsage(
             inputTokens: usageObject?["input_tokens"] as? Int ?? 0,
             outputTokens: usageObject?["output_tokens"] as? Int ?? 0
         )
-        return TutorResult(lesson: lesson, usage: usage)
+        return TutorResult(value: value, usage: usage, model: model)
     }
 
-    private static let tutorInstructions = """
-    You are Aster, a calm spatial STEM tutor. Teach in the learner's visual context. Speak in short, intuitive sentences. First identify the exact visual object and likely misconception. Prefer a question, analogy, or single next step over a completed solution. Coordinate voice, note, and annotations. The spoken field is narration; the note field is a compact notebook takeaway; the question field checks understanding. Never diagnose disease or interpret radiology. For anatomy, teach only labeled educational diagrams and clearly separate structure from clinical advice.
+    private static let diagnosticInstructions = """
+    You are Aster's diagnostic tutor. Inspect the learner's selected visual context and determine what must be clarified before an explanation. Ask exactly one short, non-leading question with concrete options. Do not teach, solve, or annotate yet. Connect to persistent mastery evidence only when it is explicitly present.
     """
 
-    private static let lessonFormat: [String: Any] = [
-        "type": "json_schema",
-        "name": "spatial_lesson",
-        "strict": true,
+    private static let lessonInstructions = """
+    You are Aster, a calm spatial STEM tutor. Teach one causal or structural idea at a time in intuitive language. Voice is the teacher; notebook text preserves only the key insight; annotations point to the exact visible evidence. Scaffold rather than solve. End with an independent check. For anatomy, teach only labeled educational diagrams and never diagnose or interpret clinical imagery.
+    """
+
+    private static let assessmentInstructions = """
+    You are Aster's understanding checker. Judge the learner's reasoning against the stated success criteria. Be generous about phrasing and strict about the central concept. Update memory only from demonstrated evidence. If incorrect, identify one precise shaky area and a different next teaching strategy.
+    """
+
+    private static let diagnosticFormat: [String: Any] = [
+        "type": "json_schema", "name": "diagnostic_plan", "strict": true,
         "schema": [
-            "type": "object",
-            "additionalProperties": false,
+            "type": "object", "additionalProperties": false,
             "properties": [
-                "title": ["type": "string"],
-                "spoken": ["type": "string"],
-                "note": ["type": "string"],
+                "conceptID": ["type": "string"],
+                "conceptTitle": ["type": "string"],
+                "observedObject": ["type": "string"],
                 "question": ["type": "string"],
-                "toolSuggestion": ["type": "string", "enum": ["none", "desmos", "manim"]],
-                "annotations": [
-                    "type": "array",
-                    "maxItems": 4,
+                "options": [
+                    "type": "array", "minItems": 2, "maxItems": 3,
                     "items": [
-                        "type": "object",
-                        "additionalProperties": false,
+                        "type": "object", "additionalProperties": false,
                         "properties": [
                             "id": ["type": "string"],
-                            "type": ["type": "string", "enum": ["circle", "highlight", "arrow", "label"]],
-                            "x": ["type": "number", "minimum": 0, "maximum": 1],
-                            "y": ["type": "number", "minimum": 0, "maximum": 1],
-                            "width": ["type": "number", "minimum": 0, "maximum": 1],
-                            "height": ["type": "number", "minimum": 0, "maximum": 1],
-                            "endX": ["type": "number", "minimum": 0, "maximum": 1],
-                            "endY": ["type": "number", "minimum": 0, "maximum": 1],
-                            "text": ["type": "string"],
-                            "color": ["type": "string", "enum": ["violet", "mint", "coral", "blue"]]
+                            "label": ["type": "string"],
+                            "misconception": ["type": "string"]
                         ],
-                        "required": ["id", "type", "x", "y", "width", "height", "endX", "endY", "text", "color"]
+                        "required": ["id", "label", "misconception"]
                     ]
+                ],
+                "priorConnection": ["type": "string"]
+            ],
+            "required": ["conceptID", "conceptTitle", "observedObject", "question", "options", "priorConnection"]
+        ]
+    ]
+
+    private static let annotationProperties: [String: Any] = [
+        "id": ["type": "string"],
+        "type": ["type": "string", "enum": ["circle", "highlight", "arrow", "label", "mask"]],
+        "x": ["type": "number", "minimum": 0, "maximum": 1],
+        "y": ["type": "number", "minimum": 0, "maximum": 1],
+        "width": ["type": "number", "minimum": 0, "maximum": 1],
+        "height": ["type": "number", "minimum": 0, "maximum": 1],
+        "endX": ["type": "number", "minimum": 0, "maximum": 1],
+        "endY": ["type": "number", "minimum": 0, "maximum": 1],
+        "text": ["type": "string"],
+        "color": ["type": "string", "enum": ["violet", "mint", "coral", "blue"]]
+    ]
+
+    private static let lessonFormat: [String: Any] = [
+        "type": "json_schema", "name": "spatial_lesson", "strict": true,
+        "schema": [
+            "type": "object", "additionalProperties": false,
+            "properties": [
+                "title": ["type": "string"],
+                "conceptID": ["type": "string"],
+                "conceptTitle": ["type": "string"],
+                "diagnosis": ["type": "string"],
+                "steps": [
+                    "type": "array", "minItems": 1, "maxItems": 4,
+                    "items": [
+                        "type": "object", "additionalProperties": false,
+                        "properties": [
+                            "id": ["type": "string"],
+                            "narration": ["type": "string"],
+                            "notebook": ["type": "string"],
+                            "annotations": [
+                                "type": "array", "maxItems": 4,
+                                "items": [
+                                    "type": "object", "additionalProperties": false,
+                                    "properties": annotationProperties,
+                                    "required": ["id", "type", "x", "y", "width", "height", "endX", "endY", "text", "color"]
+                                ]
+                            ]
+                        ],
+                        "required": ["id", "narration", "notebook", "annotations"]
+                    ]
+                ],
+                "check": [
+                    "type": "object", "additionalProperties": false,
+                    "properties": [
+                        "question": ["type": "string"],
+                        "successCriteria": ["type": "string"],
+                        "transferPrompt": ["type": "string"]
+                    ],
+                    "required": ["question", "successCriteria", "transferPrompt"]
+                ],
+                "toolSuggestion": ["type": "string", "enum": ["none", "desmos", "manim"]],
+                "toolPayload": [
+                    "type": "object", "additionalProperties": false,
+                    "properties": [
+                        "primaryExpression": ["type": "string"],
+                        "comparisonExpression": ["type": "string"],
+                        "manimTemplate": ["type": "string", "enum": ["none", "derivative", "vector", "matrix", "circuit"]],
+                        "conceptCaption": ["type": "string"]
+                    ],
+                    "required": ["primaryExpression", "comparisonExpression", "manimTemplate", "conceptCaption"]
                 ]
             ],
-            "required": ["title", "spoken", "note", "question", "toolSuggestion", "annotations"]
+            "required": ["title", "conceptID", "conceptTitle", "diagnosis", "steps", "check", "toolSuggestion", "toolPayload"]
+        ]
+    ]
+
+    private static let assessmentFormat: [String: Any] = [
+        "type": "json_schema", "name": "mastery_assessment", "strict": true,
+        "schema": [
+            "type": "object", "additionalProperties": false,
+            "properties": [
+                "correct": ["type": "boolean"],
+                "score": ["type": "number", "minimum": 0, "maximum": 1],
+                "feedback": ["type": "string"],
+                "demonstrated": ["type": "array", "maxItems": 4, "items": ["type": "string"]],
+                "shakyAreas": ["type": "array", "maxItems": 4, "items": ["type": "string"]],
+                "nextStrategy": ["type": "string"]
+            ],
+            "required": ["correct", "score", "feedback", "demonstrated", "shakyAreas", "nextStrategy"]
         ]
     ]
 }
