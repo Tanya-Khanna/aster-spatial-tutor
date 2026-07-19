@@ -48,17 +48,17 @@ const lessons = [
   {
     n: "01",
     title: "Point",
-    copy: "Hover your cursor near the part that is confusing. Aster uses that gesture as spatial context.",
+    copy: "Point at the exact term, structure, or object. Aster anchors to it locally—even when its window moves.",
   },
   {
     n: "02",
     title: "Ask",
-    copy: "Press ⌥ Space and speak naturally. No uploads, tabs, or re-explaining what you are looking at.",
+    copy: "Press ⌥ Space and speak naturally. Talk back, interrupt, and continue the same tutoring conversation.",
   },
   {
     n: "03",
     title: "See it click",
-    copy: "Aster teaches in voice while drawing on the exact variables, structures, and connections that matter.",
+    copy: "Aster teaches in voice while drawing, animating flows, simplifying dense diagrams, and checking you.",
   },
 ];
 
@@ -72,7 +72,7 @@ const actions = [
   {
     tag: "MANIM",
     title: "Animate the idea",
-    copy: "Turn a dense derivation into a short visual sequence when a static annotation is not enough.",
+    copy: "Preview a bounded local animation for derivatives, vectors, fields, circuits, geometry, waves, or molecules.",
     color: "mint",
   },
   {
@@ -243,8 +243,8 @@ export default function Home() {
             <a className="text-button" href="#demo"><span className="play-icon">▶</span> See it teach</a>
           </div>
           <div className="hero-meta">
-            <span><i /> Exact context selection</span>
-            <span><i /> Local live follow</span>
+            <span><i /> Semantic cursor anchoring</span>
+            <span><i /> Multi-display live follow</span>
             <span><i /> Persistent mastery</span>
           </div>
         </div>
@@ -273,7 +273,8 @@ export default function Home() {
         <span>Equations</span><i />
         <span>Anatomy</span><i />
         <span>Circuits</span><i />
-        <span>Graphs</span>
+        <span>Graphs</span><i />
+        <span>Videos</span>
       </section>
 
       <section className="how-section" id="how">
@@ -332,8 +333,8 @@ export default function Home() {
           <span className="section-kicker">REMEMBERS THE LEARNER, NOT JUST THE CHAT</span>
           <h2>Every explanation changes what comes next.</h2>
           <p>
-            Aster stores compact learning evidence on your Mac: what you demonstrated, what is still shaky, and the
-            next teaching strategy. Mastery changes only after you answer—not simply because you watched.
+            Aster stores compact learning evidence on your Mac: what you demonstrated, what is still shaky, concept
+            dependencies, review timing, and the next strategy. Mastery changes only after you answer.
           </p>
           <div className="memory-loop" aria-label="Adaptive learning loop">
             <span>Diagnose</span><i>→</i><span>Teach</span><i>→</i><span>Predict</span><i>→</i><span>Assess</span><i>→</i><span>Adapt</span>
@@ -356,7 +357,7 @@ export default function Home() {
         <div className="section-heading centered-heading">
           <span className="section-kicker">DEMONSTRATES, NEVER TAKES OVER</span>
           <h2>An agent with a teacher’s restraint.</h2>
-          <p>Aster can open a real teaching surface, but every action is bounded, previewed, and learner-approved.</p>
+          <p>Aster can open a teaching surface, create scratch work and practice, or prepare content for another app—but every action is bounded, reversible, and permissioned.</p>
         </div>
         <div className="action-grid">
           {actions.map((action, index) => (
@@ -381,8 +382,8 @@ export default function Home() {
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
             <h2>Quiet until invited.</h2>
             <p>
-              No invisible API surveillance. Aster visibly follows only the region you selected, refreshes it locally,
-              and sends a screen image only after you ask. Your API key stays in macOS Keychain.
+              No invisible API surveillance. Aster visibly follows only the region or window you selected, excludes
+              its own overlays, and sends context only after you ask. Your API key stays in macOS Keychain.
             </p>
             <div className="privacy-points">
               <span><i>✓</i> Selected-region capture</span>

@@ -24,6 +24,8 @@ Do not store private learner content in the benchmark.
 
 ### 1. Annotation target accuracy
 
+The Swift suite includes a deterministic 400-placement coordinate benchmark spanning narrow equation targets and larger diagram regions. It verifies crop-to-display mapping before pixel rounding. Manual evaluation additionally covers OCR anchors, visual-object anchors, window movement, resize, scroll, zoom, and every attached display.
+
 - **Target hit rate:** percentage of circles/highlights whose center lies inside an acceptable target.
 - **IoU:** overlap between the annotation rectangle and the expert target box.
 - **Arrow endpoint error:** normalized distance from the returned endpoint to the nearest acceptable anchor.

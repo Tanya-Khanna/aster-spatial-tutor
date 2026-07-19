@@ -196,6 +196,7 @@ struct WelcomeView: View {
 struct TutorPanelView: View {
     @ObservedObject var model: TutorModel
     @State private var pulse = false
+    @State private var transcriptExpanded = true
 
     var body: some View {
         ZStack {
@@ -206,7 +207,7 @@ struct TutorPanelView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 11) {
-                            ForEach(model.messages) { message in
+                            ForEach(Array(transcriptExpanded ? model.messages[...] : model.messages.suffix(3))) { message in
                                 MessageBubble(message: message)
                                     .id(message.id)
                             }
@@ -265,22 +266,32 @@ struct TutorPanelView: View {
     }
 
     private var contextBar: some View {
-        HStack(spacing: 9) {
-            Button { model.selectContext() } label: {
-                Label(model.contextRegion == nil ? "Select context" : "Reselect", systemImage: "viewfinder")
-            }
-            Button { model.toggleFollowing() } label: {
-                Label(model.isFollowing ? "Following" : "Follow", systemImage: model.isFollowing ? "dot.radiowaves.left.and.right" : "pause.circle")
-            }
-            Spacer()
-            if model.isFollowing {
-                HStack(spacing: 5) {
-                    Circle().fill(mint).frame(width: 6, height: 6)
-                    Text("Local refresh · no API")
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 9) {
+                Button { model.selectContext() } label: {
+                    Label(model.contextRegion == nil ? "Point / select" : "Reselect", systemImage: "viewfinder")
                 }
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+                Button { model.selectCurrentWindow() } label: { Label("Window", systemImage: "macwindow") }
+                Button { model.toggleFollowing() } label: {
+                    Image(systemName: model.isFollowing ? "dot.radiowaves.left.and.right" : "pause.circle")
+                }.help(model.isFollowing ? "Following locally" : "Resume following")
+                Button { model.toggleVideoMode() } label: {
+                    Image(systemName: model.isVideoMode ? "play.rectangle.fill" : "play.rectangle")
+                }.help("Recent-frame video tutoring")
+                Spacer()
+                Button { transcriptExpanded.toggle() } label: {
+                    Image(systemName: transcriptExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")
+                }.help("Collapse synchronized transcript")
             }
+            HStack(spacing: 5) {
+                Circle().fill(model.isFollowing ? mint : Color.secondary).frame(width: 6, height: 6)
+                Text(model.anchorStatus)
+                    .lineLimit(1)
+                Spacer()
+                Text(model.isVideoMode ? "4 FRAMES" : "LOCAL")
+            }
+            .font(.system(size: 8, weight: .medium, design: .monospaced))
+            .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)
         .font(.system(size: 10, weight: .semibold))
@@ -326,6 +337,7 @@ struct TutorPanelView: View {
                 HStack(spacing: 7) {
                     Button("Explain more simply") { model.requestReteach("more simply") }
                     Button("Ask a follow-up") { model.askFollowUpInstead() }
+                    Button("Challenge me") { model.increaseDifficulty() }
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -346,6 +358,32 @@ struct TutorPanelView: View {
                 .tint(violet)
                 .controlSize(.small)
             }
+            HStack(spacing: 8) {
+                Button { model.practiceShakyAreas() } label: {
+                    Label(model.learnerProfile.dueReviews.isEmpty ? "Practice" : "Review due", systemImage: "brain.head.profile")
+                }
+                Menu {
+                    Button("Create reversible scratch work", action: model.createScratchWork)
+                    Button("Open zoomable context crop", action: model.openZoomableContext)
+                    Button("Preview expression for another app", action: model.previewTyping)
+                    Divider()
+                    Button("Undo last Aster action", action: model.undoLastAction)
+                        .disabled(model.actionHistory.isEmpty)
+                    Picker("Action permission", selection: $model.actionPermission) {
+                        Text("Ask every time").tag(ActionPermission.askEveryTime)
+                        Text("Internal only").tag(ActionPermission.internalOnly)
+                        Text("Never").tag(ActionPermission.never)
+                    }
+                } label: {
+                    Label("Agent tools", systemImage: "wand.and.stars")
+                }
+                Spacer()
+                if let last = model.actionHistory.last {
+                    Text(last.kind.uppercased()).font(.system(size: 8, weight: .bold, design: .monospaced)).foregroundStyle(.secondary)
+                }
+            }
+            .font(.system(size: 10, weight: .semibold))
+            .buttonStyle(.borderless)
             HStack(spacing: 10) {
                 Button { model.toggleListening() } label: {
                     Image(systemName: model.isListening ? "stop.fill" : "waveform")
@@ -364,6 +402,12 @@ struct TutorPanelView: View {
             }
             .buttonStyle(.plain)
             .padding(8).background(.white, in: RoundedRectangle(cornerRadius: 17))
+            Toggle(isOn: $model.conversationMode) {
+                Label("Voice conversation · listen again after each check", systemImage: "waveform.and.mic")
+                    .font(.system(size: 9, weight: .medium))
+            }
+            .toggleStyle(.switch)
+            .controlSize(.mini)
             HStack {
                 Text("$\(model.estimatedSpend, specifier: "%.3f") of $5.00")
                 Spacer()

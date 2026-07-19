@@ -5,8 +5,9 @@ final class OverlayController {
     private var panel: NSPanel?
     private let canvas = AnnotationCanvas(frame: .zero)
     private var revealTimer: Timer?
+    private var animationTimer: Timer?
 
-    func show(_ annotations: [ScreenAnnotation], on frame: CGRect, within region: ContextRegion) {
+    func show(_ annotations: [ScreenAnnotation], primitives: [DiagramPrimitive] = [], on frame: CGRect, within region: ContextRegion) {
         clear()
         let panel = NSPanel(
             contentRect: frame,
@@ -23,11 +24,17 @@ final class OverlayController {
         panel.sharingType = .none
         canvas.frame = NSRect(origin: .zero, size: frame.size)
         canvas.annotations = []
+        canvas.primitives = primitives
         canvas.contextRegion = region
         canvas.alphaValue = 1
         panel.contentView = canvas
         panel.orderFrontRegardless()
         self.panel = panel
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            self.canvas.animationPhase += 0.025
+            self.canvas.needsDisplay = true
+        }
 
         var index = 0
         revealTimer = Timer.scheduledTimer(withTimeInterval: 0.38, repeats: true) { [weak self] timer in
@@ -49,21 +56,53 @@ final class OverlayController {
     func clear() {
         revealTimer?.invalidate()
         revealTimer = nil
+        animationTimer?.invalidate()
+        animationTimer = nil
         panel?.orderOut(nil)
         panel = nil
         canvas.annotations = []
+        canvas.primitives = []
     }
 }
 
 final class AnnotationCanvas: NSView {
     var annotations: [ScreenAnnotation] = []
+    var primitives: [DiagramPrimitive] = []
     var contextRegion: ContextRegion = .fullScreen
+    var animationPhase: Double = 0
 
     override var isFlipped: Bool { true }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
+        for primitive in primitives { draw(primitive) }
         for annotation in annotations { draw(annotation) }
+    }
+
+    private func draw(_ primitive: DiagramPrimitive) {
+        let color = NSColor.aster(primitive.color)
+        let start = mappedPoint(x: primitive.x, y: primitive.y)
+        let end = mappedPoint(x: primitive.endX, y: primitive.endY)
+        let rect = NSRect(
+            x: start.x,
+            y: start.y,
+            width: max(CGFloat(primitive.width) * CGFloat(contextRegion.width) * bounds.width, 24),
+            height: max(CGFloat(primitive.height) * CGFloat(contextRegion.height) * bounds.height, 24)
+        )
+        switch primitive.type {
+        case "line":
+            color.setStroke(); let path = NSBezierPath(); path.lineWidth = 3; path.move(to: start); path.line(to: end); path.stroke()
+        case "arrow": drawArrow(from: start, to: end, color: color)
+        case "node":
+            NSColor.windowBackgroundColor.withAlphaComponent(0.96).setFill(); color.setStroke()
+            let shape = NSBezierPath(ovalIn: rect); shape.lineWidth = 3; shape.fill(); shape.stroke()
+            drawCentered(primitive.text, in: rect)
+        case "box":
+            NSColor.windowBackgroundColor.withAlphaComponent(0.96).setFill(); color.setStroke()
+            let shape = NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12); shape.lineWidth = 3; shape.fill(); shape.stroke()
+            drawCentered(primitive.text, in: rect)
+        default: drawLabel(primitive.text, at: start, color: color)
+        }
     }
 
     private func draw(_ annotation: ScreenAnnotation) {
@@ -91,6 +130,21 @@ final class AnnotationCanvas: NSView {
             let start = mappedPoint(x: annotation.x, y: annotation.y)
             let end = mappedPoint(x: annotation.endX, y: annotation.endY)
             drawArrow(from: start, to: end, color: color)
+        case "flow":
+            let start = mappedPoint(x: annotation.x, y: annotation.y)
+            let end = mappedPoint(x: annotation.endX, y: annotation.endY)
+            drawArrow(from: start, to: end, color: color)
+            drawFlow(from: start, to: end, color: color)
+        case "focus":
+            drawFocus(around: rect, color: color)
+        case "comparison":
+            color.withAlphaComponent(0.16).setFill()
+            color.setStroke()
+            let shape = NSBezierPath(roundedRect: rect.insetBy(dx: -6, dy: -6), xRadius: 10, yRadius: 10)
+            shape.setLineDash([7, 5], count: 2, phase: CGFloat(animationPhase * 12))
+            shape.lineWidth = 2.5
+            shape.fill()
+            shape.stroke()
         case "mask":
             NSColor.windowBackgroundColor.withAlphaComponent(0.84).setFill()
             NSBezierPath(roundedRect: rect, xRadius: 9, yRadius: 9).fill()
@@ -138,6 +192,29 @@ final class AnnotationCanvas: NSView {
         head.fill()
     }
 
+    private func drawFlow(from start: NSPoint, to end: NSPoint, color: NSColor) {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        for index in 0..<4 {
+            let progress = (animationPhase + Double(index) * 0.25).truncatingRemainder(dividingBy: 1)
+            let center = NSPoint(x: start.x + dx * progress, y: start.y + dy * progress)
+            color.withAlphaComponent(0.9).setFill()
+            NSBezierPath(ovalIn: NSRect(x: center.x - 4, y: center.y - 4, width: 8, height: 8)).fill()
+        }
+    }
+
+    private func drawFocus(around rect: NSRect, color: NSColor) {
+        NSColor.black.withAlphaComponent(0.48).setFill()
+        NSRect(x: 0, y: 0, width: bounds.width, height: max(rect.minY, 0)).fill()
+        NSRect(x: 0, y: rect.maxY, width: bounds.width, height: max(bounds.height - rect.maxY, 0)).fill()
+        NSRect(x: 0, y: rect.minY, width: max(rect.minX, 0), height: rect.height).fill()
+        NSRect(x: rect.maxX, y: rect.minY, width: max(bounds.width - rect.maxX, 0), height: rect.height).fill()
+        color.setStroke()
+        let ring = NSBezierPath(roundedRect: rect.insetBy(dx: -8, dy: -8), xRadius: 12, yRadius: 12)
+        ring.lineWidth = 3
+        ring.stroke()
+    }
+
     private func drawLabel(_ text: String, at point: NSPoint, color: NSColor) {
         guard !text.isEmpty else { return }
         let attributes: [NSAttributedString.Key: Any] = [
@@ -153,6 +230,19 @@ final class AnnotationCanvas: NSView {
         bubble.fill()
         bubble.stroke()
         (text as NSString).draw(at: NSPoint(x: rect.minX + 10, y: rect.minY + 6), withAttributes: attributes)
+    }
+
+    private func drawCentered(_ text: String, in rect: NSRect) {
+        guard !text.isEmpty else { return }
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+            .foregroundColor: NSColor.labelColor
+        ]
+        let size = (text as NSString).size(withAttributes: attributes)
+        (text as NSString).draw(
+            at: NSPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2),
+            withAttributes: attributes
+        )
     }
 }
 

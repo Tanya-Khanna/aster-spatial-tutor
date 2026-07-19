@@ -21,6 +21,7 @@ final class OpenAIClient {
         apiKey: String,
         question: String,
         screen: CapturedScreen,
+        recentFrames: [CapturedScreen] = [],
         recentContext: String,
         learnerMemory: String,
         safetyIdentifier: String
@@ -34,7 +35,7 @@ final class OpenAIClient {
         Persistent learner memory:
         \(learnerMemory)
 
-        The image is the exact context the learner selected. A violet cursor halo may indicate the object they mean.
+        The newest image is the exact context the learner selected. A violet cursor halo indicates the object they mean. If multiple timestamped frames are present, reason about what changed across the sequence; do not treat them as unrelated images.
         Before teaching, identify the visible object and ask ONE short diagnostic question with 2–3 concrete options that distinguish likely misconceptions. Do not explain or solve yet. Use priorConnection only when the stored evidence genuinely supports it; otherwise leave it empty. Use a stable lowercase conceptID such as function-horizontal-translation or attention-scaling.
         """
         return try await structuredRequest(
@@ -43,8 +44,8 @@ final class OpenAIClient {
             reasoningEffort: "low",
             instructions: Self.diagnosticInstructions,
             prompt: prompt,
-            image: screen,
-            imageDetail: "high",
+            images: recentFrames.isEmpty ? [screen] : recentFrames,
+            imageDetail: "original",
             maxOutputTokens: 500,
             format: Self.diagnosticFormat,
             safetyIdentifier: safetyIdentifier
@@ -57,6 +58,7 @@ final class OpenAIClient {
         selectedDiagnosis: DiagnosticOption,
         diagnostic: DiagnosticPlan,
         screen: CapturedScreen,
+        recentFrames: [CapturedScreen] = [],
         recentContext: String,
         learnerMemory: String,
         precisionMode: Bool,
@@ -78,9 +80,9 @@ final class OpenAIClient {
         Persistent learner memory:
         \(learnerMemory)
 
-        Build a synchronized spatial lesson over the selected image. Use 1–4 short steps. Every step must coordinate narration, one notebook insight, and 0–4 precise annotations. Coordinates are normalized 0...1 relative to THIS CROPPED IMAGE, origin TOP LEFT. Reveal only what advances that step. Prefer arrows for relationships, circles for one object, highlights for a span, and labels beside—not over—the source. If localization is uncertain, use fewer marks and say where the learner should point more tightly.
+        Build a synchronized spatial lesson over the newest selected image. Use 1–4 short steps. Every step must coordinate narration, one notebook insight, and 0–4 precise annotations. Coordinates are normalized 0...1 relative to THIS CROPPED IMAGE, origin TOP LEFT. Reveal only what advances that step. Prefer arrows for relationships, circles for one object, highlights for a span, labels beside—not over—the source, flow for changing processes, and focus to dim irrelevant regions. For a genuinely dense diagram, set visualMode to simplify and redraw its essential causal structure with up to 8 safe diagramPrimitives (line, arrow, node, box, text); otherwise return an empty array. Use compare to show two instructional states. If multiple frames are present, explain the change or process across time and anchor the final annotations to the newest frame. If localization is uncertain, use fewer marks and say where the learner should point more tightly.
 
-        End with an independent prediction or transfer question. Do not give the answer to that check. Never complete a graded-looking problem. Suggest desmos only when graphing materially improves the prediction–demonstration loop. Suggest manim only for one of these safe templates: derivative, vector, matrix, circuit. Tool payloads are data, never executable code.
+        Coverage includes equations, research papers, charts, circuits, molecular diagrams, geometry proofs, engineering schematics, anatomy diagrams, data visualizations, and code. End with an independent prediction or transfer question. Do not give the answer to that check. Never complete a graded-looking problem. Suggest desmos only when graphing materially improves the prediction–demonstration loop. Suggest manim only for a bounded local template. Tool payloads are data, never executable code.
         """
         return try await structuredRequest(
             apiKey: apiKey,
@@ -88,7 +90,7 @@ final class OpenAIClient {
             reasoningEffort: precisionMode ? "medium" : "low",
             instructions: Self.lessonInstructions,
             prompt: prompt,
-            image: screen,
+            images: recentFrames.isEmpty ? [screen] : recentFrames,
             imageDetail: precisionMode ? "original" : "high",
             maxOutputTokens: 1_400,
             format: Self.lessonFormat,
@@ -122,7 +124,7 @@ final class OpenAIClient {
             reasoningEffort: "low",
             instructions: Self.assessmentInstructions,
             prompt: prompt,
-            image: nil,
+            images: [],
             imageDetail: "low",
             maxOutputTokens: 450,
             format: Self.assessmentFormat,
@@ -136,18 +138,20 @@ final class OpenAIClient {
         reasoningEffort: String,
         instructions: String,
         prompt: String,
-        image: CapturedScreen?,
+        images: [CapturedScreen],
         imageDetail: String,
         maxOutputTokens: Int,
         format: [String: Any],
         safetyIdentifier: String
     ) async throws -> TutorResult<Value> {
         var content: [[String: Any]] = [["type": "input_text", "text": prompt]]
-        if let image {
+        for (index, image) in images.suffix(4).enumerated() {
+            let age = max(0, Date().timeIntervalSince(image.capturedAt))
+            content.append(["type": "input_text", "text": "Frame \(index + 1), captured \(String(format: "%.1f", age)) seconds ago\(image.videoContext.map { ", video time \(String(format: "%.1f", $0.currentTime))s, captions: \($0.captions)" } ?? "")."])
             content.append([
                 "type": "input_image",
                 "image_url": "data:image/jpeg;base64,\(image.jpegData.base64EncodedString())",
-                "detail": imageDetail
+                "detail": index == images.suffix(4).count - 1 ? imageDetail : "low"
             ])
         }
 
@@ -237,7 +241,7 @@ final class OpenAIClient {
 
     private static let annotationProperties: [String: Any] = [
         "id": ["type": "string"],
-        "type": ["type": "string", "enum": ["circle", "highlight", "arrow", "label", "mask"]],
+        "type": ["type": "string", "enum": ["circle", "highlight", "arrow", "label", "mask", "flow", "focus", "comparison"]],
         "x": ["type": "number", "minimum": 0, "maximum": 1],
         "y": ["type": "number", "minimum": 0, "maximum": 1],
         "width": ["type": "number", "minimum": 0, "maximum": 1],
@@ -272,9 +276,29 @@ final class OpenAIClient {
                                     "properties": annotationProperties,
                                     "required": ["id", "type", "x", "y", "width", "height", "endX", "endY", "text", "color"]
                                 ]
+                            ],
+                            "visualMode": ["type": "string", "enum": ["overlay", "simplify", "compare"]],
+                            "diagramPrimitives": [
+                                "type": "array", "maxItems": 8,
+                                "items": [
+                                    "type": "object", "additionalProperties": false,
+                                    "properties": [
+                                        "id": ["type": "string"],
+                                        "type": ["type": "string", "enum": ["line", "arrow", "node", "box", "text"]],
+                                        "x": ["type": "number", "minimum": 0, "maximum": 1],
+                                        "y": ["type": "number", "minimum": 0, "maximum": 1],
+                                        "width": ["type": "number", "minimum": 0, "maximum": 1],
+                                        "height": ["type": "number", "minimum": 0, "maximum": 1],
+                                        "endX": ["type": "number", "minimum": 0, "maximum": 1],
+                                        "endY": ["type": "number", "minimum": 0, "maximum": 1],
+                                        "text": ["type": "string"],
+                                        "color": ["type": "string", "enum": ["violet", "mint", "coral", "blue"]]
+                                    ],
+                                    "required": ["id", "type", "x", "y", "width", "height", "endX", "endY", "text", "color"]
+                                ]
                             ]
                         ],
-                        "required": ["id", "narration", "notebook", "annotations"]
+                        "required": ["id", "narration", "notebook", "annotations", "visualMode", "diagramPrimitives"]
                     ]
                 ],
                 "check": [
@@ -292,7 +316,7 @@ final class OpenAIClient {
                     "properties": [
                         "primaryExpression": ["type": "string"],
                         "comparisonExpression": ["type": "string"],
-                        "manimTemplate": ["type": "string", "enum": ["none", "derivative", "vector", "matrix", "circuit"]],
+                        "manimTemplate": ["type": "string", "enum": ["none", "derivative", "vector", "matrix", "circuit", "limit", "field", "geometry", "wave", "molecule"]],
                         "conceptCaption": ["type": "string"]
                     ],
                     "required": ["primaryExpression", "comparisonExpression", "manimTemplate", "conceptCaption"]

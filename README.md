@@ -47,9 +47,9 @@ Aster removes that translation layer. Its core unit is not an answer—it is a *
 ```text
 ⌥ Space + voice/text
         ↓
-Exact main-screen region selection + visible cursor halo
+Any-display region / native window selection + semantic cursor anchor
         ↓
-Local 2-second follow refresh (zero API calls)
+Local target recovery + optional recent-frame video buffer (zero API calls)
         ↓
 GPT-5.6 diagnostic turn → learner choice
         ↓
@@ -66,7 +66,7 @@ Native macOS presentation
         ↓
 GPT-5.6 assessment turn
         ↓
-Persistent local concept memory
+Persistent concept graph + evidence + spaced review
 ```
 
 Three strict schemas separate diagnosis, teaching, and assessment. A lesson contains one to four synchronized steps; every step has narration, a notebook insight, and no more than four normalized annotations. Coordinates from the cropped context are validated and mapped back into the selected screen region. If localization is uncertain, the model is instructed to use fewer marks and request a tighter selection.
@@ -137,17 +137,18 @@ cd macos && swift build -c release
 
 | Criterion | Evidence in this repository |
 | --- | --- |
-| Technological Implementation | Exact context crop and Retina mapping, local follow mode, native overlay, global hotkey, three Responses API schemas, persistent learner model, native voice, embedded Desmos, safe Manim templates, Keychain, spend guard |
+| Technological Implementation | Multi-display/window capture, semantic cursor anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, Keychain, spend guard |
 | Design | One coherent Aster system across macOS and responsive web; visible context/follow states; mandatory diagnostic choices; staged annotation choreography; voice, notebook, mastery, and memory states |
 | Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams; demo emphasizes comprehension rather than answer generation |
 | Quality of Idea | OS-native spatial tutoring, cursor-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
 
 See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submission story and [`docs/EVALS.md`](docs/EVALS.md) for the annotation-quality evaluation plan.
 
-## Prototype boundaries
+## Safety boundaries
 
-- Exact region selection and anchoring are implemented on the main display; multi-display anchoring is next.
-- Desmos runs as an embedded learner-controlled sandbox. Manim uses fixed local templates and requires a local Manim CLI installation; Aster never executes model-authored Python.
+- Aster deliberately does not provide general autonomous Mac control, submit graded work, or run model-authored Python. Cross-app content is previewed and copied for learner-controlled paste.
+- Browser video controls are limited to the active HTML5 video in Safari/Chrome and may require the browser’s JavaScript-from-Apple-Events setting.
+- Manim uses fixed local templates and requires a local Manim CLI installation.
 - A live API turn requires the learner’s own OpenAI API key. The submission can be evaluated fully in free Demo mode.
 
 Independent Build Week project. Not affiliated with or endorsed by Apple or OpenAI.

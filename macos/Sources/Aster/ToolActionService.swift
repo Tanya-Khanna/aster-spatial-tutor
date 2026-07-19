@@ -1,10 +1,15 @@
 import AppKit
+import AVKit
 import Foundation
 import WebKit
 
 @MainActor
 final class ToolActionService {
     private var desmosWindow: NSWindow?
+    private var previewWindow: NSWindow?
+    private var scratchWindow: NSWindow?
+    private var undoStack: [() -> Void] = []
+    var onAction: ((TutorActionRecord) -> Void)?
 
     func openDesmos(payload: ToolPayload) {
         let configuration = WKWebViewConfiguration()
@@ -24,6 +29,112 @@ final class ToolActionService {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         desmosWindow = window
+        record(kind: "desmos", summary: "Opened reversible Desmos sandbox") { [weak window] in window?.close() }
+    }
+
+    func showManimPreview(movie: URL, template: String, caption: String, onNarration: @escaping (String) -> Void) {
+        let player = AVPlayer(url: movie)
+        let playerView = AVPlayerView(frame: NSRect(x: 0, y: 0, width: 920, height: 560))
+        playerView.player = player
+        playerView.controlsStyle = .floating
+        let window = NSWindow(
+            contentRect: playerView.frame,
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Aster animation preview · \(caption)"
+        window.contentView = playerView
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        previewWindow = window
+        player.play()
+        let cues = Self.narrationCues(template: template, caption: caption)
+        for (index, cue) in cues.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 2.2) { [weak window] in
+                if window?.isVisible == true { onNarration(cue) }
+            }
+        }
+        record(kind: "manim", summary: "Played bounded Manim preview") { [weak window] in window?.close() }
+    }
+
+    private static func narrationCues(template: String, caption: String) -> [String] {
+        let stage: String
+        switch template {
+        case "circuit": stage = "Now follow the conserved flow as it splits between the branches."
+        case "field": stage = "Watch how the local arrows determine the path through the field."
+        case "geometry": stage = "The shape moves, but the structural relationship remains invariant."
+        case "wave": stage = "Track one phase point: the pattern travels while its shape repeats."
+        case "molecule": stage = "Focus on the bonds first, then on the molecule’s overall orientation."
+        case "limit": stage = "The approaching values agree even though the highlighted point is missing."
+        case "matrix": stage = "Compare the basis directions before and after the transformation."
+        case "vector": stage = "The dashed components reconstruct the same resultant vector."
+        default: stage = "As the two points meet, the secant becomes the local tangent."
+        }
+        return [caption, stage]
+    }
+
+    func openScratchpad(text: String) {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 680, height: 460))
+        let editor = NSTextView(frame: scroll.bounds)
+        editor.string = text
+        editor.font = .monospacedSystemFont(ofSize: 16, weight: .regular)
+        editor.textContainerInset = NSSize(width: 24, height: 24)
+        scroll.documentView = editor
+        scroll.hasVerticalScroller = true
+        let window = NSWindow(contentRect: scroll.frame, styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.title = "Aster · reversible scratch work"
+        window.contentView = scroll
+        window.center(); window.makeKeyAndOrderFront(nil)
+        scratchWindow = window
+        record(kind: "scratchpad", summary: "Created editable local scratch work") { [weak window] in window?.close() }
+    }
+
+    func openZoomableContext(jpeg: Data) {
+        guard let image = NSImage(data: jpeg) else { return }
+        let imageView = NSImageView(frame: NSRect(origin: .zero, size: image.size))
+        imageView.image = image
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 900, height: 620))
+        scroll.documentView = imageView
+        scroll.allowsMagnification = true
+        scroll.minMagnification = 0.5
+        scroll.maxMagnification = 5
+        scroll.magnification = 1
+        scroll.hasVerticalScroller = true
+        scroll.hasHorizontalScroller = true
+        let window = NSWindow(contentRect: scroll.frame, styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.title = "Aster · zoomable context sandbox"
+        window.contentView = scroll
+        window.center(); window.makeKeyAndOrderFront(nil)
+        record(kind: "zoom", summary: "Opened a zoomable local crop") { [weak window] in window?.close() }
+    }
+
+    func previewTyping(_ text: String, targetApp: String) {
+        let alert = NSAlert()
+        alert.messageText = "Preview for \(targetApp.isEmpty ? "another app" : targetApp)"
+        alert.informativeText = String(text.prefix(500))
+        alert.addButton(withTitle: "Copy for me to paste")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            let previous = NSPasteboard.general.string(forType: .string)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(String(text.prefix(500)), forType: .string)
+            record(kind: "typing-preview", summary: "Copied approved preview; did not type automatically") {
+                NSPasteboard.general.clearContents()
+                if let previous { NSPasteboard.general.setString(previous, forType: .string) }
+            }
+        }
+    }
+
+    func undoLast() {
+        undoStack.popLast()?()
+        onAction?(TutorActionRecord(id: UUID(), date: Date(), kind: "undo", summary: "Undid the last Aster action", reversible: false))
+    }
+
+    private func record(kind: String, summary: String, undo: @escaping () -> Void) {
+        undoStack.append(undo)
+        onAction?(TutorActionRecord(id: UUID(), date: Date(), kind: kind, summary: summary, reversible: true))
     }
 
     func renderManim(payload: ToolPayload, completion: @escaping (Result<URL, Error>) -> Void) {
@@ -61,6 +172,9 @@ final class ToolActionService {
                 }
             }
             try process.run()
+            DispatchQueue.global().asyncAfter(deadline: .now() + 30) {
+                if process.isRunning { process.terminate() }
+            }
         } catch {
             completion(.failure(error))
         }
@@ -141,6 +255,40 @@ final class ToolActionService {
                 wires = VGroup(Line(left,node), Line(node,top), Line(node,bottom))
                 self.play(Create(wires), FadeIn(left,node,top,bottom))
                 for target in [top,bottom]: self.play(MoveAlongPath(Dot(color=YELLOW), VGroup(Line(left,node),Line(node,target))), run_time=1.2)
+            """
+        case "limit":
+            body = """
+                axes = Axes(x_range=[-3,3,1], y_range=[-1,5,1])
+                graph = axes.plot(lambda x: (x*x-1)/(x-1) if abs(x-1)>.05 else 2, discontinuities=[1], color=PURPLE)
+                hole = Circle(radius=.09, color=YELLOW).move_to(axes.c2p(1,2))
+                self.play(Create(axes), Create(graph), Create(hole))
+                self.play(Indicate(hole), run_time=2)
+            """
+        case "field":
+            body = """
+                field = ArrowVectorField(lambda p: np.array([-p[1], p[0], 0]), x_range=[-4,4,1], y_range=[-2,2,1])
+                dot = Dot([2,0,0], color=YELLOW)
+                self.play(Create(field), FadeIn(dot))
+                self.play(Rotate(dot, angle=TAU, about_point=ORIGIN), run_time=4)
+            """
+        case "geometry":
+            body = """
+                triangle = Triangle(color=PURPLE).scale(2)
+                altitude = DashedLine(triangle.get_top(), triangle.get_bottom(), color=GREEN)
+                self.play(Create(triangle)); self.play(Create(altitude)); self.play(triangle.animate.rotate(PI/5), run_time=2)
+            """
+        case "wave":
+            body = """
+                axes = Axes(x_range=[-5,5,1], y_range=[-2,2,1])
+                phase = ValueTracker(0)
+                wave = always_redraw(lambda: axes.plot(lambda x: np.sin(x-phase.get_value()), color=PURPLE))
+                self.play(Create(axes), Create(wave)); self.play(phase.animate.set_value(TAU), run_time=4, rate_func=linear)
+            """
+        case "molecule":
+            body = """
+                atoms = VGroup(Circle(.45,color=BLUE), Circle(.32,color=WHITE).shift(LEFT*.8+DOWN*.5), Circle(.32,color=WHITE).shift(RIGHT*.8+DOWN*.5))
+                bonds = VGroup(Line(LEFT*.55+DOWN*.3, ORIGIN), Line(RIGHT*.55+DOWN*.3, ORIGIN))
+                self.play(Create(bonds), FadeIn(atoms)); self.play(atoms.animate.rotate(TAU), run_time=3)
             """
         default:
             body = """

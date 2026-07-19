@@ -36,7 +36,7 @@ Use Demo mode to switch to Anatomy, then Math. Do not run three full lessons.
 
 Show the “Show in graph sandbox” preview row.
 
-> “When seeing a change matters, Aster opens a real embedded Desmos sandbox with comparison expressions and sliders. For temporal concepts it can render one fixed local Manim template. Both use structured payloads and learner confirmation; Aster never executes model-authored code or modifies graded work.”
+> “When seeing a change matters, Aster opens a real embedded Desmos sandbox or one of its bounded Manim animation families. Actions are permissioned and reversible; Aster never executes model-authored code or modifies graded work.”
 
 ## 2:15–2:35 — Technical proof and budget
 

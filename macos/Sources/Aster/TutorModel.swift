@@ -16,14 +16,22 @@ final class TutorModel: ObservableObject {
     @Published var precisionMode = false
     @Published var narrationRate: Float = 0.48
     @Published var isListening = false
+    @Published var conversationMode = true
     @Published var isFollowing = false
+    @Published var isVideoMode = false
     @Published var contextRegion: ContextRegion?
+    @Published var contextTarget: CaptureTarget?
+    @Published var anchorStatus = "Cursor-local context"
     @Published var diagnostic: DiagnosticPlan?
     @Published var lastLesson: LessonPlan?
     @Published var lessonStepIndex = 0
     @Published var learnerProfile: LearnerProfile
     @Published var lastAssessment: AssessmentResult?
     @Published var isPanelVisible = false
+    @Published var actionPermission: ActionPermission = ActionPermission(rawValue: UserDefaults.standard.string(forKey: "actionPermission") ?? "") ?? .askEveryTime {
+        didSet { UserDefaults.standard.set(actionPermission.rawValue, forKey: "actionPermission") }
+    }
+    @Published var actionHistory: [TutorActionRecord] = []
 
     var onShowPanel: (() -> Void)?
     var onHidePanel: (() -> Void)?
@@ -33,21 +41,37 @@ final class TutorModel: ObservableObject {
     private let client = OpenAIClient()
     private let voice = VoiceServices()
     private let memoryStore = LearnerMemoryStore()
+    private let anchorTracker = SemanticAnchorTracker()
+    private let browserVideo = BrowserVideoService()
     private let contextSelector = ContextSelectionController()
     private let tools = ToolActionService()
     private(set) var overlay = OverlayController()
     private var capturedContext: CapturedScreen?
+    private var recentFrames: [CapturedScreen] = []
     private var followTimer: Timer?
     private var pendingQuestion = ""
     private var selectedDiagnosis: DiagnosticOption?
     private var shownStepIDs = Set<String>()
     private var demoKind: String?
     private var phaseBeforeListening: TutorPhase = .ready
+    private var lessonAnchor: SemanticAnchor?
+    private var resumeVideoAfterCheck = false
 
     private init() {
         learnerProfile = memoryStore.load()
         voice.onText = { [weak self] text in self?.query = text }
+        voice.onFinalText = { [weak self] text in
+            guard let self else { return }
+            self.isListening = false
+            self.query = text
+            if self.conversationMode { self.submit() }
+        }
         voice.onFinished = { [weak self] in self?.voiceDidFinish() }
+        tools.onAction = { [weak self] action in
+            guard let self else { return }
+            self.actionHistory.append(action)
+            self.actionHistory = Array(self.actionHistory.suffix(30))
+        }
     }
 
     func activate() {
@@ -88,16 +112,27 @@ final class TutorModel: ObservableObject {
         overlay.clear()
         onHidePanel?()
         phase = .selectingContext
-        contextSelector.begin { [weak self] region in
+        contextSelector.begin { [weak self] target in
             guard let self else { return }
-            guard let region else {
+            guard let target else {
                 self.phase = self.contextRegion == nil ? .ready : .following
                 self.activate()
                 return
             }
-            self.contextRegion = region
+            self.contextTarget = target
+            self.contextRegion = target.region
             do {
-                self.capturedContext = try self.capture.capture(region: region)
+                self.capturedContext = try self.capture.capture(target: target)
+                if let screen = self.capturedContext, let anchor = self.anchorTracker.anchor(in: screen) {
+                    var anchoredTarget = target
+                    anchoredTarget.anchor = anchor
+                    self.contextTarget = anchoredTarget
+                    self.anchorStatus = "Pointing at “\(anchor.label)” · \(Int(anchor.confidence * 100))% local confidence"
+                }
+                self.recentFrames = self.capturedContext.map { [$0] } ?? []
+                if self.contextTarget?.anchor == nil {
+                    self.anchorStatus = "Diagram focus locked at the cursor"
+                }
                 self.startFollowing()
                 self.messages.append(ChatMessage(
                     role: .aster,
@@ -112,6 +147,41 @@ final class TutorModel: ObservableObject {
         }
     }
 
+    func selectCurrentWindow() {
+        voice.stopSpeaking()
+        overlay.clear()
+        guard let target = contextSelector.selectWindowUnderCursor() else {
+            report(CaptureError.captureFailed)
+            return
+        }
+        contextTarget = target
+        contextRegion = target.region
+        do {
+            capturedContext = try capture.capture(target: target)
+            if let screen = capturedContext, let anchor = anchorTracker.anchor(in: screen) {
+                var anchoredTarget = target
+                anchoredTarget.anchor = anchor
+                contextTarget = anchoredTarget
+                anchorStatus = "Following “\(anchor.label)” in \(target.appName)"
+            }
+            recentFrames = capturedContext.map { [$0] } ?? []
+            if contextTarget?.anchor == nil { anchorStatus = "Following \(target.appName) · \(target.windowTitle)" }
+            startFollowing()
+            messages.append(ChatMessage(role: .aster, text: "Window locked. I’ll recover its position when it moves or resizes.", kind: .memory))
+            activate()
+        } catch { report(error) }
+    }
+
+    func toggleVideoMode() {
+        isVideoMode.toggle()
+        if isFollowing { startFollowing() }
+        messages.append(ChatMessage(
+            role: .aster,
+            text: isVideoMode ? "Video context on. I’ll retain four changing local frames and send them only when you ask." : "Video context off. I’ll use the current frame.",
+            kind: .memory
+        ))
+    }
+
     func toggleFollowing() {
         if isFollowing { stopFollowing() }
         else if contextRegion == nil { selectContext() }
@@ -123,7 +193,7 @@ final class TutorModel: ObservableObject {
         followTimer?.invalidate()
         isFollowing = true
         phase = .following
-        followTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+        followTimer = Timer.scheduledTimer(withTimeInterval: isVideoMode ? 0.75 : 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshContextSilently() }
         }
     }
@@ -136,8 +206,29 @@ final class TutorModel: ObservableObject {
     }
 
     private func refreshContextSilently() {
-        guard let region = contextRegion else { return }
-        if let updated = try? capture.capture(region: region) { capturedContext = updated }
+        guard let target = contextTarget else { return }
+        let video = isVideoMode ? browserVideo.snapshot(appName: target.appName) : nil
+        if let updated = try? capture.capture(target: target, videoContext: video) {
+            capturedContext = updated
+            contextRegion = updated.contextRegion
+            var recoveredTarget = updated.target
+            if let anchor = target.anchor {
+                if let recovered = anchorTracker.recover(anchor, in: updated) {
+                    recoveredTarget.anchor = recovered
+                    anchorStatus = "Tracking “\(recovered.label)” · recovered after movement"
+                } else {
+                    recoveredTarget.anchor = anchor
+                    anchorStatus = "Anchor temporarily hidden · keeping last position"
+                }
+            }
+            contextTarget = recoveredTarget
+            if isVideoMode, recentFrames.last?.jpegData != updated.jpegData {
+                recentFrames.append(updated)
+                recentFrames = Array(recentFrames.suffix(4))
+            } else if !isVideoMode {
+                recentFrames = [updated]
+            }
+        }
     }
 
     func toggleListening() {
@@ -146,6 +237,7 @@ final class TutorModel: ObservableObject {
             isListening = false
             phase = phaseBeforeListening
         } else {
+            voice.stopSpeaking() // natural barge-in
             phaseBeforeListening = phase
             isListening = true
             phase = .listening
@@ -181,7 +273,7 @@ final class TutorModel: ObservableObject {
     func replayCurrentStep() {
         guard let lesson = lastLesson, lesson.steps.indices.contains(lessonStepIndex), let screen = capturedContext else { return }
         let step = lesson.steps[lessonStepIndex]
-        overlay.show(step.annotations.map(\.clamped), on: screen.screenFrame, within: screen.contextRegion)
+        overlay.show(anchoredAnnotations(step.annotations), primitives: anchoredPrimitives(step.diagramPrimitives), on: screen.screenFrame, within: screen.contextRegion)
         phase = .teaching
         voice.speak(step.narration)
     }
@@ -199,6 +291,12 @@ final class TutorModel: ObservableObject {
 
     func requestReteach(_ style: String) {
         guard let lesson = lastLesson else { return }
+        if style.contains("analogy") { learnerProfile.preferences.analogyStyle = "concrete analogy" }
+        if style.contains("simply") {
+            learnerProfile.preferences.explanationMode = "explain more simply"
+            learnerProfile.preferences.difficulty = max(0.15, learnerProfile.preferences.difficulty - 0.1)
+        }
+        memoryStore.save(learnerProfile)
         overlay.clear()
         phase = isFollowing ? .following : .ready
         let request = "Teach \(lesson.conceptTitle) again \(style), focusing on \(lastAssessment?.shakyAreas.joined(separator: ", ") ?? lesson.diagnosis)."
@@ -221,8 +319,19 @@ final class TutorModel: ObservableObject {
         Task { await beginDiagnosis(for: request) }
     }
 
+    func increaseDifficulty() {
+        learnerProfile.preferences.difficulty = min(0.95, learnerProfile.preferences.difficulty + 0.1)
+        learnerProfile.preferences.explanationMode = "more challenging transfer"
+        memoryStore.save(learnerProfile)
+        practiceShakyAreas()
+    }
+
     func runSuggestedTool() {
         guard let lesson = lastLesson, lesson.toolSuggestion != "none" else { return }
+        guard actionPermission != .never else {
+            messages.append(ChatMessage(role: .aster, text: "Agent actions are disabled. Change permission to Ask every time or Internal only.", kind: .tool))
+            return
+        }
         let alert = NSAlert()
         alert.messageText = lesson.toolSuggestion == "desmos" ? "Open a Desmos teaching sandbox?" : "Render a safe Manim template?"
         alert.informativeText = lesson.toolSuggestion == "desmos"
@@ -231,7 +340,7 @@ final class TutorModel: ObservableObject {
         alert.addButton(withTitle: "Demonstrate")
         alert.addButton(withTitle: "Not now")
         NSApp.activate(ignoringOtherApps: true)
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        if actionPermission == .askEveryTime, alert.runModal() != .alertFirstButtonReturn { return }
 
         if lesson.toolSuggestion == "desmos" {
             tools.openDesmos(payload: lesson.toolPayload)
@@ -242,7 +351,11 @@ final class TutorModel: ObservableObject {
                 guard let self else { return }
                 switch result {
                 case .success(let movie):
-                    NSWorkspace.shared.open(movie)
+                    self.tools.showManimPreview(
+                        movie: movie,
+                        template: lesson.toolPayload.manimTemplate,
+                        caption: lesson.toolPayload.conceptCaption
+                    ) { [weak self] cue in self?.voice.speak(cue, rate: self?.narrationRate ?? 0.48) }
                     self.messages.append(ChatMessage(role: .aster, text: "Rendered the safe \(lesson.toolPayload.manimTemplate) animation locally.", kind: .tool))
                     self.phase = .ready
                 case .failure(let error): self.report(error)
@@ -251,11 +364,38 @@ final class TutorModel: ObservableObject {
         }
     }
 
+    func createScratchWork() {
+        let source = lastLesson?.steps.map(\.notebook).joined(separator: "\n\n") ?? "Use this space to reason, sketch a prediction, or write a practice attempt."
+        tools.openScratchpad(text: source)
+    }
+
+    func previewTyping() {
+        guard let payload = lastLesson?.toolPayload else { return }
+        tools.previewTyping(payload.primaryExpression, targetApp: contextTarget?.appName ?? "another app")
+    }
+
+    func openZoomableContext() {
+        guard let image = capturedContext?.jpegData else { return }
+        tools.openZoomableContext(jpeg: image)
+    }
+
+    func undoLastAction() { tools.undoLast() }
+
+    func practiceShakyAreas() {
+        let due = learnerProfile.dueReviews.first ?? learnerProfile.concepts.sorted { $0.mastery < $1.mastery }.first
+        let concept = due?.title ?? lastLesson?.conceptTitle ?? "the selected concept"
+        let shaky = due?.shakyAreas.joined(separator: ", ") ?? lastAssessment?.shakyAreas.joined(separator: ", ") ?? "the central mechanism"
+        let request = "Generate one fresh, ungraded practice problem for \(concept), targeting \(shaky). Make me predict first and adapt the difficulty to my history."
+        messages.append(ChatMessage(role: .learner, text: request, kind: .message))
+        Task { await beginDiagnosis(for: request) }
+    }
+
     func runDemo(_ kind: String = "paper") {
         demoKind = kind
         if contextRegion == nil {
             contextRegion = ContextRegion(x: 0.12, y: 0.12, width: 0.70, height: 0.70)
-            capturedContext = try? capture.capture(region: contextRegion!)
+            contextTarget = .displayRegion(displayID: CGMainDisplayID(), region: contextRegion!)
+            capturedContext = try? capture.capture(target: contextTarget!)
         }
         activate()
         let question: String
@@ -274,9 +414,22 @@ final class TutorModel: ObservableObject {
         lastAssessment = nil
         phase = .seeing
         do {
+            if isVideoMode {
+                let appName = contextTarget?.appName ?? ""
+                if let state = browserVideo.snapshot(appName: appName), !state.isPaused {
+                    resumeVideoAfterCheck = browserVideo.pause(appName: appName)
+                    if resumeVideoAfterCheck {
+                        messages.append(ChatMessage(role: .aster, text: "Paused at \(Self.timestamp(state.currentTime)) so we can inspect this teaching moment.", kind: .tool))
+                    }
+                }
+            }
             let screen: CapturedScreen
-            if let region = contextRegion {
-                screen = try capture.capture(region: region)
+            if let target = contextTarget {
+                screen = try capture.capture(target: target, videoContext: isVideoMode ? browserVideo.snapshot(appName: target.appName) : nil)
+            } else if let region = contextRegion {
+                let target = CaptureTarget.displayRegion(displayID: CGMainDisplayID(), region: region)
+                contextTarget = target
+                screen = try capture.capture(target: target)
             } else {
                 throw CaptureError.captureFailed
             }
@@ -291,6 +444,7 @@ final class TutorModel: ObservableObject {
                     apiKey: apiKey,
                     question: question,
                     screen: screen,
+                    recentFrames: requestFrames(endingWith: screen),
                     recentContext: recentContext,
                     learnerMemory: learnerProfile.promptSummary,
                     safetyIdentifier: safetyIdentifier
@@ -320,6 +474,7 @@ final class TutorModel: ObservableObject {
                     selectedDiagnosis: option,
                     diagnostic: diagnostic,
                     screen: screen,
+                    recentFrames: requestFrames(endingWith: screen),
                     recentContext: recentContext,
                     learnerMemory: learnerProfile.promptSummary,
                     precisionMode: precisionMode,
@@ -333,6 +488,7 @@ final class TutorModel: ObservableObject {
 
     private func present(_ lesson: LessonPlan) {
         lastLesson = lesson
+        lessonAnchor = contextTarget?.anchor
         shownStepIDs = []
         lessonStepIndex = 0
         messages.append(ChatMessage(role: .aster, text: "Diagnosis: \(lesson.diagnosis)", kind: .diagnostic))
@@ -345,7 +501,7 @@ final class TutorModel: ObservableObject {
               let screen = capturedContext else { return }
         let step = lesson.steps[lessonStepIndex]
         phase = .teaching
-        overlay.show(step.annotations.map(\.clamped), on: screen.screenFrame, within: screen.contextRegion)
+        overlay.show(anchoredAnnotations(step.annotations), primitives: anchoredPrimitives(step.diagramPrimitives), on: screen.screenFrame, within: screen.contextRegion)
         if !shownStepIDs.contains(step.id) {
             messages.append(ChatMessage(role: .aster, text: step.notebook, kind: .insight))
             shownStepIDs.insert(step.id)
@@ -358,6 +514,43 @@ final class TutorModel: ObservableObject {
         advanceLessonStep()
     }
 
+    private func anchoredAnnotations(_ annotations: [ScreenAnnotation]) -> [ScreenAnnotation] {
+        guard let original = lessonAnchor, let current = contextTarget?.anchor else {
+            return annotations.map(\.clamped)
+        }
+        let dx = current.bounds.rect.midX - original.bounds.rect.midX
+        let dy = current.bounds.rect.midY - original.bounds.rect.midY
+        return annotations.map { item in
+            ScreenAnnotation(
+                id: item.id,
+                type: item.type,
+                x: item.x + dx,
+                y: item.y + dy,
+                width: item.width,
+                height: item.height,
+                endX: item.endX + dx,
+                endY: item.endY + dy,
+                text: item.text,
+                color: item.color
+            ).clamped
+        }
+    }
+
+    private func anchoredPrimitives(_ primitives: [DiagramPrimitive]) -> [DiagramPrimitive] {
+        guard let original = lessonAnchor, let current = contextTarget?.anchor else { return primitives }
+        let dx = current.bounds.rect.midX - original.bounds.rect.midX
+        let dy = current.bounds.rect.midY - original.bounds.rect.midY
+        return primitives.map {
+            DiagramPrimitive(
+                id: $0.id, type: $0.type,
+                x: min(max($0.x + dx, 0), 1), y: min(max($0.y + dy, 0), 1),
+                width: $0.width, height: $0.height,
+                endX: min(max($0.endX + dx, 0), 1), endY: min(max($0.endY + dy, 0), 1),
+                text: $0.text, color: $0.color
+            )
+        }
+    }
+
     private func advanceLessonStep() {
         guard let lesson = lastLesson else { return }
         if lessonStepIndex + 1 < lesson.steps.count {
@@ -367,6 +560,7 @@ final class TutorModel: ObservableObject {
             overlay.fadeScaffolding()
             messages.append(ChatMessage(role: .aster, text: lesson.check.question, kind: .check))
             phase = .awaitingUnderstanding
+            if conversationMode && !isListening { toggleListening() }
         }
     }
 
@@ -407,6 +601,11 @@ final class TutorModel: ObservableObject {
             }
             overlay.clear()
             phase = isFollowing ? .following : .ready
+            if resumeVideoAfterCheck {
+                _ = browserVideo.resume(appName: contextTarget?.appName ?? "")
+                resumeVideoAfterCheck = false
+                messages.append(ChatMessage(role: .aster, text: "Understanding checked · resumed the video.", kind: .tool))
+            }
         } catch { report(error) }
     }
 
@@ -424,6 +623,10 @@ final class TutorModel: ObservableObject {
     }
 
     private func report(_ error: Error) {
+        if resumeVideoAfterCheck {
+            _ = browserVideo.resume(appName: contextTarget?.appName ?? "")
+            resumeVideoAfterCheck = false
+        }
         phase = .error(error.localizedDescription)
         messages.append(ChatMessage(role: .aster, text: error.localizedDescription, kind: .message))
     }
@@ -434,12 +637,24 @@ final class TutorModel: ObservableObject {
         }.joined(separator: "\n")
     }
 
+    private func requestFrames(endingWith screen: CapturedScreen) -> [CapturedScreen] {
+        guard isVideoMode else { return [screen] }
+        var frames = recentFrames.filter { $0.capturedAt != screen.capturedAt }
+        frames.append(screen)
+        return Array(frames.suffix(4))
+    }
+
     private var safetyIdentifier: String {
         let key = "safetyIdentifier"
         if let value = UserDefaults.standard.string(forKey: key) { return value }
         let value = "aster-\(UUID().uuidString.lowercased())"
         UserDefaults.standard.set(value, forKey: key)
         return value
+    }
+
+    private static func timestamp(_ seconds: Double) -> String {
+        let value = max(Int(seconds.rounded()), 0)
+        return String(format: "%d:%02d", value / 60, value % 60)
     }
 
     private func personalizedDemoDiagnostic(for question: String) -> DiagnosticPlan {

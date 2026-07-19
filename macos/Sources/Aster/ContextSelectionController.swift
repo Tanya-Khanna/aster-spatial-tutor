@@ -3,12 +3,16 @@ import AppKit
 @MainActor
 final class ContextSelectionController {
     private var panel: NSPanel?
-    private var completion: ((ContextRegion?) -> Void)?
+    private var completion: ((CaptureTarget?) -> Void)?
+    private var activeDisplayID: CGDirectDisplayID?
 
-    func begin(completion: @escaping (ContextRegion?) -> Void) {
-        guard let screen = NSScreen.main else { completion(nil); return }
+    func begin(completion: @escaping (CaptureTarget?) -> Void) {
+        let cursor = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(cursor) }) ?? NSScreen.main,
+              let displayID = ScreenCaptureService.displayID(for: screen) else { completion(nil); return }
         cancel()
         self.completion = completion
+        self.activeDisplayID = displayID
 
         let panel = NSPanel(
             contentRect: screen.frame,
@@ -17,7 +21,10 @@ final class ContextSelectionController {
             defer: false
         )
         let view = ContextSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
-        view.onComplete = { [weak self] region in self?.finish(region) }
+        view.onComplete = { [weak self] region in
+            guard let self, let displayID = self.activeDisplayID else { return }
+            self.finish(.displayRegion(displayID: displayID, region: region))
+        }
         view.onCancel = { [weak self] in self?.finish(nil) }
         panel.contentView = view
         panel.isOpaque = false
@@ -32,18 +39,57 @@ final class ContextSelectionController {
         self.panel = panel
     }
 
+    /// Selects the frontmost normal window under the pointer. The stable window
+    /// number lets capture recover its new bounds after a move or resize.
+    func selectWindowUnderCursor() -> CaptureTarget? {
+        let point = CGEvent(source: nil)?.location ?? .zero
+        guard let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return nil }
+        for info in windows {
+            guard (info[kCGWindowLayer as String] as? Int) == 0,
+                  let owner = info[kCGWindowOwnerName as String] as? String,
+                  owner != "Aster",
+                  let number = info[kCGWindowNumber as String] as? NSNumber,
+                  let boundsDictionary = info[kCGWindowBounds as String] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsDictionary),
+                  bounds.contains(point), bounds.width > 120, bounds.height > 80 else { continue }
+            guard let screen = NSScreen.screens.first(where: {
+                guard let id = ScreenCaptureService.displayID(for: $0) else { return false }
+                return CGDisplayBounds(id).intersects(bounds)
+            }), let displayID = ScreenCaptureService.displayID(for: screen) else { continue }
+            let displayBounds = CGDisplayBounds(displayID)
+            let region = ContextRegion(
+                x: (bounds.minX - displayBounds.minX) / displayBounds.width,
+                y: (bounds.minY - displayBounds.minY) / displayBounds.height,
+                width: bounds.width / displayBounds.width,
+                height: bounds.height / displayBounds.height
+            )
+            return CaptureTarget(
+                kind: .window,
+                displayID: displayID,
+                region: region,
+                windowID: number.uint32Value,
+                appName: owner,
+                windowTitle: info[kCGWindowName as String] as? String ?? "Window",
+                anchor: nil
+            )
+        }
+        return nil
+    }
+
     func cancel() {
         panel?.orderOut(nil)
         panel = nil
         completion = nil
+        activeDisplayID = nil
     }
 
-    private func finish(_ region: ContextRegion?) {
+    private func finish(_ target: CaptureTarget?) {
         let callback = completion
         panel?.orderOut(nil)
         panel = nil
         completion = nil
-        callback?(region)
+        activeDisplayID = nil
+        callback?(target)
     }
 }
 

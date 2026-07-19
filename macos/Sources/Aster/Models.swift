@@ -57,6 +57,39 @@ struct ContextRegion: Codable, Hashable {
     var rect: CGRect { CGRect(x: x, y: y, width: width, height: height) }
 }
 
+/// A stable, display-aware description of what the learner selected. Regions are
+/// stored relative to a display or window so they survive Retina scaling and moves.
+struct CaptureTarget: Codable, Hashable {
+    enum Kind: String, Codable { case displayRegion, window }
+
+    var kind: Kind
+    var displayID: UInt32
+    var region: ContextRegion
+    var windowID: UInt32?
+    var appName: String
+    var windowTitle: String
+    var anchor: SemanticAnchor?
+
+    static func displayRegion(displayID: UInt32, region: ContextRegion) -> CaptureTarget {
+        CaptureTarget(kind: .displayRegion, displayID: displayID, region: region, windowID: nil, appName: "", windowTitle: "", anchor: nil)
+    }
+}
+
+struct SemanticAnchor: Codable, Hashable {
+    var label: String
+    var bounds: ContextRegion
+    var confidence: Double
+    var fingerprint: String
+    var lastResolvedAt: Date
+}
+
+struct VideoContext: Codable, Hashable {
+    var sourceTitle: String
+    var currentTime: Double
+    var isPaused: Bool
+    var captions: String
+}
+
 struct DiagnosticOption: Codable, Identifiable, Hashable {
     let id: String
     let label: String
@@ -100,6 +133,43 @@ struct ScreenAnnotation: Codable, Identifiable, Hashable {
     }
 }
 
+enum ActionPermission: String, Codable, CaseIterable, Identifiable {
+    case askEveryTime
+    case internalOnly
+    case never
+    var id: String { rawValue }
+}
+
+struct TutorActionRecord: Codable, Identifiable, Hashable {
+    let id: UUID
+    let date: Date
+    let kind: String
+    let summary: String
+    let reversible: Bool
+}
+
+struct LearningEvidence: Codable, Identifiable, Hashable {
+    let id: UUID
+    let date: Date
+    let score: Double
+    let demonstrated: [String]
+    let shakyAreas: [String]
+}
+
+struct LearnerPreferences: Codable, Hashable {
+    var analogyStyle: String
+    var explanationMode: String
+    var difficulty: Double
+    var narrationRate: Double
+
+    static let standard = LearnerPreferences(
+        analogyStyle: "concrete and visual",
+        explanationMode: "intuitive",
+        difficulty: 0.5,
+        narrationRate: 0.48
+    )
+}
+
 enum AnnotationGeometry {
     static func normalizedRect(for annotation: ScreenAnnotation, within region: ContextRegion) -> CGRect {
         CGRect(
@@ -115,11 +185,50 @@ enum AnnotationGeometry {
     }
 }
 
+struct DiagramPrimitive: Codable, Identifiable, Hashable {
+    let id: String
+    let type: String
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
+    let endX: Double
+    let endY: Double
+    let text: String
+    let color: String
+}
+
 struct LessonStep: Codable, Identifiable, Hashable {
     let id: String
     let narration: String
     let notebook: String
     let annotations: [ScreenAnnotation]
+    let visualMode: String
+    let diagramPrimitives: [DiagramPrimitive]
+
+    init(
+        id: String,
+        narration: String,
+        notebook: String,
+        annotations: [ScreenAnnotation],
+        visualMode: String = "overlay",
+        diagramPrimitives: [DiagramPrimitive] = []
+    ) {
+        self.id = id; self.narration = narration; self.notebook = notebook
+        self.annotations = annotations; self.visualMode = visualMode; self.diagramPrimitives = diagramPrimitives
+    }
+
+    enum CodingKeys: String, CodingKey { case id, narration, notebook, annotations, visualMode, diagramPrimitives }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        narration = try c.decode(String.self, forKey: .narration)
+        notebook = try c.decode(String.self, forKey: .notebook)
+        annotations = try c.decode([ScreenAnnotation].self, forKey: .annotations)
+        visualMode = try c.decodeIfPresent(String.self, forKey: .visualMode) ?? "overlay"
+        diagramPrimitives = try c.decodeIfPresent([DiagramPrimitive].self, forKey: .diagramPrimitives) ?? []
+    }
 }
 
 struct MasteryCheck: Codable, Hashable {
@@ -165,11 +274,56 @@ struct ConceptMemory: Codable, Identifiable, Hashable {
     var shakyAreas: [String]
     var nextStrategy: String
     var lastSeen: Date
+    var nextReview: Date = Date()
+    var reviewIntervalDays: Double = 1
+    var difficulty: Double = 0.5
+    var dependencies: [String] = []
+    var misconceptionCluster: String = ""
+    var evidence: [LearningEvidence] = []
 
     var statusLabel: String {
         if mastery >= 0.82 { return "Mastered" }
         if mastery >= 0.55 { return "Developing" }
         return "Needs practice"
+    }
+
+    var isReviewDue: Bool { nextReview <= Date() }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, mastery, attempts, correctAttempts, understood, shakyAreas, nextStrategy, lastSeen
+        case nextReview, reviewIntervalDays, difficulty, dependencies, misconceptionCluster, evidence
+    }
+
+    init(
+        id: String, title: String, mastery: Double, attempts: Int, correctAttempts: Int,
+        understood: [String], shakyAreas: [String], nextStrategy: String, lastSeen: Date,
+        nextReview: Date = Date(), reviewIntervalDays: Double = 1, difficulty: Double = 0.5,
+        dependencies: [String] = [], misconceptionCluster: String = "", evidence: [LearningEvidence] = []
+    ) {
+        self.id = id; self.title = title; self.mastery = mastery; self.attempts = attempts
+        self.correctAttempts = correctAttempts; self.understood = understood; self.shakyAreas = shakyAreas
+        self.nextStrategy = nextStrategy; self.lastSeen = lastSeen; self.nextReview = nextReview
+        self.reviewIntervalDays = reviewIntervalDays; self.difficulty = difficulty
+        self.dependencies = dependencies; self.misconceptionCluster = misconceptionCluster; self.evidence = evidence
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        mastery = try c.decode(Double.self, forKey: .mastery)
+        attempts = try c.decode(Int.self, forKey: .attempts)
+        correctAttempts = try c.decode(Int.self, forKey: .correctAttempts)
+        understood = try c.decode([String].self, forKey: .understood)
+        shakyAreas = try c.decode([String].self, forKey: .shakyAreas)
+        nextStrategy = try c.decode(String.self, forKey: .nextStrategy)
+        lastSeen = try c.decode(Date.self, forKey: .lastSeen)
+        nextReview = try c.decodeIfPresent(Date.self, forKey: .nextReview) ?? Date()
+        reviewIntervalDays = try c.decodeIfPresent(Double.self, forKey: .reviewIntervalDays) ?? 1
+        difficulty = try c.decodeIfPresent(Double.self, forKey: .difficulty) ?? 0.5
+        dependencies = try c.decodeIfPresent([String].self, forKey: .dependencies) ?? []
+        misconceptionCluster = try c.decodeIfPresent(String.self, forKey: .misconceptionCluster) ?? ""
+        evidence = try c.decodeIfPresent([LearningEvidence].self, forKey: .evidence) ?? []
     }
 }
 
@@ -177,20 +331,40 @@ struct LearnerProfile: Codable, Hashable {
     var concepts: [ConceptMemory]
     var totalChecks: Int
     var streak: Int
+    var preferences: LearnerPreferences = .standard
 
-    static let empty = LearnerProfile(concepts: [], totalChecks: 0, streak: 0)
+    static let empty = LearnerProfile(concepts: [], totalChecks: 0, streak: 0, preferences: .standard)
 
     func memory(for conceptID: String) -> ConceptMemory? {
         concepts.first(where: { $0.id == conceptID })
     }
 
+    var dueReviews: [ConceptMemory] {
+        concepts.filter(\.isReviewDue).sorted { $0.nextReview < $1.nextReview }
+    }
+
+    enum CodingKeys: String, CodingKey { case concepts, totalChecks, streak, preferences }
+
+    init(concepts: [ConceptMemory], totalChecks: Int, streak: Int, preferences: LearnerPreferences = .standard) {
+        self.concepts = concepts; self.totalChecks = totalChecks; self.streak = streak; self.preferences = preferences
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        concepts = try c.decodeIfPresent([ConceptMemory].self, forKey: .concepts) ?? []
+        totalChecks = try c.decodeIfPresent(Int.self, forKey: .totalChecks) ?? 0
+        streak = try c.decodeIfPresent(Int.self, forKey: .streak) ?? 0
+        preferences = try c.decodeIfPresent(LearnerPreferences.self, forKey: .preferences) ?? .standard
+    }
+
     var promptSummary: String {
-        guard !concepts.isEmpty else { return "No prior mastery evidence yet." }
-        return concepts
+        let preferenceLine = "Preferences: mode \(preferences.explanationMode); analogy \(preferences.analogyStyle); difficulty \(Int(preferences.difficulty * 100))%."
+        guard !concepts.isEmpty else { return "\(preferenceLine) No prior mastery evidence yet." }
+        return preferenceLine + "\n" + concepts
             .sorted { $0.lastSeen > $1.lastSeen }
             .prefix(8)
             .map { concept in
-                "\(concept.title): mastery \(Int(concept.mastery * 100))%; understands [\(concept.understood.joined(separator: ", "))]; shaky [\(concept.shakyAreas.joined(separator: ", "))]; next [\(concept.nextStrategy)]"
+                "\(concept.title): mastery \(Int(concept.mastery * 100))%; understands [\(concept.understood.joined(separator: ", "))]; shaky [\(concept.shakyAreas.joined(separator: ", "))]; dependencies [\(concept.dependencies.joined(separator: ", "))]; next [\(concept.nextStrategy)]; review \(concept.nextReview.formatted())"
             }
             .joined(separator: "\n")
     }

@@ -14,11 +14,13 @@ let package = Package(
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("AVFoundation"),
+                .linkedFramework("AVKit"),
                 .linkedFramework("Carbon"),
                 .linkedFramework("CoreGraphics"),
                 .linkedFramework("Security"),
                 .linkedFramework("Speech"),
                 .linkedFramework("SwiftUI"),
+                .linkedFramework("Vision"),
                 .linkedFramework("WebKit")
             ]
         ),

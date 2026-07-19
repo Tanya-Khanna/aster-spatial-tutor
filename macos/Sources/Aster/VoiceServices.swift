@@ -11,6 +11,7 @@ final class VoiceServices: NSObject, AVSpeechSynthesizerDelegate {
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var hasInputTap = false
     var onText: ((String) -> Void)?
+    var onFinalText: ((String) -> Void)?
     var onFinished: (() -> Void)?
 
     override init() {
@@ -57,7 +58,11 @@ final class VoiceServices: NSObject, AVSpeechSynthesizerDelegate {
                 Task { @MainActor in self?.onText?(text) }
             }
             if error != nil || result?.isFinal == true {
-                Task { @MainActor in self?.stopListening() }
+                let finalText = result?.bestTranscription.formattedString
+                Task { @MainActor in
+                    self?.stopListening()
+                    if let finalText, !finalText.isEmpty { self?.onFinalText?(finalText) }
+                }
             }
         }
     }
