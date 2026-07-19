@@ -108,137 +108,6 @@ function VoiceWave({ dark = false }: { dark?: boolean }) {
   );
 }
 
-function WebGLField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const gl = canvas.getContext("webgl", {
-      alpha: true,
-      antialias: false,
-      powerPreference: "low-power",
-    });
-    if (!gl) return;
-
-    const vertexSource = `
-      attribute vec2 a_position;
-      void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-      }
-    `;
-    const fragmentSource = `
-      precision mediump float;
-      uniform vec2 u_resolution;
-      uniform vec2 u_pointer;
-      uniform float u_time;
-
-      float glow(vec2 point, vec2 center, float radius) {
-        return smoothstep(radius, 0.0, length(point - center));
-      }
-
-      void main() {
-        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-        vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
-        vec2 point = (uv - 0.5) * aspect;
-        vec2 cursor = (u_pointer - 0.5) * aspect;
-        float drift = u_time * 0.07;
-
-        vec3 color = mix(vec3(0.018, 0.024, 0.055), vec3(0.060, 0.028, 0.052), uv.x);
-        color += vec3(0.82, 0.16, 0.055) * glow(point, vec2(0.52 + sin(drift) * 0.10, 0.26), 0.62) * 0.34;
-        color += vec3(0.10, 0.48, 0.39) * glow(point, vec2(0.78, -0.18 + cos(drift * 1.3) * 0.09), 0.54) * 0.18;
-        color += vec3(0.10, 0.22, 0.62) * glow(point, vec2(-0.50, 0.36), 0.58) * 0.20;
-        color += vec3(1.0, 0.33, 0.16) * glow(point, cursor, 0.22) * 0.13;
-
-        float ribbons = sin((point.x * 4.2) + sin(point.y * 5.0 + drift * 5.0)) * 0.5 + 0.5;
-        ribbons *= smoothstep(0.75, 0.05, abs(point.y + 0.08));
-        color += vec3(0.18, 0.10, 0.22) * ribbons * 0.10;
-
-        float grain = fract(sin(dot(gl_FragCoord.xy + u_time, vec2(12.9898, 78.233))) * 43758.5453);
-        color += (grain - 0.5) * 0.018;
-        gl_FragColor = vec4(color, 0.96);
-      }
-    `;
-
-    const compile = (type: number, source: string) => {
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        gl.deleteShader(shader);
-        return null;
-      }
-      return shader;
-    };
-
-    const vertexShader = compile(gl.VERTEX_SHADER, vertexSource);
-    const fragmentShader = compile(gl.FRAGMENT_SHADER, fragmentSource);
-    if (!vertexShader || !fragmentShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    gl.useProgram(program);
-
-    const vertices = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertices);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-    const position = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-
-    const resolution = gl.getUniformLocation(program, "u_resolution");
-    const pointer = gl.getUniformLocation(program, "u_pointer");
-    const time = gl.getUniformLocation(program, "u_time");
-    const cursor = { x: 0.72, y: 0.68 };
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const startedAt = performance.now();
-    let frame = 0;
-
-    const resize = () => {
-      const bounds = canvas.getBoundingClientRect();
-      const density = Math.min(window.devicePixelRatio || 1, 1.5);
-      canvas.width = Math.max(1, Math.round(bounds.width * density));
-      canvas.height = Math.max(1, Math.round(bounds.height * density));
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-    const followPointer = (event: globalThis.PointerEvent) => {
-      const bounds = canvas.getBoundingClientRect();
-      cursor.x = (event.clientX - bounds.left) / bounds.width;
-      cursor.y = 1 - (event.clientY - bounds.top) / bounds.height;
-    };
-    const render = (now: number) => {
-      gl.uniform2f(resolution, canvas.width, canvas.height);
-      gl.uniform2f(pointer, cursor.x, cursor.y);
-      gl.uniform1f(time, (now - startedAt) / 1000);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      if (!reducedMotion) frame = requestAnimationFrame(render);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    window.addEventListener("pointermove", followPointer, { passive: true });
-    frame = requestAnimationFrame(render);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("pointermove", followPointer);
-      gl.deleteBuffer(vertices);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="webgl-field" aria-hidden="true" />;
-}
-
 function ProductStage({ scene }: { scene: SceneKey }) {
   const data = scenes[scene];
 
@@ -327,63 +196,12 @@ export default function Home() {
   const [scene, setScene] = useState<SceneKey>("paper");
   const [scrolled, setScrolled] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
-  const pageRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let animationContext: { revert: () => void } | undefined;
-    let cancelled = false;
-
-    async function animatePage() {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-      ]);
-      if (cancelled || !pageRef.current) return;
-      gsap.registerPlugin(ScrollTrigger);
-      animationContext = gsap.context(() => {
-        gsap.from("[data-hero-reveal]", {
-          y: 26,
-          autoAlpha: 0,
-          duration: 0.85,
-          stagger: 0.08,
-          ease: "power3.out",
-        });
-        gsap.from(".hero-stage", {
-          x: 52,
-          autoAlpha: 0,
-          duration: 1.15,
-          delay: 0.18,
-          ease: "power3.out",
-        });
-        gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
-          gsap.from(element, {
-            y: 52,
-            autoAlpha: 0,
-            duration: 0.9,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: element,
-              start: "top 86%",
-              once: true,
-            },
-          });
-        });
-      }, pageRef);
-    }
-
-    animatePage();
-    return () => {
-      cancelled = true;
-      animationContext?.revert();
-    };
   }, []);
 
   function trackPointer(event: PointerEvent<HTMLElement>) {
@@ -394,7 +212,7 @@ export default function Home() {
   }
 
   return (
-    <main ref={pageRef}>
+    <main>
       <nav className={scrolled ? "site-nav nav-scrolled" : "site-nav"} aria-label="Main navigation">
         <a className="brand" href="#top" aria-label="Aster home"><AsterMark /><span>Aster</span></a>
         <div className="nav-links">
@@ -413,25 +231,24 @@ export default function Home() {
         ref={heroRef}
         onPointerMove={trackPointer}
       >
-        <WebGLField />
         <div className="pointer-aura" aria-hidden="true" />
         <div className="hero-copy">
-          <div className="eyebrow" data-hero-reveal><span className="eyebrow-dot" /> Meet your on-screen tutor</div>
-          <h1 data-hero-reveal>Your screen becomes the <span>whiteboard</span>.</h1>
-          <p className="hero-manifesto" data-hero-reveal>Don’t bring your question to the tutor. Bring the tutor to your question.</p>
-          <div className="hero-learning-loop" aria-label="How Aster helps you learn" data-hero-reveal>
+          <div className="eyebrow"><span className="eyebrow-dot" /> Meet your on-screen tutor</div>
+          <h1>Your screen becomes the <span>whiteboard</span>.</h1>
+          <p className="hero-manifesto">Don’t bring your question to the tutor. Bring the tutor to your question.</p>
+          <div className="hero-learning-loop" aria-label="How Aster helps you learn">
             <p><b>Point.</b><span>Highlight anything you’re learning.</span></p>
             <p><b>Learn.</b><span>Aster explains it aloud and draws directly where it matters.</span></p>
             <p><b>Master.</b><span>It checks what clicked, remembers what didn’t, and helps you revisit it.</span></p>
           </div>
-          <div className="hero-actions" data-hero-reveal>
+          <div className="hero-actions">
             <a className="primary-button" href="/Aster-macOS.zip" download>
               <span className="apple-glyph">⌘</span>
               <span><small>Prototype for</small>macOS</span>
               <b>↓</b>
             </a>
           </div>
-          <div className="hero-meta" data-hero-reveal>
+          <div className="hero-meta">
             <span><i /> No screenshots or uploads</span>
             <span><i /> Teaches where you’re looking</span>
             <span><i /> Remembers what needs practice</span>
@@ -457,7 +274,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="trust-strip" aria-label="Aster capabilities" data-reveal>
+      <section className="trust-strip" aria-label="Aster capabilities">
         <span>Research papers</span><i />
         <span>Equations</span><i />
         <span>Anatomy</span><i />
@@ -466,7 +283,7 @@ export default function Home() {
         <span>Videos</span>
       </section>
 
-      <section className="how-section" id="how" data-reveal>
+      <section className="how-section" id="how">
         <div className="section-heading split-heading">
           <div>
             <span className="section-kicker">ZERO CONTEXT SWITCHING</span>
@@ -493,7 +310,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="voice-section" id="learning" data-reveal>
+      <section className="voice-section" id="learning">
         <div className="voice-visual">
           <div className="voice-orbit orbit-one" />
           <div className="voice-orbit orbit-two" />
@@ -517,7 +334,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="memory-section" data-reveal>
+      <section className="memory-section">
         <div className="memory-copy">
           <span className="section-kicker">REMEMBERS THE LEARNER, NOT JUST THE CHAT</span>
           <h2>Every explanation changes what comes next.</h2>
@@ -542,7 +359,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="agent-section" data-reveal>
+      <section className="agent-section">
         <div className="section-heading centered-heading">
           <span className="section-kicker">TOOLS FOR DEEPER UNDERSTANDING</span>
           <h2>An agent with a teacher’s restraint.</h2>
@@ -565,7 +382,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="privacy-section" id="privacy" data-reveal>
+      <section className="privacy-section" id="privacy">
         <div className="privacy-card">
           <div className="privacy-copy">
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
@@ -590,7 +407,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="final-cta" data-reveal>
+      <section className="final-cta">
         <div className="cta-glow" />
         <AsterMark />
         <span className="section-kicker light">ASTER FOR MAC</span>

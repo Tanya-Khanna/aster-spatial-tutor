@@ -50,11 +50,7 @@ test("ships the app archive, social card, and removes the starter preview", asyn
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(page, /Your screen becomes the/);
   assert.match(page, /scene-switcher/);
-  assert.match(page, /WebGLField/);
-  assert.match(page, /gsap\/ScrollTrigger/);
   assert.match(css, /prefers-reduced-motion/);
-  assert.match(css, /--hand:/);
-  assert.match(css, /\.webgl-field/);
   assert.doesNotMatch(css, /perspective\(1400px\) rotateY/);
   assert.match(layout, /\/og\.png/);
   await assert.rejects(access(new URL("app\/_sites-preview", root)));
