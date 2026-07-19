@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
@@ -195,7 +195,6 @@ function ProductStage({ scene }: { scene: SceneKey }) {
 export default function Home() {
   const [scene, setScene] = useState<SceneKey>("paper");
   const [scrolled, setScrolled] = useState(false);
-  const [demoReplay, setDemoReplay] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -210,20 +209,6 @@ export default function Home() {
     if (!rect || !heroRef.current) return;
     heroRef.current.style.setProperty("--pointer-x", `${event.clientX - rect.left}px`);
     heroRef.current.style.setProperty("--pointer-y", `${event.clientY - rect.top}px`);
-  }
-
-  function replayDemo(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
-    setDemoReplay((replay) => replay + 1);
-    window.history.replaceState(null, "", "#demo");
-
-    requestAnimationFrame(() => {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      document.getElementById("demo")?.scrollIntoView({
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-        block: "center",
-      });
-    });
   }
 
   return (
@@ -262,9 +247,6 @@ export default function Home() {
               <span><small>Prototype for</small>macOS</span>
               <b>↓</b>
             </a>
-            <a className="text-button" href="#demo" onClick={replayDemo} aria-controls="demo">
-              <span className="play-icon">▶</span> See it teach
-            </a>
           </div>
           <div className="hero-meta">
             <span><i /> No screenshots or uploads</span>
@@ -273,12 +255,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div
-          className={demoReplay > 0 ? "hero-stage demo-playing" : "hero-stage"}
-          id="demo"
-          key={demoReplay}
-          aria-label="Interactive Aster teaching demonstration"
-        >
+        <div className="hero-stage" aria-label="Interactive Aster teaching demonstration">
           <div className="scene-switcher" role="tablist" aria-label="Choose a lesson demo">
             {(Object.keys(scenes) as SceneKey[]).map((key) => (
               <button
