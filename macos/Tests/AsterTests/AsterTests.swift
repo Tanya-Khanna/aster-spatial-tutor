@@ -64,6 +64,14 @@ import Testing
     #expect(decoded == target)
 }
 
+@MainActor
+@Test func wakePhraseRequiresExplicitAsterInvocation() {
+    #expect(VoiceServices.containsWakePhrase("Hey Aster, explain this") == true)
+    #expect(VoiceServices.containsWakePhrase("hey, Astor") == true)
+    #expect(VoiceServices.containsWakePhrase("Aster is a flower") == false)
+    #expect(VoiceServices.containsWakePhrase("explain this") == false)
+}
+
 @Test func learnerMemoryPersistsMasteryAndMisconceptions() throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }

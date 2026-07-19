@@ -408,6 +408,13 @@ struct TutorPanelView: View {
             }
             .toggleStyle(.switch)
             .controlSize(.mini)
+            Toggle(isOn: $model.wakePhraseEnabled) {
+                Label("“Hey Aster” · opt-in wake phrase", systemImage: "sparkle.magnifyingglass")
+                    .font(.system(size: 9, weight: .medium))
+            }
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .help("Uses macOS Speech Recognition continuously while enabled. Transcription is used only to detect the wake phrase.")
             HStack {
                 Text("$\(model.estimatedSpend, specifier: "%.3f") of $5.00")
                 Spacer()

@@ -4,6 +4,8 @@
 
 Aster is a native spatial tutor for macOS. Press **Option–Space**, select an equation, research figure, graph, circuit, code block, paragraph, homework problem, or educational anatomy diagram, and ask a question. Aster diagnoses the misconception before explaining, teaches through synchronized voice and on-target drawings, checks an independent answer, and remembers the resulting mastery evidence for the next lesson.
 
+The animated **✱** is Aster’s physical presence: it lands beside the cursor, pulses while reading, stretches into each teaching mark, then collapses beside the concept as a clickable lesson bookmark. “Hey Aster” offers the same entry point as an explicit opt-in wake mode.
+
 Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-5.6**.
 
 ## Try it
@@ -99,6 +101,7 @@ Codex session ID: <add public session ID>
 ## Privacy and safety
 
 - No continuous or hidden API surveillance.
+- “Hey Aster” listening is off by default, visibly configurable, and uses macOS Speech Recognition only after the learner opts in.
 - Follow mode visibly refreshes only the learner-selected region every two seconds on-device; a screen image is sent only after the learner asks.
 - Capture state is visible in the interface.
 - The API key is stored in macOS Keychain and excluded from the repository.

@@ -2,6 +2,8 @@
 
 Aster is a native spatial tutor for macOS. Press **Option–Space**, drag around the exact learning context, and ask by voice or text. Aster follows that region locally, diagnoses before explaining, teaches through synchronized voice and staged annotations, checks an independent answer, and persists concept-level mastery evidence across launches.
 
+The ✱ cursor companion is the source of the overlay: it lands and reads beside the pointer, morphs into each annotation, and collapses into a clickable bookmark that reopens the exact lesson. The optional “Hey Aster” wake phrase is disabled by default.
+
 ## Product loop
 
 1. Select an exact region on any display, click for cursor context, or lock a native window.

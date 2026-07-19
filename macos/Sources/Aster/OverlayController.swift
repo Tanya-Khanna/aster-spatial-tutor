@@ -6,9 +6,22 @@ final class OverlayController {
     private let canvas = AnnotationCanvas(frame: .zero)
     private var revealTimer: Timer?
     private var animationTimer: Timer?
+    private let companion = AsterStarCompanion()
+    var onBookmarkClick: (() -> Void)? {
+        didSet { companion.onClick = onBookmarkClick }
+    }
+
+    func arriveBesideCursor() {
+        clearAnnotationPanel()
+        companion.landBesideCursor()
+    }
+
+    func showReadingState() { companion.setReading() }
 
     func show(_ annotations: [ScreenAnnotation], primitives: [DiagramPrimitive] = [], on frame: CGRect, within region: ContextRegion) {
-        clear()
+        let origin = companion.globalPoint ?? NSEvent.mouseLocation
+        clearAnnotationPanel()
+        companion.hide()
         let panel = NSPanel(
             contentRect: frame,
             styleMask: [.borderless, .nonactivatingPanel],
@@ -26,6 +39,7 @@ final class OverlayController {
         canvas.annotations = []
         canvas.primitives = primitives
         canvas.contextRegion = region
+        canvas.sourcePoint = NSPoint(x: origin.x - frame.minX, y: frame.maxY - origin.y)
         canvas.alphaValue = 1
         panel.contentView = canvas
         panel.orderFrontRegardless()
@@ -41,6 +55,8 @@ final class OverlayController {
             guard let self else { timer.invalidate(); return }
             guard index < annotations.count else { timer.invalidate(); return }
             self.canvas.annotations.append(annotations[index])
+            self.canvas.morphingID = annotations[index].id
+            self.canvas.morphStartedAt = self.canvas.animationPhase
             self.canvas.needsDisplay = true
             index += 1
         }
@@ -51,9 +67,15 @@ final class OverlayController {
             context.duration = 0.65
             canvas.animator().alphaValue = 0.22
         }
+        companion.showBookmark(at: bookmarkPoint())
     }
 
     func clear() {
+        clearAnnotationPanel()
+        companion.hide(rememberPoint: false)
+    }
+
+    private func clearAnnotationPanel() {
         revealTimer?.invalidate()
         revealTimer = nil
         animationTimer?.invalidate()
@@ -63,6 +85,15 @@ final class OverlayController {
         canvas.annotations = []
         canvas.primitives = []
     }
+
+    private func bookmarkPoint() -> CGPoint {
+        guard let panel else { return companion.globalPoint ?? NSEvent.mouseLocation }
+        if let annotation = canvas.annotations.last {
+            let point = AnnotationGeometry.normalizedPoint(x: annotation.endX, y: annotation.endY, within: canvas.contextRegion)
+            return CGPoint(x: panel.frame.minX + point.x * panel.frame.width, y: panel.frame.maxY - point.y * panel.frame.height)
+        }
+        return companion.globalPoint ?? NSEvent.mouseLocation
+    }
 }
 
 final class AnnotationCanvas: NSView {
@@ -70,11 +101,19 @@ final class AnnotationCanvas: NSView {
     var primitives: [DiagramPrimitive] = []
     var contextRegion: ContextRegion = .fullScreen
     var animationPhase: Double = 0
+    var sourcePoint: NSPoint?
+    var morphingID: String?
+    var morphStartedAt: Double = 0
 
     override var isFlipped: Bool { true }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
+        if let sourcePoint, let morphingID,
+           let annotation = annotations.first(where: { $0.id == morphingID }) {
+            let progress = min(max((animationPhase - morphStartedAt) / 0.34, 0), 1)
+            if progress < 1 { drawSourceStar(at: sourcePoint, progress: progress, toward: mappedPoint(x: annotation.endX, y: annotation.endY)) }
+        }
         for primitive in primitives { draw(primitive) }
         for annotation in annotations { draw(annotation) }
     }
@@ -107,7 +146,9 @@ final class AnnotationCanvas: NSView {
 
     private func draw(_ annotation: ScreenAnnotation) {
         let color = NSColor.aster(annotation.color)
-        let rect = mappedRect(for: annotation)
+        let progress = annotation.id == morphingID ? min(max((animationPhase - morphStartedAt) / 0.34, 0), 1) : 1
+        let finalRect = mappedRect(for: annotation)
+        let rect = interpolatedRect(from: sourcePoint ?? finalRect.origin, to: finalRect, progress: progress)
 
         switch annotation.type {
         case "highlight":
@@ -127,12 +168,16 @@ final class AnnotationCanvas: NSView {
             path.fill()
             path.stroke()
         case "arrow":
-            let start = mappedPoint(x: annotation.x, y: annotation.y)
-            let end = mappedPoint(x: annotation.endX, y: annotation.endY)
+            let finalStart = mappedPoint(x: annotation.x, y: annotation.y)
+            let finalEnd = mappedPoint(x: annotation.endX, y: annotation.endY)
+            let start = interpolatedPoint(from: sourcePoint ?? finalStart, to: finalStart, progress: progress)
+            let end = interpolatedPoint(from: sourcePoint ?? finalStart, to: finalEnd, progress: progress)
             drawArrow(from: start, to: end, color: color)
         case "flow":
-            let start = mappedPoint(x: annotation.x, y: annotation.y)
-            let end = mappedPoint(x: annotation.endX, y: annotation.endY)
+            let finalStart = mappedPoint(x: annotation.x, y: annotation.y)
+            let finalEnd = mappedPoint(x: annotation.endX, y: annotation.endY)
+            let start = interpolatedPoint(from: sourcePoint ?? finalStart, to: finalStart, progress: progress)
+            let end = interpolatedPoint(from: sourcePoint ?? finalStart, to: finalEnd, progress: progress)
             drawArrow(from: start, to: end, color: color)
             drawFlow(from: start, to: end, color: color)
         case "focus":
@@ -161,6 +206,34 @@ final class AnnotationCanvas: NSView {
     private func mappedPoint(x: Double, y: Double) -> NSPoint {
         let normalized = AnnotationGeometry.normalizedPoint(x: x, y: y, within: contextRegion)
         return NSPoint(x: normalized.x * bounds.width, y: normalized.y * bounds.height)
+    }
+
+    private func interpolatedPoint(from: NSPoint, to: NSPoint, progress: Double) -> NSPoint {
+        NSPoint(x: from.x + (to.x - from.x) * progress, y: from.y + (to.y - from.y) * progress)
+    }
+
+    private func interpolatedRect(from: NSPoint, to: NSRect, progress: Double) -> NSRect {
+        NSRect(
+            x: from.x + (to.minX - from.x) * progress,
+            y: from.y + (to.minY - from.y) * progress,
+            width: max(to.width * progress, 2),
+            height: max(to.height * progress, 2)
+        )
+    }
+
+    private func drawSourceStar(at source: NSPoint, progress: Double, toward target: NSPoint) {
+        let point = interpolatedPoint(from: source, to: target, progress: progress * 0.78)
+        let radius = CGFloat(8 * (1 - progress) + 2)
+        let path = NSBezierPath()
+        for index in 0..<16 {
+            let r = index.isMultiple(of: 2) ? radius : radius * 0.34
+            let angle = -CGFloat.pi / 2 + CGFloat(index) * CGFloat.pi / 8
+            let p = NSPoint(x: point.x + cos(angle) * r, y: point.y + sin(angle) * r)
+            index == 0 ? path.move(to: p) : path.line(to: p)
+        }
+        path.close()
+        NSColor.aster("violet").withAlphaComponent(CGFloat(1 - progress * 0.65)).setFill()
+        path.fill()
     }
 
     private func mappedRect(for annotation: ScreenAnnotation) -> NSRect {

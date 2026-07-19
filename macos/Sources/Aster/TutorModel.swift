@@ -17,6 +17,12 @@ final class TutorModel: ObservableObject {
     @Published var narrationRate: Float = 0.48
     @Published var isListening = false
     @Published var conversationMode = true
+    @Published var wakePhraseEnabled = UserDefaults.standard.bool(forKey: "wakePhraseEnabled") {
+        didSet {
+            UserDefaults.standard.set(wakePhraseEnabled, forKey: "wakePhraseEnabled")
+            wakePhraseEnabled ? voice.startWakeListening() : voice.stopWakeListening()
+        }
+    }
     @Published var isFollowing = false
     @Published var isVideoMode = false
     @Published var contextRegion: ContextRegion?
@@ -56,6 +62,7 @@ final class TutorModel: ObservableObject {
     private var phaseBeforeListening: TutorPhase = .ready
     private var lessonAnchor: SemanticAnchor?
     private var resumeVideoAfterCheck = false
+    private var pendingWakeQuestion = false
 
     private init() {
         learnerProfile = memoryStore.load()
@@ -67,11 +74,14 @@ final class TutorModel: ObservableObject {
             if self.conversationMode { self.submit() }
         }
         voice.onFinished = { [weak self] in self?.voiceDidFinish() }
+        voice.onWakeWord = { [weak self] in self?.activateFromWakePhrase() }
+        overlay.onBookmarkClick = { [weak self] in self?.reopenBookmarkedLesson() }
         tools.onAction = { [weak self] action in
             guard let self else { return }
             self.actionHistory.append(action)
             self.actionHistory = Array(self.actionHistory.suffix(30))
         }
+        if wakePhraseEnabled { voice.startWakeListening() }
     }
 
     func activate() {
@@ -83,9 +93,29 @@ final class TutorModel: ObservableObject {
     func activateFromHotKey() {
         if contextRegion == nil {
             selectContext()
+            overlay.arriveBesideCursor()
         } else {
+            overlay.arriveBesideCursor()
             activate()
         }
+    }
+
+    private func activateFromWakePhrase() {
+        pendingWakeQuestion = true
+        if contextRegion == nil {
+            selectContext()
+            overlay.arriveBesideCursor()
+        } else {
+            overlay.arriveBesideCursor()
+            activate()
+            if !isListening { toggleListening() }
+        }
+    }
+
+    private func reopenBookmarkedLesson() {
+        activate()
+        if lastLesson != nil { replayCurrentStep() }
+        else { query = "I have a follow-up: " }
     }
 
     func closePanel() {
@@ -117,6 +147,10 @@ final class TutorModel: ObservableObject {
             guard let target else {
                 self.phase = self.contextRegion == nil ? .ready : .following
                 self.activate()
+                if self.pendingWakeQuestion {
+                    self.pendingWakeQuestion = false
+                    if !self.isListening { self.toggleListening() }
+                }
                 return
             }
             self.contextTarget = target
@@ -413,6 +447,7 @@ final class TutorModel: ObservableObject {
         pendingQuestion = question
         lastAssessment = nil
         phase = .seeing
+        overlay.showReadingState()
         do {
             if isVideoMode {
                 let appName = contextTarget?.appName ?? ""
