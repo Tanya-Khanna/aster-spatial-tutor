@@ -3,19 +3,19 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://aster-spatial-tutor.tanyak897.chatgpt.site"),
-  title: "Aster — Your screen becomes the whiteboard",
+  title: "Aster — The spatial tutor for macOS",
   description:
-    "A spatial AI tutor for macOS that sees what you see, teaches by voice, and draws explanations exactly where they belong.",
+    "Don’t bring your question to the tutor. Bring the tutor to your question. Aster explains aloud, draws where it matters, and remembers what needs practice.",
   openGraph: {
-    title: "Aster — Your screen becomes the whiteboard",
-    description: "Point at an equation, figure, or diagram. Aster teaches right on your screen.",
+    title: "Aster — The spatial tutor for macOS",
+    description: "Point. Learn. Master. Aster turns your screen into a whiteboard.",
     type: "website",
     images: [{ url: "/og.png", width: 1536, height: 1024, alt: "Aster spatial tutor teaching over an equation and anatomy diagram" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Aster — Your screen becomes the whiteboard",
-    description: "A spatial AI tutor for macOS.",
+    title: "Aster — The spatial tutor for macOS",
+    description: "Point. Learn. Master. Aster turns your screen into a whiteboard.",
     images: ["/og.png"],
   },
 };

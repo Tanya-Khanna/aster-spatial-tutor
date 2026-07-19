@@ -21,16 +21,18 @@ test("server-renders Aster's complete product story", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Aster — Your screen becomes the whiteboard<\/title>/i);
-  assert.match(html, /Your screen becomes/);
-  assert.match(html, /the whiteboard/);
+  assert.match(html, /<title>Aster — The spatial tutor for macOS<\/title>/i);
+  assert.match(html, /Don’t bring your question to the tutor/);
+  assert.match(html, /Highlight anything you’re learning/);
+  assert.match(html, /draws directly where it matters/);
+  assert.match(html, /helps you revisit it/);
   assert.match(html, /Research paper/);
   assert.match(html, /Calculus/);
   assert.match(html, /Anatomy/);
   assert.match(html, /Quiet until invited/);
   assert.match(html, /REMEMBERS THE LEARNER/);
   assert.match(html, /Diagnose/);
-  assert.match(html, /Persistent mastery/);
+  assert.match(html, /Remembers what needs practice/);
   assert.match(html, /Aster-macOS\.zip/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
@@ -46,7 +48,7 @@ test("ships the app archive, social card, and removes the starter preview", asyn
   ]);
 
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
-  assert.match(page, /A spatial tutor for macOS/);
+  assert.match(page, /The spatial tutor for macOS/);
   assert.match(page, /scene-switcher/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(layout, /\/og\.png/);

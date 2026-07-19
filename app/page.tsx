@@ -228,12 +228,15 @@ export default function Home() {
       >
         <div className="pointer-aura" aria-hidden="true" />
         <div className="hero-copy">
-          <div className="eyebrow"><span className="eyebrow-dot" /> A spatial tutor for macOS</div>
-          <h1>Your screen becomes<br />the <span>whiteboard.</span></h1>
-          <p>
-            Select an equation, figure, paragraph, chart, code block, or diagram. Aster diagnoses first, teaches by
-            voice and on-target drawing, checks your understanding, and remembers what still needs work.
-          </p>
+          <div className="eyebrow"><span className="eyebrow-dot" /> Meet your on-screen tutor</div>
+          <div className="hero-name">Aster</div>
+          <h1>The spatial tutor for macOS that turns your screen into a <span>whiteboard.</span></h1>
+          <p className="hero-manifesto">Don’t bring your question to the tutor. Bring the tutor to your question.</p>
+          <div className="hero-learning-loop" aria-label="How Aster helps you learn">
+            <p><b>Point.</b><span>Highlight anything you’re learning.</span></p>
+            <p><b>Learn.</b><span>Aster explains it aloud and draws directly where it matters.</span></p>
+            <p><b>Master.</b><span>It checks what clicked, remembers what didn’t, and helps you revisit it.</span></p>
+          </div>
           <div className="hero-actions">
             <a className="primary-button" href="/Aster-macOS.zip" download>
               <span className="apple-glyph">⌘</span>
@@ -243,9 +246,9 @@ export default function Home() {
             <a className="text-button" href="#demo"><span className="play-icon">▶</span> See it teach</a>
           </div>
           <div className="hero-meta">
-            <span><i /> Semantic cursor anchoring</span>
-            <span><i /> Multi-display live follow</span>
-            <span><i /> Persistent mastery</span>
+            <span><i /> No screenshots or uploads</span>
+            <span><i /> Teaches where you’re looking</span>
+            <span><i /> Remembers what needs practice</span>
           </div>
         </div>
 
