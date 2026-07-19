@@ -88,6 +88,7 @@ function AsterMark() {
     <span className="aster-mark" aria-hidden="true">
       <i />
       <i />
+      <i />
     </span>
   );
 }
@@ -235,7 +236,7 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <a className="primary-button" href="/Aster-macOS.zip" download>
-              <span className="apple-glyph">●</span>
+              <span className="apple-glyph">⌘</span>
               <span><small>Prototype for</small>macOS</span>
               <b>↓</b>
             </a>
