@@ -362,9 +362,9 @@ export default function Home() {
 
       <section className="agent-section">
         <div className="section-heading centered-heading">
-          <span className="section-kicker">DEMONSTRATES, NEVER TAKES OVER</span>
+          <span className="section-kicker">TOOLS FOR DEEPER UNDERSTANDING</span>
           <h2>An agent with a teacher’s restraint.</h2>
-          <p>Aster can open a teaching surface, create scratch work and practice, or prepare content for another app—but every action is bounded, reversible, and permissioned.</p>
+          <p>Aster opens a teaching surface only when it helps you understand: visualizing a change, creating reversible scratch work, or generating focused practice. Every action is previewed, bounded, reversible, and permissioned.</p>
         </div>
         <div className="action-grid">
           {actions.map((action, index) => (
@@ -389,8 +389,8 @@ export default function Home() {
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
             <h2>Quiet until invited.</h2>
             <p>
-              No invisible API surveillance. Aster visibly follows only the region or window you selected, excludes
-              its own overlays, and sends context only after you ask. Your API key stays in macOS Keychain.
+              Until you invoke Aster, no screen context leaves your Mac. When you do, Aster follows only the region
+              or window you chose, visibly marks that boundary, and excludes its own overlay. Your API key stays in macOS Keychain.
             </p>
             <div className="privacy-points">
               <span><i>✓</i> Selected-region capture</span>
@@ -399,7 +399,8 @@ export default function Home() {
             </div>
           </div>
           <div className="budget-widget">
-            <div className="budget-top"><span>Project budget</span><b>$0.37 used</b></div>
+            <div className="privacy-state"><span><i /> LOCAL UNTIL INVOKED</span><b>No silent background uploads.</b><small>Screen context moves only after an explicit request.</small></div>
+            <div className="budget-top"><span>API budget guard</span><b>$0.37 used</b></div>
             <div className="budget-bar"><i /></div>
             <div className="budget-scale"><span>$0</span><span>Hard stop at $5</span></div>
             <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following selected context locally</b><small>No API request until you ask Aster</small></div></div>
