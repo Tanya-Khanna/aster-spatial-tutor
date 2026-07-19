@@ -13,30 +13,29 @@ struct AsterMark: View {
             let scale = min(canvasSize.width, canvasSize.height) / 32
             let stroke = StrokeStyle(lineWidth: 3.2 * scale, lineCap: .round, lineJoin: .round)
 
-            var underline = Path()
-            underline.move(to: CGPoint(x: 5 * scale, y: 24 * scale))
-            underline.addCurve(
-                to: CGPoint(x: 27 * scale, y: 20 * scale),
-                control1: CGPoint(x: 10 * scale, y: 27 * scale),
-                control2: CGPoint(x: 20 * scale, y: 25.8 * scale)
-            )
-            context.stroke(underline, with: .color(signal), style: stroke)
+            var cursor = Path()
+            cursor.move(to: CGPoint(x: 3 * scale, y: 3 * scale))
+            cursor.addLine(to: CGPoint(x: 6.2 * scale, y: 15.2 * scale))
+            cursor.addLine(to: CGPoint(x: 9 * scale, y: 11.9 * scale))
+            cursor.addLine(to: CGPoint(x: 14.2 * scale, y: 17.1 * scale))
+            cursor.addLine(to: CGPoint(x: 16.7 * scale, y: 14.6 * scale))
+            cursor.addLine(to: CGPoint(x: 11.5 * scale, y: 9.4 * scale))
+            cursor.addLine(to: CGPoint(x: 15.2 * scale, y: 6.3 * scale))
+            cursor.closeSubpath()
+            context.fill(cursor, with: .color(signal))
 
-            var cursorArm = Path()
-            cursorArm.move(to: CGPoint(x: 7 * scale, y: 21 * scale))
-            cursorArm.addLine(to: CGPoint(x: 24 * scale, y: 5 * scale))
-            cursorArm.move(to: CGPoint(x: 24 * scale, y: 5 * scale))
-            cursorArm.addLine(to: CGPoint(x: 16.5 * scale, y: 6.5 * scale))
-            cursorArm.move(to: CGPoint(x: 24 * scale, y: 5 * scale))
-            cursorArm.addLine(to: CGPoint(x: 22.5 * scale, y: 12.5 * scale))
-            context.stroke(cursorArm, with: .color(signal), style: stroke)
+            var rays = Path()
+            rays.move(to: CGPoint(x: 23 * scale, y: 13 * scale))
+            rays.addLine(to: CGPoint(x: 29 * scale, y: 7 * scale))
+            rays.move(to: CGPoint(x: 23 * scale, y: 23 * scale))
+            rays.addLine(to: CGPoint(x: 29 * scale, y: 28 * scale))
+            rays.move(to: CGPoint(x: 18 * scale, y: 24 * scale))
+            rays.addLine(to: CGPoint(x: 18 * scale, y: 30 * scale))
+            rays.move(to: CGPoint(x: 13 * scale, y: 19 * scale))
+            rays.addLine(to: CGPoint(x: 3 * scale, y: 19 * scale))
+            context.stroke(rays, with: .color(signal), style: stroke)
 
-            var shortArm = Path()
-            shortArm.move(to: CGPoint(x: 6 * scale, y: 8 * scale))
-            shortArm.addLine(to: CGPoint(x: 20 * scale, y: 15 * scale))
-            context.stroke(shortArm, with: .color(signal), style: stroke)
-
-            let dot = CGRect(x: 23.5 * scale, y: 22.5 * scale, width: 5 * scale, height: 5 * scale)
+            let dot = CGRect(x: 15.2 * scale, y: 16.2 * scale, width: 5.6 * scale, height: 5.6 * scale)
             context.fill(Path(ellipseIn: dot), with: .color(signal))
         }
         .frame(width: size, height: size)

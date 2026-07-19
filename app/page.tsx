@@ -87,10 +87,12 @@ function AsterMark() {
   return (
     <span className="aster-mark" aria-hidden="true">
       <svg viewBox="0 0 32 32" fill="none">
-        <path d="M5 24C10 27 20 25.8 27 20" />
-        <path d="M7 21L24 5M24 5L16.5 6.5M24 5L22.5 12.5" />
-        <path d="M6 8L20 15" />
-        <circle cx="26" cy="25" r="2.5" />
+        <path className="cursor-ray" d="M3 3L6.2 15.2L9 11.9L14.2 17.1L16.7 14.6L11.5 9.4L15.2 6.3L3 3Z" />
+        <path d="M23 13L29 7" />
+        <path d="M23 23L29 28" />
+        <path d="M18 24L18 30" />
+        <path d="M13 19L3 19" />
+        <circle cx="18" cy="19" r="2.8" />
       </svg>
     </span>
   );

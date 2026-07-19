@@ -210,12 +210,12 @@ final class ToolActionService {
         <style>
         *{box-sizing:border-box}body{margin:0;background:#f4f3ec;color:#101114;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
         header{height:72px;display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid #d9d6cd;background:#faf9f4}
-        .mark{position:relative;width:36px;height:36px;color:#ef5b35}.mark:before{content:"";position:absolute;width:22px;height:3px;left:7px;top:15px;border-radius:99px;background:currentColor;transform:rotate(-48deg)}.mark:after{content:"";position:absolute;width:24px;height:11px;left:5px;top:15px;border-bottom:3px solid currentColor;border-radius:0 0 70% 55%;transform:rotate(7deg)}.mark i{position:absolute;width:6px;height:6px;right:3px;bottom:3px;border-radius:50%;background:currentColor}
+        .mark{width:36px;height:36px;color:#ef5b35}.mark svg{width:100%;height:100%;display:block}.mark .ray{stroke:currentColor;stroke-width:3.1;stroke-linecap:round}.mark .cursor,.mark circle{fill:currentColor}
         h1{margin:0;font-size:16px}p{margin:3px 0 0;color:#6e6e68;font-size:12px}.badge{margin-left:auto;padding:8px 11px;border-radius:9px;background:#ffe3da;color:#a9341d;font-size:10px;font-weight:700}
         #calculator{width:100%;height:calc(100vh - 72px)}
         </style>
         <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=desmos"></script></head>
-        <body><header><div class="mark"><i></i></div><div><h1>Aster demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
+        <body><header><div class="mark"><svg viewBox="0 0 32 32"><path class="cursor" d="M3 3L6.2 15.2L9 11.9L14.2 17.1L16.7 14.6L11.5 9.4L15.2 6.3Z"/><path class="ray" d="M23 13L29 7M23 23L29 28M18 24L18 30M13 19L3 19"/><circle cx="18" cy="19" r="2.8"/></svg></div><div><h1>Aster demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
         <script>
         document.getElementById('caption').textContent=\(caption);
         const calculator=Desmos.GraphingCalculator(document.getElementById('calculator'),{expressions:true,settingsMenu:false,zoomButtons:true});
