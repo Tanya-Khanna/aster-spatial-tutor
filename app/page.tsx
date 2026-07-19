@@ -234,7 +234,7 @@ export default function Home() {
         <div className="pointer-aura" aria-hidden="true" />
         <div className="hero-copy">
           <div className="eyebrow"><span className="eyebrow-dot" /> Meet your on-screen tutor</div>
-          <h1>The spatial tutor for macOS that turns your screen into a <span>whiteboard.</span></h1>
+          <h1>Your screen becomes the <span>whiteboard</span>.</h1>
           <p className="hero-manifesto">Don’t bring your question to the tutor. Bring the tutor to your question.</p>
           <div className="hero-learning-loop" aria-label="How Aster helps you learn">
             <p><b>Point.</b><span>Highlight anything you’re learning.</span></p>
