@@ -91,39 +91,27 @@ private final class AsterStarView: NSView {
         let center = NSPoint(x: bounds.midX, y: bounds.midY)
 
         if mode == .reading {
-            NSColor.aster("violet").withAlphaComponent(0.10 + 0.08 * CGFloat((sin(phase * 2) + 1) / 2)).setFill()
-            NSBezierPath(ovalIn: bounds.insetBy(dx: 3, dy: 3)).fill()
+            AsterGlyphRenderer.signal.withAlphaComponent(0.12 + 0.08 * CGFloat((sin(phase * 2) + 1) / 2)).setStroke()
+            let readingStroke = NSBezierPath()
+            readingStroke.lineWidth = 2
+            readingStroke.lineCapStyle = .round
+            readingStroke.move(to: NSPoint(x: 7, y: 8))
+            readingStroke.curve(to: NSPoint(x: 39, y: 13), controlPoint1: NSPoint(x: 16, y: 3), controlPoint2: NSPoint(x: 31, y: 5))
+            readingStroke.stroke()
             let glance = NSPoint(x: center.x + CGFloat(cos(phase * 1.7)) * 5, y: center.y + CGFloat(sin(phase * 2.1)) * 3)
-            NSColor.aster("violet").withAlphaComponent(0.28).setFill()
+            AsterGlyphRenderer.signal.withAlphaComponent(0.28).setFill()
             NSBezierPath(ovalIn: NSRect(x: glance.x - 2, y: glance.y - 2, width: 4, height: 4)).fill()
         }
 
-        var transform = AffineTransform()
-        transform.translate(x: center.x, y: center.y)
-        transform.scale(scale)
-        transform.translate(x: -center.x, y: -center.y)
-        let path = Self.starPath(center: center, outer: 11, inner: 3.8)
-        path.transform(using: transform)
-        NSColor.aster("violet").setFill()
-        path.fill()
+        let markSize = 30 * scale
+        AsterGlyphRenderer.draw(
+            in: NSRect(x: center.x - markSize / 2, y: center.y - markSize / 2, width: markSize, height: markSize),
+            color: AsterGlyphRenderer.signal
+        )
 
         if mode == .bookmark {
-            NSColor.windowBackgroundColor.withAlphaComponent(0.96).setStroke()
-            let ring = NSBezierPath(ovalIn: bounds.insetBy(dx: 7, dy: 7))
-            ring.lineWidth = 2
-            ring.stroke()
+            AsterGlyphRenderer.signal.withAlphaComponent(0.16).setFill()
+            NSBezierPath(ovalIn: NSRect(x: bounds.maxX - 9, y: bounds.minY + 4, width: 5, height: 5)).fill()
         }
-    }
-
-    private static func starPath(center: CGPoint, outer: CGFloat, inner: CGFloat) -> NSBezierPath {
-        let path = NSBezierPath()
-        for index in 0..<16 {
-            let radius = index.isMultiple(of: 2) ? outer : inner
-            let angle = -CGFloat.pi / 2 + CGFloat(index) * CGFloat.pi / 8
-            let point = CGPoint(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius)
-            index == 0 ? path.move(to: point) : path.line(to: point)
-        }
-        path.close()
-        return path
     }
 }

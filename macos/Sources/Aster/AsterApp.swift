@@ -82,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func createStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "sparkle", accessibilityDescription: "Aster")
+        item.button?.image = AsterGlyphRenderer.menuBarImage()
         let menu = NSMenu()
         menu.addItem(withTitle: "Ask Aster  ⌥ Space", action: #selector(askAster), keyEquivalent: "")
         menu.addItem(withTitle: "Welcome", action: #selector(showWelcomeMenu), keyEquivalent: "")

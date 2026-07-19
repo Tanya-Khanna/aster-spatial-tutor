@@ -112,7 +112,7 @@ final class AnnotationCanvas: NSView {
         if let sourcePoint, let morphingID,
            let annotation = annotations.first(where: { $0.id == morphingID }) {
             let progress = min(max((animationPhase - morphStartedAt) / 0.34, 0), 1)
-            if progress < 1 { drawSourceStar(at: sourcePoint, progress: progress, toward: mappedPoint(x: annotation.endX, y: annotation.endY)) }
+            if progress < 1 { drawSourceGlyph(at: sourcePoint, progress: progress, toward: mappedPoint(x: annotation.endX, y: annotation.endY)) }
         }
         for primitive in primitives { draw(primitive) }
         for annotation in annotations { draw(annotation) }
@@ -221,19 +221,14 @@ final class AnnotationCanvas: NSView {
         )
     }
 
-    private func drawSourceStar(at source: NSPoint, progress: Double, toward target: NSPoint) {
+    private func drawSourceGlyph(at source: NSPoint, progress: Double, toward target: NSPoint) {
         let point = interpolatedPoint(from: source, to: target, progress: progress * 0.78)
-        let radius = CGFloat(8 * (1 - progress) + 2)
-        let path = NSBezierPath()
-        for index in 0..<16 {
-            let r = index.isMultiple(of: 2) ? radius : radius * 0.34
-            let angle = -CGFloat.pi / 2 + CGFloat(index) * CGFloat.pi / 8
-            let p = NSPoint(x: point.x + cos(angle) * r, y: point.y + sin(angle) * r)
-            index == 0 ? path.move(to: p) : path.line(to: p)
-        }
-        path.close()
-        NSColor.aster("violet").withAlphaComponent(CGFloat(1 - progress * 0.65)).setFill()
-        path.fill()
+        let size = CGFloat(24 * (1 - progress) + 8)
+        AsterGlyphRenderer.draw(
+            in: NSRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size),
+            color: AsterGlyphRenderer.signal,
+            alpha: CGFloat(1 - progress * 0.65)
+        )
     }
 
     private func mappedRect(for annotation: ScreenAnnotation) -> NSRect {
@@ -322,10 +317,11 @@ final class AnnotationCanvas: NSView {
 extension NSColor {
     static func aster(_ name: String) -> NSColor {
         switch name {
+        case "signal": return AsterGlyphRenderer.signal
         case "mint": return NSColor(calibratedRed: 0.22, green: 0.78, blue: 0.57, alpha: 1)
         case "coral": return NSColor(calibratedRed: 1.0, green: 0.43, blue: 0.38, alpha: 1)
         case "blue": return NSColor(calibratedRed: 0.18, green: 0.55, blue: 1.0, alpha: 1)
-        default: return NSColor(calibratedRed: 0.47, green: 0.31, blue: 0.98, alpha: 1)
+        default: return AsterGlyphRenderer.signal
         }
     }
 }

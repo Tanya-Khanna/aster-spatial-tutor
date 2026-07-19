@@ -210,17 +210,17 @@ final class ToolActionService {
         <style>
         *{box-sizing:border-box}body{margin:0;background:#f4f3ec;color:#101114;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
         header{height:72px;display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid #d9d6cd;background:#faf9f4}
-        .mark{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#7650fa;color:white;font-size:20px}
-        h1{margin:0;font-size:16px}p{margin:3px 0 0;color:#6e6e68;font-size:12px}.badge{margin-left:auto;padding:8px 11px;border-radius:9px;background:#e9e5fb;color:#5932dd;font-size:10px;font-weight:700}
+        .mark{position:relative;width:36px;height:36px;color:#ef5b35}.mark:before{content:"";position:absolute;width:22px;height:3px;left:7px;top:15px;border-radius:99px;background:currentColor;transform:rotate(-48deg)}.mark:after{content:"";position:absolute;width:24px;height:11px;left:5px;top:15px;border-bottom:3px solid currentColor;border-radius:0 0 70% 55%;transform:rotate(7deg)}.mark i{position:absolute;width:6px;height:6px;right:3px;bottom:3px;border-radius:50%;background:currentColor}
+        h1{margin:0;font-size:16px}p{margin:3px 0 0;color:#6e6e68;font-size:12px}.badge{margin-left:auto;padding:8px 11px;border-radius:9px;background:#ffe3da;color:#a9341d;font-size:10px;font-weight:700}
         #calculator{width:100%;height:calc(100vh - 72px)}
         </style>
         <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=desmos"></script></head>
-        <body><header><div class="mark">✦</div><div><h1>Aster demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
+        <body><header><div class="mark"><i></i></div><div><h1>Aster demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
         <script>
         document.getElementById('caption').textContent=\(caption);
         const calculator=Desmos.GraphingCalculator(document.getElementById('calculator'),{expressions:true,settingsMenu:false,zoomButtons:true});
         calculator.setExpression({id:'comparison',latex:\(comparison),color:'#777777',lineOpacity:0.55});
-        calculator.setExpression({id:'lesson',latex:\(primary),color:'#7650fa',lineWidth:4});
+        calculator.setExpression({id:'lesson',latex:\(primary),color:'#ef5b35',lineWidth:4});
         calculator.setExpression({id:'h',latex:'h=2',sliderBounds:{min:-5,max:5,step:1}});
         calculator.setExpression({id:'k',latex:'k=3',sliderBounds:{min:-5,max:5,step:1}});
         </script></body></html>
@@ -237,7 +237,7 @@ final class ToolActionService {
         case "vector":
             body = """
                 plane = NumberPlane()
-                vector = Arrow(ORIGIN, [3, 2, 0], buff=0, color=PURPLE)
+                vector = Arrow(ORIGIN, [3, 2, 0], buff=0, color="#EF5B35")
                 components = VGroup(DashedLine(ORIGIN, [3,0,0], color=GREEN), DashedLine([3,0,0], [3,2,0], color=GREEN))
                 self.play(Create(plane), GrowArrow(vector))
                 self.play(Create(components))
@@ -245,13 +245,13 @@ final class ToolActionService {
         case "matrix":
             body = """
                 plane = NumberPlane()
-                square = Square(side_length=2, color=PURPLE).set_fill(PURPLE, opacity=.15)
+                square = Square(side_length=2, color="#EF5B35").set_fill("#EF5B35", opacity=.15)
                 self.play(Create(plane), Create(square))
                 self.play(square.animate.apply_matrix([[1.5, .7], [.2, 1]]), run_time=2)
             """
         case "circuit":
             body = """
-                left = Dot(LEFT*3, color=PURPLE); node = Dot(ORIGIN, color=CORAL); top = Dot(RIGHT*3+UP, color=GREEN); bottom = Dot(RIGHT*3+DOWN, color=GREEN)
+                left = Dot(LEFT*3, color="#EF5B35"); node = Dot(ORIGIN, color=CORAL); top = Dot(RIGHT*3+UP, color=GREEN); bottom = Dot(RIGHT*3+DOWN, color=GREEN)
                 wires = VGroup(Line(left,node), Line(node,top), Line(node,bottom))
                 self.play(Create(wires), FadeIn(left,node,top,bottom))
                 for target in [top,bottom]: self.play(MoveAlongPath(Dot(color=YELLOW), VGroup(Line(left,node),Line(node,target))), run_time=1.2)
@@ -259,7 +259,7 @@ final class ToolActionService {
         case "limit":
             body = """
                 axes = Axes(x_range=[-3,3,1], y_range=[-1,5,1])
-                graph = axes.plot(lambda x: (x*x-1)/(x-1) if abs(x-1)>.05 else 2, discontinuities=[1], color=PURPLE)
+                graph = axes.plot(lambda x: (x*x-1)/(x-1) if abs(x-1)>.05 else 2, discontinuities=[1], color="#EF5B35")
                 hole = Circle(radius=.09, color=YELLOW).move_to(axes.c2p(1,2))
                 self.play(Create(axes), Create(graph), Create(hole))
                 self.play(Indicate(hole), run_time=2)
@@ -273,7 +273,7 @@ final class ToolActionService {
             """
         case "geometry":
             body = """
-                triangle = Triangle(color=PURPLE).scale(2)
+                triangle = Triangle(color="#EF5B35").scale(2)
                 altitude = DashedLine(triangle.get_top(), triangle.get_bottom(), color=GREEN)
                 self.play(Create(triangle)); self.play(Create(altitude)); self.play(triangle.animate.rotate(PI/5), run_time=2)
             """
@@ -281,7 +281,7 @@ final class ToolActionService {
             body = """
                 axes = Axes(x_range=[-5,5,1], y_range=[-2,2,1])
                 phase = ValueTracker(0)
-                wave = always_redraw(lambda: axes.plot(lambda x: np.sin(x-phase.get_value()), color=PURPLE))
+                wave = always_redraw(lambda: axes.plot(lambda x: np.sin(x-phase.get_value()), color="#EF5B35"))
                 self.play(Create(axes), Create(wave)); self.play(phase.animate.set_value(TAU), run_time=4, rate_func=linear)
             """
         case "molecule":
@@ -293,7 +293,7 @@ final class ToolActionService {
         default:
             body = """
                 axes = Axes(x_range=[-3,3,1], y_range=[-1,9,1])
-                graph = axes.plot(lambda x: x*x, color=PURPLE)
+                graph = axes.plot(lambda x: x*x, color="#EF5B35")
                 point = ValueTracker(2.4)
                 secant = always_redraw(lambda: axes.get_secant_slope_group(point.get_value(), graph, dx=.7, secant_line_color=GREEN))
                 self.play(Create(axes), Create(graph), Create(secant))

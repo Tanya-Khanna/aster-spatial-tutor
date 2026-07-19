@@ -116,10 +116,10 @@ final class ScreenCaptureService {
         if let local {
             let marker = NSPoint(x: local.x * targetWidth, y: targetHeight - (local.y * targetHeight))
             let halo = NSBezierPath(ovalIn: NSRect(x: marker.x - 22, y: marker.y - 22, width: 44, height: 44))
-            NSColor(calibratedRed: 0.55, green: 0.42, blue: 1, alpha: 0.22).setFill()
+            AsterGlyphRenderer.signal.withAlphaComponent(0.18).setFill()
             halo.fill()
             let ring = NSBezierPath(ovalIn: NSRect(x: marker.x - 8, y: marker.y - 8, width: 16, height: 16))
-            NSColor(calibratedRed: 0.45, green: 0.29, blue: 0.98, alpha: 1).setStroke()
+            AsterGlyphRenderer.signal.setStroke()
             ring.lineWidth = 3
             ring.stroke()
         }

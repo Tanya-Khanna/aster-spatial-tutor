@@ -67,7 +67,7 @@ const actions = [
     tag: "DESMOS",
     title: "Show the change",
     copy: "Preview an equation, then open it in Desmos so a parameter can be explored—not merely described.",
-    color: "violet",
+    color: "signal",
   },
   {
     tag: "MANIM",
@@ -86,9 +86,12 @@ const actions = [
 function AsterMark() {
   return (
     <span className="aster-mark" aria-hidden="true">
-      <i />
-      <i />
-      <i />
+      <svg viewBox="0 0 32 32" fill="none">
+        <path d="M5 24C10 27 20 25.8 27 20" />
+        <path d="M7 21L24 5M24 5L16.5 6.5M24 5L22.5 12.5" />
+        <path d="M6 8L20 15" />
+        <circle cx="26" cy="25" r="2.5" />
+      </svg>
     </span>
   );
 }
@@ -161,7 +164,7 @@ function ProductStage({ scene }: { scene: SceneKey }) {
               </div>
               <div className="anatomy-labels">
                 <span><i className="blue-dot" /> Vena cava</span>
-                <span><i className="violet-dot" /> Right atrium</span>
+                <span><i className="signal-dot" /> Right atrium</span>
                 <span><i className="coral-dot" /> Left ventricle</span>
               </div>
               <div className="target-ring target-heart" />
@@ -229,7 +232,6 @@ export default function Home() {
         <div className="pointer-aura" aria-hidden="true" />
         <div className="hero-copy">
           <div className="eyebrow"><span className="eyebrow-dot" /> Meet your on-screen tutor</div>
-          <div className="hero-name">Aster</div>
           <h1>The spatial tutor for macOS that turns your screen into a <span>whiteboard.</span></h1>
           <p className="hero-manifesto">Don’t bring your question to the tutor. Bring the tutor to your question.</p>
           <div className="hero-learning-loop" aria-label="How Aster helps you learn">

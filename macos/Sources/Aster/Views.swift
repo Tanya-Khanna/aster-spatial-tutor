@@ -2,19 +2,45 @@ import SwiftUI
 
 private let ink = Color(red: 0.055, green: 0.06, blue: 0.07)
 private let canvas = Color(red: 0.965, green: 0.963, blue: 0.945)
-private let violet = Color(red: 0.47, green: 0.31, blue: 0.98)
+private let signal = Color(red: 0.937, green: 0.357, blue: 0.208)
 private let mint = Color(red: 0.55, green: 0.94, blue: 0.75)
 
 struct AsterMark: View {
     var size: CGFloat = 28
+
     var body: some View {
-        ZStack {
-            Circle().fill(ink)
-            Image(systemName: "sparkle")
-                .font(.system(size: size * 0.46, weight: .semibold))
-                .foregroundStyle(.white)
+        Canvas { context, canvasSize in
+            let scale = min(canvasSize.width, canvasSize.height) / 32
+            let stroke = StrokeStyle(lineWidth: 3.2 * scale, lineCap: .round, lineJoin: .round)
+
+            var underline = Path()
+            underline.move(to: CGPoint(x: 5 * scale, y: 24 * scale))
+            underline.addCurve(
+                to: CGPoint(x: 27 * scale, y: 20 * scale),
+                control1: CGPoint(x: 10 * scale, y: 27 * scale),
+                control2: CGPoint(x: 20 * scale, y: 25.8 * scale)
+            )
+            context.stroke(underline, with: .color(signal), style: stroke)
+
+            var cursorArm = Path()
+            cursorArm.move(to: CGPoint(x: 7 * scale, y: 21 * scale))
+            cursorArm.addLine(to: CGPoint(x: 24 * scale, y: 5 * scale))
+            cursorArm.move(to: CGPoint(x: 24 * scale, y: 5 * scale))
+            cursorArm.addLine(to: CGPoint(x: 16.5 * scale, y: 6.5 * scale))
+            cursorArm.move(to: CGPoint(x: 24 * scale, y: 5 * scale))
+            cursorArm.addLine(to: CGPoint(x: 22.5 * scale, y: 12.5 * scale))
+            context.stroke(cursorArm, with: .color(signal), style: stroke)
+
+            var shortArm = Path()
+            shortArm.move(to: CGPoint(x: 6 * scale, y: 8 * scale))
+            shortArm.addLine(to: CGPoint(x: 20 * scale, y: 15 * scale))
+            context.stroke(shortArm, with: .color(signal), style: stroke)
+
+            let dot = CGRect(x: 23.5 * scale, y: 22.5 * scale, width: 5 * scale, height: 5 * scale)
+            context.fill(Path(ellipseIn: dot), with: .color(signal))
         }
         .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 
@@ -25,7 +51,7 @@ struct WelcomeView: View {
     var body: some View {
         ZStack {
             canvas.ignoresSafeArea()
-            RadialGradient(colors: [violet.opacity(0.18), .clear], center: .topTrailing, startRadius: 0, endRadius: 560)
+            RadialGradient(colors: [signal.opacity(0.18), .clear], center: .topTrailing, startRadius: 0, endRadius: 560)
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 header
@@ -66,7 +92,7 @@ struct WelcomeView: View {
             Text("YOUR SCREEN,\nNOW A WHITEBOARD.")
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .tracking(1.8)
-                .foregroundStyle(violet)
+                .foregroundStyle(signal)
             Text("Understand anything\nright where it lives.")
                 .font(.system(size: 50, weight: .medium, design: .rounded))
                 .tracking(-2.5)
@@ -98,7 +124,7 @@ struct WelcomeView: View {
                     SecureField("sk-…  Leave empty for demo mode", text: $model.apiKey)
                         .textFieldStyle(.plain)
                     Button("Save") { model.saveAPIKey() }
-                        .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(violet)
+                        .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(signal)
                 }
                 .padding(12)
                 .background(.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 13))
@@ -149,7 +175,7 @@ struct WelcomeView: View {
                     HStack(spacing: 7) { AsterMark(size: 20); Text("Aster noticed").font(.system(size: 11, weight: .semibold)) }
                     Text(selectedDemo == "anatomy" ? "The membrane is thin for a reason." : "This term controls the direction of change.")
                         .font(.system(size: 12, weight: .medium)).lineLimit(2)
-                    Text("Show me →").font(.system(size: 11, weight: .semibold)).foregroundStyle(violet)
+                    Text("Show me →").font(.system(size: 11, weight: .semibold)).foregroundStyle(signal)
                 }
                 .padding(14).frame(width: 185, alignment: .leading)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 17))
@@ -170,7 +196,7 @@ struct WelcomeView: View {
                         RoundedRectangle(cornerRadius: 8).fill(mint.opacity(0.6)).frame(width: 22, height: 112)
                         Circle().fill(Color.red.opacity(0.22)).frame(width: 110, height: 110)
                     }
-                    Image(systemName: "arrow.right").font(.system(size: 28, weight: .bold)).foregroundStyle(violet)
+                    Image(systemName: "arrow.right").font(.system(size: 28, weight: .bold)).foregroundStyle(signal)
                 }
                 Text("Diffusion rate ∝ surface area × concentration gradient / membrane thickness")
                     .font(.system(size: 16, weight: .medium, design: .serif)).lineSpacing(5)
@@ -185,7 +211,7 @@ struct WelcomeView: View {
                     .font(.system(size: 13, design: .serif)).foregroundStyle(.secondary).lineSpacing(6)
                 HStack(spacing: 18) {
                     ForEach(0..<3) { index in
-                        RoundedRectangle(cornerRadius: 10).fill(index == 1 ? violet.opacity(0.18) : Color.black.opacity(0.05)).frame(height: 70)
+                        RoundedRectangle(cornerRadius: 10).fill(index == 1 ? signal.opacity(0.18) : Color.black.opacity(0.05)).frame(height: 70)
                     }
                 }
             }
@@ -235,7 +261,7 @@ struct TutorPanelView: View {
             ZStack {
                 AsterMark(size: 29)
                 if model.phase != .ready {
-                    Circle().stroke(violet.opacity(0.4), lineWidth: 2).frame(width: 38, height: 38).scaleEffect(pulse ? 1.15 : 0.9).opacity(pulse ? 0 : 1)
+                    Circle().stroke(signal.opacity(0.4), lineWidth: 2).frame(width: 38, height: 38).scaleEffect(pulse ? 1.15 : 0.9).opacity(pulse ? 0 : 1)
                         .animation(.easeOut(duration: 1).repeatForever(autoreverses: false), value: pulse)
                 }
             }
@@ -247,9 +273,9 @@ struct TutorPanelView: View {
             if let lesson = model.lastLesson, let concept = model.learnerProfile.memory(for: lesson.conceptID) {
                 Text("\(Int(concept.mastery * 100))%")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .foregroundStyle(violet)
+                    .foregroundStyle(signal)
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(violet.opacity(0.1), in: Capsule())
+                    .background(signal.opacity(0.1), in: Capsule())
                     .help("Persistent mastery for \(concept.title)")
             }
             Button { model.precisionMode.toggle() } label: {
@@ -307,13 +333,13 @@ struct TutorPanelView: View {
                         Image(systemName: lesson.toolSuggestion == "desmos" ? "function" : "play.rectangle")
                         Text(lesson.toolSuggestion == "desmos" ? "Show in Desmos sandbox" : "Animate with Manim")
                         Spacer()
-                        Text("Preview →").font(.system(size: 10, weight: .bold)).foregroundStyle(violet)
+                        Text("Preview →").font(.system(size: 10, weight: .bold)).foregroundStyle(signal)
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 12, weight: .semibold))
-                .padding(11).background(violet.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
+                .padding(11).background(signal.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
             }
             if model.phase == .teaching, let lesson = model.lastLesson {
                 HStack {
@@ -355,7 +381,7 @@ struct TutorPanelView: View {
                     Label("Try a transfer problem", systemImage: "arrow.up.right")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(violet)
+                .tint(signal)
                 .controlSize(.small)
             }
             HStack(spacing: 8) {
@@ -409,7 +435,7 @@ struct TutorPanelView: View {
             .toggleStyle(.switch)
             .controlSize(.mini)
             Toggle(isOn: $model.wakePhraseEnabled) {
-                Label("“Hey Aster” · opt-in wake phrase", systemImage: "sparkle.magnifyingglass")
+                Label("“Hey Aster” · opt-in wake phrase", systemImage: "cursorarrow.rays")
                     .font(.system(size: 9, weight: .medium))
             }
             .toggleStyle(.switch)
@@ -438,7 +464,7 @@ struct DiagnosticChoiceCard: View {
                 Text(diagnostic.conceptTitle).foregroundStyle(.secondary)
             }
             .font(.system(size: 8, weight: .bold, design: .monospaced))
-            .foregroundStyle(violet)
+            .foregroundStyle(signal)
             Text(diagnostic.question).font(.system(size: 12, weight: .semibold))
             ForEach(diagnostic.options) { option in
                 Button { choose(option) } label: {
@@ -456,7 +482,7 @@ struct DiagnosticChoiceCard: View {
             }
         }
         .padding(13)
-        .background(violet.opacity(0.08), in: RoundedRectangle(cornerRadius: 15))
+        .background(signal.opacity(0.08), in: RoundedRectangle(cornerRadius: 15))
     }
 }
 
@@ -467,17 +493,17 @@ struct MessageBubble: View {
             if message.role == .learner { Spacer(minLength: 46) }
             VStack(alignment: .leading, spacing: 6) {
                 if message.kind == .insight {
-                    Label("KEEP", systemImage: "bookmark.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
+                    Label("KEEP", systemImage: "bookmark.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(signal)
                 } else if message.kind == .check {
                     Label("YOUR TURN", systemImage: "arrow.turn.down.right").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(Color.green)
                 } else if message.kind == .diagnostic {
-                    Label("DIAGNOSIS", systemImage: "scope").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
+                    Label("DIAGNOSIS", systemImage: "scope").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(signal)
                 } else if message.kind == .assessment {
                     Label("UNDERSTANDING", systemImage: "checkmark.seal.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(Color.green)
                 } else if message.kind == .memory {
-                    Label("REMEMBERED", systemImage: "brain.head.profile").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
+                    Label("REMEMBERED", systemImage: "brain.head.profile").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(signal)
                 } else if message.kind == .tool {
-                    Label("DEMONSTRATION", systemImage: "play.rectangle.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(violet)
+                    Label("DEMONSTRATION", systemImage: "play.rectangle.fill").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(signal)
                 }
                 Text(message.text)
                     .font(.system(size: 13))
@@ -492,9 +518,9 @@ struct MessageBubble: View {
     }
     private var background: Color {
         if message.role == .learner { return ink }
-        if message.kind == .insight { return violet.opacity(0.1) }
+        if message.kind == .insight { return signal.opacity(0.1) }
         if message.kind == .check { return mint.opacity(0.34) }
-        if message.kind == .diagnostic { return violet.opacity(0.07) }
+        if message.kind == .diagnostic { return signal.opacity(0.07) }
         if message.kind == .assessment { return mint.opacity(0.28) }
         if message.kind == .memory { return Color.blue.opacity(0.08) }
         if message.kind == .tool { return Color.orange.opacity(0.10) }

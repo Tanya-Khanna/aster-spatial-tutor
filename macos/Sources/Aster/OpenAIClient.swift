@@ -35,7 +35,7 @@ final class OpenAIClient {
         Persistent learner memory:
         \(learnerMemory)
 
-        The newest image is the exact context the learner selected. A violet cursor halo indicates the object they mean. If multiple timestamped frames are present, reason about what changed across the sequence; do not treat them as unrelated images.
+        The newest image is the exact context the learner selected. A warm orange cursor halo indicates the object they mean. If multiple timestamped frames are present, reason about what changed across the sequence; do not treat them as unrelated images.
         Before teaching, identify the visible object and ask ONE short diagnostic question with 2–3 concrete options that distinguish likely misconceptions. Do not explain or solve yet. Use priorConnection only when the stored evidence genuinely supports it; otherwise leave it empty. Use a stable lowercase conceptID such as function-horizontal-translation or attention-scaling.
         """
         return try await structuredRequest(
@@ -249,7 +249,7 @@ final class OpenAIClient {
         "endX": ["type": "number", "minimum": 0, "maximum": 1],
         "endY": ["type": "number", "minimum": 0, "maximum": 1],
         "text": ["type": "string"],
-        "color": ["type": "string", "enum": ["violet", "mint", "coral", "blue"]]
+        "color": ["type": "string", "enum": ["signal", "mint", "coral", "blue"]]
     ]
 
     private static let lessonFormat: [String: Any] = [
@@ -292,7 +292,7 @@ final class OpenAIClient {
                                         "endX": ["type": "number", "minimum": 0, "maximum": 1],
                                         "endY": ["type": "number", "minimum": 0, "maximum": 1],
                                         "text": ["type": "string"],
-                                        "color": ["type": "string", "enum": ["violet", "mint", "coral", "blue"]]
+                                        "color": ["type": "string", "enum": ["signal", "mint", "coral", "blue"]]
                                     ],
                                     "required": ["id", "type", "x", "y", "width", "height", "endX", "endY", "text", "color"]
                                 ]

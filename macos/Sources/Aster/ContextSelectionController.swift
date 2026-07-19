@@ -158,7 +158,7 @@ private final class ContextSelectionView: NSView {
             NSGraphicsContext.current?.compositingOperation = .clear
             NSBezierPath(roundedRect: selection, xRadius: 13, yRadius: 13).fill()
             NSGraphicsContext.restoreGraphicsState()
-            NSColor(calibratedRed: 0.47, green: 0.31, blue: 0.98, alpha: 1).setStroke()
+            AsterGlyphRenderer.signal.setStroke()
             let border = NSBezierPath(roundedRect: selection.insetBy(dx: -2, dy: -2), xRadius: 15, yRadius: 15)
             border.lineWidth = 4
             border.stroke()

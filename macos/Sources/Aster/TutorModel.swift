@@ -769,7 +769,7 @@ final class TutorModel: ObservableObject {
                 diagnosis: option.misconception,
                 steps: [
                     LessonStep(id: "g1", narration: "Start inside the parentheses. The square becomes smallest when this entire expression equals zero.", notebook: "Locate a transformed graph by zeroing its inner expression.", annotations: [
-                        ScreenAnnotation(id: "g1a", type: "circle", x: 0.35, y: 0.36, width: 0.18, height: 0.10, endX: 0.53, endY: 0.41, text: "set this to 0", color: "violet")
+                        ScreenAnnotation(id: "g1a", type: "circle", x: 0.35, y: 0.36, width: 0.18, height: 0.10, endX: 0.53, endY: 0.41, text: "set this to 0", color: "signal")
                     ]),
                     LessonStep(id: "g2", narration: "If x minus h equals zero, x must equal h. That is why a positive h places the vertex to the right.", notebook: "x − h = 0  →  x = h. Inside signs describe the input needed, not the direction directly.", annotations: [
                         ScreenAnnotation(id: "g2a", type: "arrow", x: 0.47, y: 0.53, width: 0.12, height: 0.05, endX: 0.66, endY: 0.53, text: "vertex at x = h", color: "coral")
@@ -810,7 +810,7 @@ final class TutorModel: ObservableObject {
                     ScreenAnnotation(id: "p1h", type: "highlight", x: 0.28, y: 0.31, width: 0.23, height: 0.09, endX: 0.51, endY: 0.35, text: "dot product grows", color: "mint")
                 ]),
                 LessonStep(id: "p2", narration: "Dividing by the square root of the dimension restores a stable scale before softmax sees those values.", notebook: "√dₖ normalizes the dot-product standard deviation before softmax.", annotations: [
-                    ScreenAnnotation(id: "p2c", type: "circle", x: 0.48, y: 0.35, width: 0.12, height: 0.10, endX: 0.60, endY: 0.40, text: "stabilizes scale", color: "violet"),
+                    ScreenAnnotation(id: "p2c", type: "circle", x: 0.48, y: 0.35, width: 0.12, height: 0.10, endX: 0.60, endY: 0.40, text: "stabilizes scale", color: "signal"),
                     ScreenAnnotation(id: "p2a", type: "arrow", x: 0.58, y: 0.42, width: 0.10, height: 0.04, endX: 0.73, endY: 0.42, text: "healthier softmax", color: "coral")
                 ])
             ],
