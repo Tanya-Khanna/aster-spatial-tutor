@@ -153,5 +153,3 @@ See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submis
 - Browser video controls are limited to the active HTML5 video in Safari/Chrome and may require the browser’s JavaScript-from-Apple-Events setting.
 - Manim uses fixed local templates and requires a local Manim CLI installation.
 - A live API turn requires the learner’s own OpenAI API key. The submission can be evaluated fully in free Demo mode.
-
-Independent Build Week project. Not affiliated with or endorsed by Apple or OpenAI.

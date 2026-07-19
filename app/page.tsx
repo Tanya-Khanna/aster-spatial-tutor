@@ -420,7 +420,6 @@ export default function Home() {
       <footer>
         <a className="brand footer-brand" href="#top"><AsterMark /><span>Aster</span></a>
         <p>Built for OpenAI Build Week · Education Track</p>
-        <p className="disclaimer">Independent project. Not affiliated with or endorsed by Apple or OpenAI.</p>
       </footer>
     </main>
   );
