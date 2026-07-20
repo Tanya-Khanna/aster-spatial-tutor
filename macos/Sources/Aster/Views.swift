@@ -127,7 +127,7 @@ struct WelcomeView: View {
                 }
                 .padding(12)
                 .background(.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 13))
-                Text("Stored in your Mac Keychain. Aster✱ stops API requests at $5.")
+                Text("Stored securely in your Mac Keychain. Leave empty to use Demo mode.")
                     .font(.system(size: 11)).foregroundStyle(.tertiary)
             }
             .frame(maxWidth: 410)
@@ -441,7 +441,7 @@ struct TutorPanelView: View {
             .controlSize(.mini)
             .help("Uses macOS Speech Recognition continuously while enabled. Transcription is used only to detect the wake phrase.")
             HStack {
-                Text("$\(model.estimatedSpend, specifier: "%.3f") of $5.00")
+                Text("Selected context is sent only after you ask")
                 Spacer()
                 Text("⌥ Space · Context stays on top")
             }

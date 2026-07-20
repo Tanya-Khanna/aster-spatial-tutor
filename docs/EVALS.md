@@ -58,7 +58,6 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - `Esc` or closing the panel clears annotations;
 - denied permissions produce a useful recovery message;
 - microphone can start, stop, and start again without an input-tap crash;
-- app refuses a live request after the $4.80 reserve threshold;
 - API key never appears in process logs or repository files.
 
 ### 4. Adaptation and memory

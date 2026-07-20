@@ -89,14 +89,13 @@ For the Build Week submission, add the public Codex session ID to `/feedback` an
 Codex session ID: <add public session ID>
 ```
 
-## $5 budget design
+## Efficient API use
 
-- macOS Speech Recognition and `AVSpeechSynthesizer` handle voice without paid audio tokens.
-- Only the selected region is downsampled to a maximum width of 1440 px.
+- macOS Speech Recognition and `AVSpeechSynthesizer` handle voice without an additional audio-model request.
+- Only the selected region is downsampled to a maximum width of 1600 px.
 - Diagnosis uses Terra with a 500-token cap; standard spatial lessons use Terra with a 1,400-token cap; answer assessment uses Luna with a 450-token cap.
 - Precision mode is explicit rather than automatic.
-- Token usage is priced into a local ledger; new live requests stop at a conservative **$4.80 reserve threshold** so a bounded final response does not discover the $5 limit after crossing it.
-- Demo mode is deterministic and costs **$0**.
+- Demo mode is deterministic and makes no OpenAI API request.
 
 ## Privacy and safety
 

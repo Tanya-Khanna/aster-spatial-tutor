@@ -12,7 +12,6 @@ final class TutorModel: ObservableObject {
         ChatMessage(role: .aster, text: "Select the exact thing you are learning. I’ll diagnose first, then teach it where it lives.", kind: .message)
     ]
     @Published var apiKey = KeychainStore.load()
-    @Published var estimatedSpend = UserDefaults.standard.double(forKey: "estimatedSpend")
     @Published var precisionMode = false
     @Published var narrationRate: Float = 0.48
     @Published var isListening = false
@@ -443,7 +442,6 @@ final class TutorModel: ObservableObject {
     }
 
     private func beginDiagnosis(for question: String) async {
-        guard checkBudget() else { return }
         pendingQuestion = question
         lastAssessment = nil
         phase = .seeing
@@ -473,7 +471,7 @@ final class TutorModel: ObservableObject {
             let result: TutorResult<DiagnosticPlan>
             if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 try await Task.sleep(nanoseconds: 450_000_000)
-                result = TutorResult(value: personalizedDemoDiagnostic(for: question), usage: APIUsage(inputTokens: 0, outputTokens: 0), model: "demo")
+                result = TutorResult(value: personalizedDemoDiagnostic(for: question))
             } else {
                 result = try await client.diagnose(
                     apiKey: apiKey,
@@ -485,7 +483,6 @@ final class TutorModel: ObservableObject {
                     safetyIdentifier: safetyIdentifier
                 )
             }
-            recordUsage(result.usage, model: result.model)
             diagnostic = result.value
             if !result.value.priorConnection.isEmpty {
                 messages.append(ChatMessage(role: .aster, text: result.value.priorConnection, kind: .memory))
@@ -496,12 +493,11 @@ final class TutorModel: ObservableObject {
     }
 
     private func buildLesson(diagnostic: DiagnosticPlan, option: DiagnosticOption, screen: CapturedScreen) async {
-        guard checkBudget() else { return }
         do {
             let result: TutorResult<LessonPlan>
             if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 try await Task.sleep(nanoseconds: 650_000_000)
-                result = TutorResult(value: Self.demoLesson(for: diagnostic, option: option), usage: APIUsage(inputTokens: 0, outputTokens: 0), model: "demo")
+                result = TutorResult(value: Self.demoLesson(for: diagnostic, option: option))
             } else {
                 result = try await client.makeLesson(
                     apiKey: apiKey,
@@ -516,7 +512,6 @@ final class TutorModel: ObservableObject {
                     safetyIdentifier: safetyIdentifier
                 )
             }
-            recordUsage(result.usage, model: result.model)
             present(result.value)
         } catch { report(error) }
     }
@@ -600,14 +595,13 @@ final class TutorModel: ObservableObject {
     }
 
     private func assess(answer: String, lesson: LessonPlan) async {
-        guard checkBudget() else { return }
         phase = .assessing
         do {
             let result: TutorResult<AssessmentResult>
             if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 try await Task.sleep(nanoseconds: 420_000_000)
                 let assessment = Self.demoAssessment(answer: answer, lesson: lesson)
-                result = TutorResult(value: assessment, usage: APIUsage(inputTokens: 0, outputTokens: 0), model: "demo")
+                result = TutorResult(value: assessment)
             } else {
                 result = try await client.assess(
                     apiKey: apiKey,
@@ -617,7 +611,6 @@ final class TutorModel: ObservableObject {
                     safetyIdentifier: safetyIdentifier
                 )
             }
-            recordUsage(result.usage, model: result.model)
             lastAssessment = result.value
             learnerProfile = memoryStore.update(
                 profile: learnerProfile,
@@ -642,19 +635,6 @@ final class TutorModel: ObservableObject {
                 messages.append(ChatMessage(role: .aster, text: "Understanding checked · resumed the video.", kind: .tool))
             }
         } catch { report(error) }
-    }
-
-    private func checkBudget() -> Bool {
-        guard estimatedSpend < 4.80 else {
-            phase = .error("$5 budget guard reached")
-            return false
-        }
-        return true
-    }
-
-    private func recordUsage(_ usage: APIUsage, model: String) {
-        estimatedSpend += usage.estimatedCost(model: model)
-        UserDefaults.standard.set(estimatedSpend, forKey: "estimatedSpend")
     }
 
     private func report(_ error: Error) {

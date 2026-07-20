@@ -404,20 +404,23 @@ export default function Home() {
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
             <h2>Quiet until invited.</h2>
             <p>
-              Until you invoke Aster✱, no screen context leaves your Mac. When you do, Aster✱ follows only the region
-              or window you chose, visibly marks that boundary, and excludes its own overlay. Your API key stays in macOS Keychain.
+              Aster✱ follows only the region or window you chose, visibly marks that boundary, and excludes its own
+              overlay. Following stays local; selected context is sent to OpenAI only after you ask a live question.
+              Your API key stays in macOS Keychain.
             </p>
             <div className="privacy-points">
               <span><i>✓</i> Selected-region capture</span>
-              <span><i>✓</i> Native speech on-device</span>
+              <span><i>✓</i> Optional macOS voice input</span>
               <span><i>✓</i> Local learner memory</span>
             </div>
           </div>
-          <div className="budget-widget">
+          <div className="privacy-widget">
             <div className="privacy-state"><span><i /> LOCAL UNTIL INVOKED</span><b>No silent background uploads.</b><small>Screen context moves only after an explicit request.</small></div>
-            <div className="budget-top"><span>API budget guard</span><b>$0.37 used</b></div>
-            <div className="budget-bar"><i /></div>
-            <div className="budget-scale"><span>$0</span><span>Hard stop at $5</span></div>
+            <div className="request-flow" aria-label="What happens to selected context">
+              <div className="request-step"><span>1</span><div><b>Follow locally</b><small>Refresh the selected region and recover its anchor on your Mac.</small></div></div>
+              <i>↓</i>
+              <div className="request-step active"><span>2</span><div><b>Send only after you ask</b><small>Your selected context and question go to OpenAI for the live teaching turn.</small></div></div>
+            </div>
             <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following selected context locally</b><small>No API request until you ask Aster✱</small></div></div>
           </div>
         </div>

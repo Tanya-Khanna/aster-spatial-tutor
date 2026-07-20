@@ -3,13 +3,11 @@ import Foundation
 enum TutorAPIError: LocalizedError {
     case invalidResponse
     case service(String)
-    case budgetReached
 
     var errorDescription: String? {
         switch self {
         case .invalidResponse: return "Aster✱ received an incomplete teaching plan. Try once more."
         case .service(let message): return message
-        case .budgetReached: return "Your $5 project budget guard has been reached."
         }
     }
 }
@@ -192,12 +190,7 @@ final class OpenAIClient {
         }
 
         let value = try JSONDecoder().decode(Value.self, from: valueData)
-        let usageObject = root["usage"] as? [String: Any]
-        let usage = APIUsage(
-            inputTokens: usageObject?["input_tokens"] as? Int ?? 0,
-            outputTokens: usageObject?["output_tokens"] as? Int ?? 0
-        )
-        return TutorResult(value: value, usage: usage, model: model)
+        return TutorResult(value: value)
     }
 
     private static let diagnosticInstructions = """

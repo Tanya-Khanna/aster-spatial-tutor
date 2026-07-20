@@ -33,7 +33,6 @@ The packaged application is written to `macos/dist/Aster.app` and the downloadab
 - Visible follow mode refreshes only the selected region locally; API capture is question-triggered.
 - The API key is stored in the macOS Keychain.
 - Voice input and narration use macOS frameworks, avoiding additional API spend.
-- The app keeps a local estimated-cost ledger and stops at $5.
 - Demo mode works without an API key using three deterministic sample lessons.
 
 ## Implemented advanced capabilities

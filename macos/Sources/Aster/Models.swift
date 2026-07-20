@@ -380,22 +380,6 @@ struct ChatMessage: Identifiable, Hashable {
     enum Kind { case message, diagnostic, insight, check, assessment, memory, tool }
 }
 
-struct APIUsage: Codable, Hashable {
-    let inputTokens: Int
-    let outputTokens: Int
-
-    func estimatedCost(model: String) -> Double {
-        let prices: (input: Double, output: Double)
-        if model.contains("luna") { prices = (1, 6) }
-        else if model.contains("sol") { prices = (5, 30) }
-        else { prices = (2.5, 15) }
-        return (Double(inputTokens) * prices.input / 1_000_000) +
-            (Double(outputTokens) * prices.output / 1_000_000)
-    }
-}
-
 struct TutorResult<Value> {
     let value: Value
-    let usage: APIUsage
-    let model: String
 }
