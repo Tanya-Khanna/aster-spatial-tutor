@@ -48,6 +48,7 @@ final class ContextSelectionController {
             guard (info[kCGWindowLayer as String] as? Int) == 0,
                   let owner = info[kCGWindowOwnerName as String] as? String,
                   owner != "Aster",
+                  owner != "Aster✱",
                   let number = info[kCGWindowNumber as String] as? NSNumber,
                   let boundsDictionary = info[kCGWindowBounds as String] as? NSDictionary,
                   let bounds = CGRect(dictionaryRepresentation: boundsDictionary),
@@ -164,7 +165,7 @@ private final class ContextSelectionView: NSView {
             border.stroke()
         }
 
-        let title = "Select exactly what Aster should teach"
+        let title = "Select exactly what Aster✱ should teach"
         let subtitle = "Drag around an equation, diagram, paragraph, chart, code block, or problem  ·  Click for a cursor-centered region  ·  Esc to cancel"
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 22, weight: .semibold),

@@ -23,7 +23,7 @@ final class ToolActionService {
             backing: .buffered,
             defer: false
         )
-        window.title = "Aster · Desmos teaching sandbox"
+        window.title = "Aster✱ · Desmos teaching sandbox"
         window.contentView = webView
         window.center()
         window.makeKeyAndOrderFront(nil)
@@ -43,7 +43,7 @@ final class ToolActionService {
             backing: .buffered,
             defer: false
         )
-        window.title = "Aster animation preview · \(caption)"
+        window.title = "Aster✱ animation preview · \(caption)"
         window.contentView = playerView
         window.center()
         window.makeKeyAndOrderFront(nil)
@@ -83,7 +83,7 @@ final class ToolActionService {
         scroll.documentView = editor
         scroll.hasVerticalScroller = true
         let window = NSWindow(contentRect: scroll.frame, styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.title = "Aster · reversible scratch work"
+        window.title = "Aster✱ · reversible scratch work"
         window.contentView = scroll
         window.center(); window.makeKeyAndOrderFront(nil)
         scratchWindow = window
@@ -104,7 +104,7 @@ final class ToolActionService {
         scroll.hasVerticalScroller = true
         scroll.hasHorizontalScroller = true
         let window = NSWindow(contentRect: scroll.frame, styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.title = "Aster · zoomable context sandbox"
+        window.title = "Aster✱ · zoomable context sandbox"
         window.contentView = scroll
         window.center(); window.makeKeyAndOrderFront(nil)
         record(kind: "zoom", summary: "Opened a zoomable local crop") { [weak window] in window?.close() }
@@ -129,7 +129,7 @@ final class ToolActionService {
 
     func undoLast() {
         undoStack.popLast()?()
-        onAction?(TutorActionRecord(id: UUID(), date: Date(), kind: "undo", summary: "Undid the last Aster action", reversible: false))
+        onAction?(TutorActionRecord(id: UUID(), date: Date(), kind: "undo", summary: "Undid the last Aster✱ action", reversible: false))
     }
 
     private func record(kind: String, summary: String, undo: @escaping () -> Void) {
@@ -215,7 +215,7 @@ final class ToolActionService {
         #calculator{width:100%;height:calc(100vh - 72px)}
         </style>
         <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=desmos"></script></head>
-        <body><header><div class="mark"><svg viewBox="0 0 32 32"><path class="cursor" d="M3 3L6.2 15.2L9 11.9L14.2 17.1L16.7 14.6L11.5 9.4L15.2 6.3Z"/><path class="ray" d="M23 13L29 7M23 23L29 28M18 24L18 30M13 19L3 19"/><circle cx="18" cy="19" r="2.8"/></svg></div><div><h1>Aster demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
+        <body><header><div class="mark"><svg viewBox="0 0 32 32"><path class="cursor" d="M3 3L6.2 15.2L9 11.9L14.2 17.1L16.7 14.6L11.5 9.4L15.2 6.3Z"/><path class="ray" d="M23 13L29 7M23 23L29 28M18 24L18 30M13 19L3 19"/><circle cx="18" cy="19" r="2.8"/></svg></div><div><h1>Aster✱ demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
         <script>
         document.getElementById('caption').textContent=\(caption);
         const calculator=Desmos.GraphingCalculator(document.getElementById('calculator'),{expressions:true,settingsMenu:false,zoomButtons:true});
@@ -319,7 +319,7 @@ enum ToolActionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .manimNotInstalled:
-            return "Manim is not installed. Install the local Manim CLI to render this template; Aster never runs model-authored Python."
+            return "Manim is not installed. Install the local Manim CLI to render this template; Aster✱ never runs model-authored Python."
         case .renderFailed(let detail):
             return "The Manim preview could not render. \(detail.prefix(180))"
         }

@@ -1,6 +1,6 @@
 # Spatial teaching evaluation
 
-Aster’s main technical risk is not eloquence. It is whether an annotation lands on the right target and whether the teaching turn improves understanding. The evaluation therefore separates **grounding**, **pedagogy**, and **interaction reliability**.
+Aster✱’s main technical risk is not eloquence. It is whether an annotation lands on the right target and whether the teaching turn improves understanding. The evaluation therefore separates **grounding**, **pedagogy**, and **interaction reliability**.
 
 ## Benchmark set
 
@@ -29,7 +29,7 @@ The Swift suite includes a deterministic 400-placement coordinate benchmark span
 - **Target hit rate:** percentage of circles/highlights whose center lies inside an acceptable target.
 - **IoU:** overlap between the annotation rectangle and the expert target box.
 - **Arrow endpoint error:** normalized distance from the returned endpoint to the nearest acceptable anchor.
-- **Abstention quality:** when the target is genuinely ambiguous, does Aster use fewer annotations and ask the learner to point again?
+- **Abstention quality:** when the target is genuinely ambiguous, does Aster✱ use fewer annotations and ask the learner to point again?
 
 Initial release gate: at least 90% target hit rate on the curated demo set, zero annotations outside the visible screen, and no more than four marks per turn.
 
@@ -48,10 +48,10 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 
 ### 3. Product reliability
 
-- global hotkey opens Aster from another app;
+- global hotkey opens Aster✱ from another app;
 - the ✱ lands beside the cursor, visibly enters its reading state, and morphs from the same origin into each mark;
 - the final ✱ bookmark is clickable, stays attached to the taught concept, and reopens the correct lesson;
-- opt-in “Hey Aster” activates Aster, hands off to normal conversational listening, and returns to wake listening afterward;
+- opt-in “Hey Aster” activates Aster✱, hands off to normal conversational listening, and returns to wake listening afterward;
 - wake listening is off by default and stops immediately when disabled;
 - overlay remains visible across focus changes;
 - overlay is click-through and does not block the source app;
@@ -75,7 +75,7 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 For five visual questions, compare two flows with the same learner:
 
 1. screenshot → separate text chat → return to source;
-2. Aster hotkey → spatial teaching turn → mastery check.
+2. Aster✱ hotkey → spatial teaching turn → mastery check.
 
 Record time-to-first-useful-explanation, number of context switches, and mastery-question accuracy. With a small hackathon sample this is directional rather than statistically conclusive, so report raw observations and avoid claiming measured population impact.
 

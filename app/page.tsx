@@ -48,7 +48,7 @@ const lessons = [
   {
     n: "01",
     title: "Point",
-    copy: "Point at the exact term, structure, or object. Aster anchors to it locally—even when its window moves.",
+    copy: "Point at the exact term, structure, or object. Aster✱ anchors to it locally—even when its window moves.",
   },
   {
     n: "02",
@@ -58,7 +58,7 @@ const lessons = [
   {
     n: "03",
     title: "See it click",
-    copy: "Aster teaches in voice while drawing, animating flows, simplifying dense diagrams, and checking you.",
+    copy: "Aster✱ teaches in voice while drawing, animating flows, simplifying dense diagrams, and checking you.",
   },
 ];
 
@@ -78,7 +78,7 @@ const actions = [
   {
     tag: "MASTERY",
     title: "Hand it back",
-    copy: "Aster fades its help and asks one focused question. The learner, not the agent, completes the thought.",
+    copy: "Aster✱ fades its help and asks one focused question. The learner, not the agent, completes the thought.",
     color: "coral",
   },
 ];
@@ -116,7 +116,7 @@ function ProductStage({ scene }: { scene: SceneKey }) {
       <div className="browser-bar">
         <span className="traffic-lights"><i /><i /><i /></span>
         <span className="document-name">{data.eyebrow}</span>
-        <span className="stage-status"><i /> Aster can see this window</span>
+        <span className="stage-status"><i /> Aster✱ can see this window</span>
       </div>
 
       <div className="paper-canvas" key={scene}>
@@ -180,7 +180,7 @@ function ProductStage({ scene }: { scene: SceneKey }) {
         <div className="tutor-popover">
           <div className="tutor-topline">
             <span className="mini-mark"><AsterMark /></span>
-            <span>Aster is teaching</span>
+            <span>Aster✱ is teaching</span>
             <VoiceWave />
           </div>
           <p>{data.voice}</p>
@@ -214,7 +214,7 @@ export default function Home() {
   return (
     <main>
       <nav className={scrolled ? "site-nav nav-scrolled" : "site-nav"} aria-label="Main navigation">
-        <a className="brand" href="#top" aria-label="Aster home"><AsterMark /><span>Aster</span></a>
+        <a className="brand" href="#top" aria-label="Aster star home"><AsterMark /><span>Aster✱</span></a>
         <div className="nav-links">
           <a href="#how">How it works</a>
           <a href="#learning">For learning</a>
@@ -236,9 +236,9 @@ export default function Home() {
           <div className="eyebrow"><span className="eyebrow-dot" /> Meet your on-screen tutor</div>
           <h1>Your screen becomes the <span>whiteboard</span>.</h1>
           <p className="hero-manifesto">Don’t bring your question to the tutor. Bring the tutor to your question.</p>
-          <div className="hero-learning-loop" aria-label="How Aster helps you learn">
+          <div className="hero-learning-loop" aria-label="How Aster star helps you learn">
             <p><b>Point.</b><span>Highlight anything you’re learning.</span></p>
-            <p><b>Learn.</b><span>Aster explains it aloud and draws directly where it matters.</span></p>
+            <p><b>Learn.</b><span>Aster✱ explains it aloud and draws directly where it matters.</span></p>
             <p><b>Master.</b><span>It checks what clicked, remembers what didn’t, and helps you revisit it.</span></p>
           </div>
           <div className="hero-actions">
@@ -251,11 +251,11 @@ export default function Home() {
               <aside className="first-launch-note" aria-label="First launch instructions">
                 <div className="first-launch-heading"><i>!</i><strong>First launch on macOS</strong></div>
                 <p>
-                  Aster is a Build Week prototype and isn’t notarized by Apple yet. The “Apple could not verify
-                  Aster” message is expected for this download.
+                  Aster✱ is a Build Week prototype and isn’t notarized by Apple yet. The “Apple could not verify
+                  Aster✱” message is expected for this download.
                 </p>
-                <div className="gatekeeper-path" aria-label="How to open Aster">
-                  <span>Open Aster</span><i>→</i><span>Privacy &amp; Security</span><i>→</i><span>Open Anyway</span>
+                <div className="gatekeeper-path" aria-label="How to open Aster star">
+                  <span>Open Aster✱</span><i>→</i><span>Privacy &amp; Security</span><i>→</i><span>Open Anyway</span>
                 </div>
                 <div className="first-launch-foot">
                   <small>Only override the warning for the copy downloaded from this page.</small>
@@ -271,7 +271,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="hero-stage" aria-label="Interactive Aster teaching demonstration">
+        <div className="hero-stage" aria-label="Interactive Aster star teaching demonstration">
           <div className="scene-switcher" role="tablist" aria-label="Choose a lesson demo">
             {(Object.keys(scenes) as SceneKey[]).map((key) => (
               <button
@@ -290,7 +290,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="trust-strip" aria-label="Aster capabilities">
+      <section className="trust-strip" aria-label="Aster star capabilities">
         <span>Research papers</span><i />
         <span>Equations</span><i />
         <span>Anatomy</span><i />
@@ -306,7 +306,7 @@ export default function Home() {
             <h2>Stay with the hard part.</h2>
           </div>
           <p>
-            Learning breaks when you leave the page to describe the page. Aster starts from the material already in
+            Learning breaks when you leave the page to describe the page. Aster✱ starts from the material already in
             front of you and keeps every explanation anchored there.
           </p>
         </div>
@@ -339,7 +339,7 @@ export default function Home() {
           <span className="section-kicker light">VOICE + SPATIAL EXPLANATION</span>
           <h2>It teaches the way a great tutor points.</h2>
           <p>
-            Aster’s voice carries the story while the overlay carries the reference. The learner never has to hold
+            Aster✱’s voice carries the story while the overlay carries the reference. The learner never has to hold
             “that variable over there” in working memory.
           </p>
           <div className="principle-list">
@@ -355,7 +355,7 @@ export default function Home() {
           <span className="section-kicker">REMEMBERS THE LEARNER, NOT JUST THE CHAT</span>
           <h2>Every explanation changes what comes next.</h2>
           <p>
-            Aster stores compact learning evidence on your Mac: what you demonstrated, what is still shaky, concept
+            Aster✱ stores compact learning evidence on your Mac: what you demonstrated, what is still shaky, concept
             dependencies, review timing, and the next strategy. Mastery changes only after you answer.
           </p>
           <div className="memory-loop" aria-label="Adaptive learning loop">
@@ -379,7 +379,7 @@ export default function Home() {
         <div className="section-heading centered-heading">
           <span className="section-kicker">TOOLS FOR DEEPER UNDERSTANDING</span>
           <h2>An agent with a teacher’s restraint.</h2>
-          <p>Aster opens a teaching surface only when it helps you understand: visualizing a change, creating reversible scratch work, or generating focused practice. Every action is previewed, bounded, reversible, and permissioned.</p>
+          <p>Aster✱ opens a teaching surface only when it helps you understand: visualizing a change, creating reversible scratch work, or generating focused practice. Every action is previewed, bounded, reversible, and permissioned.</p>
         </div>
         <div className="action-grid">
           {actions.map((action, index) => (
@@ -404,7 +404,7 @@ export default function Home() {
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
             <h2>Quiet until invited.</h2>
             <p>
-              Until you invoke Aster, no screen context leaves your Mac. When you do, Aster follows only the region
+              Until you invoke Aster✱, no screen context leaves your Mac. When you do, Aster✱ follows only the region
               or window you chose, visibly marks that boundary, and excludes its own overlay. Your API key stays in macOS Keychain.
             </p>
             <div className="privacy-points">
@@ -418,7 +418,7 @@ export default function Home() {
             <div className="budget-top"><span>API budget guard</span><b>$0.37 used</b></div>
             <div className="budget-bar"><i /></div>
             <div className="budget-scale"><span>$0</span><span>Hard stop at $5</span></div>
-            <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following selected context locally</b><small>No API request until you ask Aster</small></div></div>
+            <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following selected context locally</b><small>No API request until you ask Aster✱</small></div></div>
           </div>
         </div>
       </section>
@@ -426,14 +426,14 @@ export default function Home() {
       <section className="setup-section" id="setup">
         <div className="setup-heading">
           <span className="section-kicker">FIRST LAUNCH</span>
-          <h2>Set up Aster in two minutes.</h2>
+          <h2>Set up Aster✱ in two minutes.</h2>
           <p>Four steps from download to your first spatial lesson. No Terminal commands required.</p>
         </div>
         <div className="setup-grid">
           <article className="setup-step">
             <span>01</span>
             <b>Download</b>
-            <p>Unzip Aster, then move <strong>Aster.app</strong> into your Applications folder.</p>
+            <p>Unzip Aster✱, then move <strong>Aster.app</strong> into your Applications folder.</p>
           </article>
           <article className="setup-step emphasized">
             <span>02</span>
@@ -455,7 +455,7 @@ export default function Home() {
           <summary>Seeing a Keychain prompt or missing a permission?<span>+</span></summary>
           <div>
             <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build.</p>
-            <p><b>Screen capture:</b> enable Aster in Privacy &amp; Security → Screen &amp; System Audio Recording, then quit and reopen Aster.</p>
+            <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording, then quit and reopen Aster✱.</p>
           </div>
         </details>
       </section>
@@ -466,12 +466,12 @@ export default function Home() {
         <span className="section-kicker light">ASTER FOR MAC</span>
         <h2>Meet the material<br />where it lives.</h2>
         <p>The downloadable Build Week prototype. Bring your own OpenAI API key—or explore its built-in demo mode.</p>
-        <a className="light-button" href="/Aster-macOS.zip" download><span>Download Aster</span><b>↓</b></a>
+        <a className="light-button" href="/Aster-macOS.zip" download><span>Download Aster✱</span><b>↓</b></a>
         <small>macOS 13+ · Apple silicon · Ad-hoc signed prototype</small>
       </section>
 
       <footer>
-        <a className="brand footer-brand" href="#top"><AsterMark /><span>Aster</span></a>
+        <a className="brand footer-brand" href="#top"><AsterMark /><span>Aster✱</span></a>
         <p>Built for OpenAI Build Week · Education Track</p>
       </footer>
     </main>

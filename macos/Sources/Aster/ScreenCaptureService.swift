@@ -19,10 +19,10 @@ enum CaptureError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .permissionDenied: return "Allow Screen Recording in System Settings, then reopen Aster."
-        case .captureFailed: return "Aster could not capture the selected learning context."
+        case .permissionDenied: return "Allow Screen Recording in System Settings, then reopen Aster✱."
+        case .captureFailed: return "Aster✱ could not capture the selected learning context."
         case .targetMoved: return "The selected window closed. Select the learning context again."
-        case .encodingFailed: return "Aster could not prepare the selected context."
+        case .encodingFailed: return "Aster✱ could not prepare the selected context."
         }
     }
 }

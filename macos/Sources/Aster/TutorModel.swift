@@ -369,8 +369,8 @@ final class TutorModel: ObservableObject {
         let alert = NSAlert()
         alert.messageText = lesson.toolSuggestion == "desmos" ? "Open a Desmos teaching sandbox?" : "Render a safe Manim template?"
         alert.informativeText = lesson.toolSuggestion == "desmos"
-            ? "Aster will open an internal graph sandbox and add the previewed expressions. It will not edit your homework or submit anything."
-            : "Aster will run one fixed local template with a  low-resolution preview. It never executes model-authored Python."
+            ? "Aster✱ will open an internal graph sandbox and add the previewed expressions. It will not edit your homework or submit anything."
+            : "Aster✱ will run one fixed local template with a  low-resolution preview. It never executes model-authored Python."
         alert.addButton(withTitle: "Demonstrate")
         alert.addButton(withTitle: "Not now")
         NSApp.activate(ignoringOtherApps: true)

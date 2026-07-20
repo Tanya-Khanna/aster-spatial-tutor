@@ -1,10 +1,10 @@
-# Aster
+# Aster✱
 
 > **Your screen becomes the whiteboard.**
 
-Aster is a native spatial tutor for macOS. Press **Option–Space**, select an equation, research figure, graph, circuit, code block, paragraph, homework problem, or educational anatomy diagram, and ask a question. Aster diagnoses the misconception before explaining, teaches through synchronized voice and on-target drawings, checks an independent answer, and remembers the resulting mastery evidence for the next lesson.
+Aster✱ is a native spatial tutor for macOS. Press **Option–Space**, select an equation, research figure, graph, circuit, code block, paragraph, homework problem, or educational anatomy diagram, and ask a question. Aster✱ diagnoses the misconception before explaining, teaches through synchronized voice and on-target drawings, checks an independent answer, and remembers the resulting mastery evidence for the next lesson.
 
-The animated **✱** is Aster’s physical presence: it lands beside the cursor, pulses while reading, stretches into each teaching mark, then collapses beside the concept as a clickable lesson bookmark. “Hey Aster” offers the same entry point as an explicit opt-in wake mode.
+The animated **✱** is Aster✱’s physical presence: it lands beside the cursor, pulses while reading, stretches into each teaching mark, then collapses beside the concept as a clickable lesson bookmark. “Hey Aster” offers the same entry point as an explicit opt-in wake mode.
 
 Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-5.6**.
 
@@ -21,7 +21,7 @@ The prototype is ad-hoc signed. On first use, macOS may ask for permission to op
 
 Dense visual learning material is hard to translate into a text-chat prompt. A learner must leave the equation or diagram, capture it, upload it, describe where they are confused, mentally map a prose response back to the source, and repeat. That context switching is especially costly for notation-heavy research papers, multi-step equations, circuits, graphs, and anatomy plates.
 
-Aster removes that translation layer. Its core unit is not an answer—it is a **spatial teaching turn** synchronized across voice, overlay, note, and mastery check.
+Aster✱ removes that translation layer. Its core unit is not an answer—it is a **spatial teaching turn** synchronized across voice, overlay, note, and mastery check.
 
 ## Product loop
 
@@ -36,7 +36,7 @@ Aster removes that translation layer. Its core unit is not an answer—it is a *
 
 ## Why it is different
 
-| Existing pattern | Aster |
+| Existing pattern | Aster✱ |
 | --- | --- |
 | Upload a screenshot into a separate chat | Start from the material already on screen |
 | Explain “the variable in the second line” | Use the learner’s cursor as spatial context |
@@ -73,7 +73,7 @@ Persistent concept graph + evidence + spaced review
 
 Three strict schemas separate diagnosis, teaching, and assessment. A lesson contains one to four synchronized steps; every step has narration, a notebook insight, and no more than four normalized annotations. Coordinates from the cropped context are validated and mapped back into the selected screen region. If localization is uncertain, the model is instructed to use fewer marks and request a tighter selection.
 
-Learner memory is stored as evidence rather than a transcript: concept mastery, attempts, what the learner demonstrated, remaining shaky areas, and the next teaching strategy. The next diagnostic turn receives that compact profile so Aster can truthfully say, for example, “You demonstrated softmax purpose; square-root scaling is still shaky.”
+Learner memory is stored as evidence rather than a transcript: concept mastery, attempts, what the learner demonstrated, remaining shaky areas, and the next teaching strategy. The next diagnostic turn receives that compact profile so Aster✱ can truthfully say, for example, “You demonstrated softmax purpose; square-root scaling is still shaky.”
 
 ## Built with OpenAI
 
@@ -105,7 +105,7 @@ Codex session ID: <add public session ID>
 - Follow mode visibly refreshes only the learner-selected region every two seconds on-device; a screen image is sent only after the learner asks.
 - Capture state is visible in the interface.
 - The API key is stored in macOS Keychain and excluded from the repository.
-- Aster teaches labeled educational anatomy; it does not interpret radiology, diagnose disease, or give medical advice.
+- Aster✱ teaches labeled educational anatomy; it does not interpret radiology, diagnose disease, or give medical advice.
 - Tool suggestions are previews. This prototype does not silently type into or modify another app.
 
 ## Run the macOS app
@@ -141,7 +141,7 @@ cd macos && swift build -c release
 | Criterion | Evidence in this repository |
 | --- | --- |
 | Technological Implementation | Multi-display/window capture, semantic cursor anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, Keychain, spend guard |
-| Design | One coherent Aster system across macOS and responsive web; visible context/follow states; mandatory diagnostic choices; staged annotation choreography; voice, notebook, mastery, and memory states |
+| Design | One coherent Aster✱ system across macOS and responsive web; visible context/follow states; mandatory diagnostic choices; staged annotation choreography; voice, notebook, mastery, and memory states |
 | Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams; demo emphasizes comprehension rather than answer generation |
 | Quality of Idea | OS-native spatial tutoring, cursor-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
 
@@ -149,7 +149,7 @@ See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submis
 
 ## Safety boundaries
 
-- Aster deliberately does not provide general autonomous Mac control, submit graded work, or run model-authored Python. Cross-app content is previewed and copied for learner-controlled paste.
+- Aster✱ deliberately does not provide general autonomous Mac control, submit graded work, or run model-authored Python. Cross-app content is previewed and copied for learner-controlled paste.
 - Browser video controls are limited to the active HTML5 video in Safari/Chrome and may require the browser’s JavaScript-from-Apple-Events setting.
 - Manim uses fixed local templates and requires a local Manim CLI installation.
 - A live API turn requires the learner’s own OpenAI API key. The submission can be evaluated fully in free Demo mode.

@@ -47,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Aster"
+        window.title = "Aster✱"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
@@ -84,10 +84,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = AsterGlyphRenderer.menuBarImage()
         let menu = NSMenu()
-        menu.addItem(withTitle: "Ask Aster  ⌥ Space", action: #selector(askAster), keyEquivalent: "")
+        menu.addItem(withTitle: "Ask Aster✱  ⌥ Space", action: #selector(askAster), keyEquivalent: "")
         menu.addItem(withTitle: "Welcome", action: #selector(showWelcomeMenu), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Aster", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "Quit Aster✱", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
         statusItem = item
     }

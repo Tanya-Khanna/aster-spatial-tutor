@@ -1,6 +1,6 @@
-# Aster for macOS
+# Aster✱ for macOS
 
-Aster is a native spatial tutor for macOS. Press **Option–Space**, drag around the exact learning context, and ask by voice or text. Aster follows that region locally, diagnoses before explaining, teaches through synchronized voice and staged annotations, checks an independent answer, and persists concept-level mastery evidence across launches.
+Aster✱ is a native spatial tutor for macOS. Press **Option–Space**, drag around the exact learning context, and ask by voice or text. Aster✱ follows that region locally, diagnoses before explaining, teaches through synchronized voice and staged annotations, checks an independent answer, and persists concept-level mastery evidence across launches.
 
 The ✱ cursor companion is the source of the overlay: it lands and reads beside the pointer, morphs into each annotation, and collapses into a clickable bookmark that reopens the exact lesson. The optional “Hey Aster” wake phrase is disabled by default.
 
@@ -44,4 +44,4 @@ The packaged application is written to `macos/dist/Aster.app` and the downloadab
 - Animated flow/focus/comparison overlays and safe diagram primitives for simplified redraws.
 - Desmos plus nine fixed local Manim families with an embedded low-resolution preview. Manim requires a local CLI; model-authored Python is never executed.
 - Permission modes, reversible scratch work, safe typing previews, action history/undo, shaky-area practice, spaced review, misconception clusters, dependencies, difficulty, and analogy preferences.
-- Aster teaches labeled educational anatomy diagrams. It is not for radiology, diagnosis, or medical advice.
+- Aster✱ teaches labeled educational anatomy diagrams. It is not for radiology, diagnosis, or medical advice.

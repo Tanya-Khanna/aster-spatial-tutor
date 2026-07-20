@@ -44,7 +44,7 @@ enum AsterGlyphRenderer {
             return true
         }
         image.isTemplate = true
-        image.accessibilityDescription = "Aster"
+        image.accessibilityDescription = "Aster star"
         return image
     }
 }

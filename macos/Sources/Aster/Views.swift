@@ -71,7 +71,7 @@ struct WelcomeView: View {
         HStack {
             HStack(spacing: 10) {
                 AsterMark(size: 30)
-                Text("Aster").font(.system(size: 20, weight: .semibold, design: .rounded))
+                Text("Aster✱").font(.system(size: 20, weight: .semibold, design: .rounded))
             }
             Spacer()
             HStack(spacing: 8) {
@@ -96,7 +96,7 @@ struct WelcomeView: View {
                 .font(.system(size: 50, weight: .medium, design: .rounded))
                 .tracking(-2.5)
                 .foregroundStyle(ink)
-            Text("Point at an equation, research figure, or anatomy diagram. Aster sees your screen, teaches by voice, and draws the explanation in place.")
+            Text("Point at an equation, research figure, or anatomy diagram. Aster✱ sees your screen, teaches by voice, and draws the explanation in place.")
                 .font(.system(size: 17))
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
@@ -107,7 +107,7 @@ struct WelcomeView: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "option")
-                    Text("Try Aster")
+                    Text("Try Aster✱")
                     Text("Space").font(.system(size: 12, weight: .semibold, design: .monospaced)).opacity(0.6)
                 }
                 .font(.system(size: 15, weight: .semibold))
@@ -127,7 +127,7 @@ struct WelcomeView: View {
                 }
                 .padding(12)
                 .background(.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 13))
-                Text("Stored in your Mac Keychain. Aster stops API requests at $5.")
+                Text("Stored in your Mac Keychain. Aster✱ stops API requests at $5.")
                     .font(.system(size: 11)).foregroundStyle(.tertiary)
             }
             .frame(maxWidth: 410)
@@ -171,7 +171,7 @@ struct WelcomeView: View {
                 .padding(24)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 7) { AsterMark(size: 20); Text("Aster noticed").font(.system(size: 11, weight: .semibold)) }
+                    HStack(spacing: 7) { AsterMark(size: 20); Text("Aster✱ noticed").font(.system(size: 11, weight: .semibold)) }
                     Text(selectedDemo == "anatomy" ? "The membrane is thin for a reason." : "This term controls the direction of change.")
                         .font(.system(size: 12, weight: .medium)).lineLimit(2)
                     Text("Show me →").font(.system(size: 11, weight: .semibold)).foregroundStyle(signal)
@@ -265,7 +265,7 @@ struct TutorPanelView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("Aster").font(.system(size: 15, weight: .semibold, design: .rounded))
+                Text("Aster✱").font(.system(size: 15, weight: .semibold, design: .rounded))
                 Text(model.phase.label).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
             }
             Spacer()
@@ -392,7 +392,7 @@ struct TutorPanelView: View {
                     Button("Open zoomable context crop", action: model.openZoomableContext)
                     Button("Preview expression for another app", action: model.previewTyping)
                     Divider()
-                    Button("Undo last Aster action", action: model.undoLastAction)
+                    Button("Undo last Aster✱ action", action: model.undoLastAction)
                         .disabled(model.actionHistory.isEmpty)
                     Picker("Action permission", selection: $model.actionPermission) {
                         Text("Ask every time").tag(ActionPermission.askEveryTime)

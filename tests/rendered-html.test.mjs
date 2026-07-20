@@ -15,13 +15,13 @@ async function render() {
   );
 }
 
-test("server-renders Aster's complete product story", async () => {
+test("server-renders Aster star's complete product story", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Aster — The spatial tutor for macOS<\/title>/i);
+  assert.match(html, /<title>Aster✱ — The spatial tutor for macOS<\/title>/i);
   assert.match(html, /Don’t bring your question to the tutor/);
   assert.match(html, /Highlight anything you’re learning/);
   assert.match(html, /draws directly where it matters/);
@@ -35,7 +35,7 @@ test("server-renders Aster's complete product story", async () => {
   assert.match(html, /Remembers what needs practice/);
   assert.match(html, /isn’t notarized by Apple yet/);
   assert.match(html, /Open Anyway/);
-  assert.match(html, /Set up Aster in two minutes/);
+  assert.match(html, /Set up Aster✱ in two minutes/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
   assert.match(html, /Aster-macOS\.zip/);
