@@ -242,11 +242,27 @@ export default function Home() {
             <p><b>Master.</b><span>It checks what clicked, remembers what didn’t, and helps you revisit it.</span></p>
           </div>
           <div className="hero-actions">
-            <a className="primary-button" href="/Aster-macOS.zip" download>
-              <span className="apple-glyph">⌘</span>
-              <span><small>Prototype for</small>macOS</span>
-              <b>↓</b>
-            </a>
+            <div className="hero-download-stack">
+              <a className="primary-button" href="/Aster-macOS.zip" download>
+                <span className="apple-glyph">⌘</span>
+                <span><small>Prototype for</small>macOS</span>
+                <b>↓</b>
+              </a>
+              <aside className="first-launch-note" aria-label="First launch instructions">
+                <div className="first-launch-heading"><i>!</i><strong>First launch on macOS</strong></div>
+                <p>
+                  Aster is a Build Week prototype and isn’t notarized by Apple yet. The “Apple could not verify
+                  Aster” message is expected for this download.
+                </p>
+                <div className="gatekeeper-path" aria-label="How to open Aster">
+                  <span>Open Aster</span><i>→</i><span>Privacy &amp; Security</span><i>→</i><span>Open Anyway</span>
+                </div>
+                <div className="first-launch-foot">
+                  <small>Only override the warning for the copy downloaded from this page.</small>
+                  <a href="#setup">Full setup ↓</a>
+                </div>
+              </aside>
+            </div>
           </div>
           <div className="hero-meta">
             <span><i /> No screenshots or uploads</span>
@@ -407,6 +423,43 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="setup-section" id="setup">
+        <div className="setup-heading">
+          <span className="section-kicker">FIRST LAUNCH</span>
+          <h2>Set up Aster in two minutes.</h2>
+          <p>Four steps from download to your first spatial lesson. No Terminal commands required.</p>
+        </div>
+        <div className="setup-grid">
+          <article className="setup-step">
+            <span>01</span>
+            <b>Download</b>
+            <p>Unzip Aster, then move <strong>Aster.app</strong> into your Applications folder.</p>
+          </article>
+          <article className="setup-step emphasized">
+            <span>02</span>
+            <b>Open anyway</b>
+            <p>After the warning, open <strong>System Settings → Privacy &amp; Security</strong> and choose <strong>Open Anyway</strong>.</p>
+          </article>
+          <article className="setup-step">
+            <span>03</span>
+            <b>Allow access</b>
+            <p>Enable Screen Recording. Allow Microphone and Speech Recognition only if you want voice conversation.</p>
+          </article>
+          <article className="setup-step">
+            <span>04</span>
+            <b>Start learning</b>
+            <p>Press <strong>⌥ Space</strong>, select the exact context, then ask by voice or text.</p>
+          </article>
+        </div>
+        <details className="setup-help">
+          <summary>Seeing a Keychain prompt or missing a permission?<span>+</span></summary>
+          <div>
+            <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build.</p>
+            <p><b>Screen capture:</b> enable Aster in Privacy &amp; Security → Screen &amp; System Audio Recording, then quit and reopen Aster.</p>
+          </div>
+        </details>
+      </section>
+
       <section className="final-cta">
         <div className="cta-glow" />
         <AsterMark />
@@ -414,7 +467,7 @@ export default function Home() {
         <h2>Meet the material<br />where it lives.</h2>
         <p>The downloadable Build Week prototype. Bring your own OpenAI API key—or explore its built-in demo mode.</p>
         <a className="light-button" href="/Aster-macOS.zip" download><span>Download Aster</span><b>↓</b></a>
-        <small>macOS 13+ · Apple silicon & Intel · Ad-hoc signed prototype</small>
+        <small>macOS 13+ · Apple silicon · Ad-hoc signed prototype</small>
       </section>
 
       <footer>

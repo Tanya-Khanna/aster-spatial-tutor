@@ -33,6 +33,11 @@ test("server-renders Aster's complete product story", async () => {
   assert.match(html, /REMEMBERS THE LEARNER/);
   assert.match(html, /Diagnose/);
   assert.match(html, /Remembers what needs practice/);
+  assert.match(html, /isn’t notarized by Apple yet/);
+  assert.match(html, /Open Anyway/);
+  assert.match(html, /Set up Aster in two minutes/);
+  assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
+  assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
   assert.match(html, /Aster-macOS\.zip/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
