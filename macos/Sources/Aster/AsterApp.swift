@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var welcomeWindow: NSWindow?
+    private var settingsWindow: NSWindow?
     private var tutorPanel: NSPanel?
     private var statusItem: NSStatusItem?
     private var hotKey: HotKeyManager?
@@ -121,7 +122,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        if settingsWindow == nil {
+            let controller = NSHostingController(rootView: SettingsView(model: TutorModel.shared))
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 780, height: 760),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "Aster✱ Settings"
+            window.contentViewController = controller
+            window.minSize = NSSize(width: 720, height: 640)
+            window.isReleasedWhenClosed = false
+            window.center()
+            settingsWindow = window
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 

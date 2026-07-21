@@ -91,6 +91,7 @@ private struct ConnectionPill: View {
 
 struct WelcomeView: View {
     @ObservedObject var model: TutorModel
+    @State private var previewStep = 0
 
     var body: some View {
         ZStack {
@@ -143,69 +144,154 @@ struct WelcomeView: View {
     }
 
     private var onboardingProgress: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 12) {
             ForEach(OnboardingStep.allCases, id: \.rawValue) { step in
-                HStack(spacing: 7) {
+                HStack(spacing: 9) {
                     Circle()
                         .fill(step.rawValue <= model.onboardingStep.rawValue ? asterSignal : asterLine)
-                        .frame(width: 8, height: 8)
+                        .frame(width: 10, height: 10)
                     Text(["Meet Aster✱", "Permissions", "Connect", "Ready"][step.rawValue])
-                        .font(.system(size: 10, weight: step == model.onboardingStep ? .semibold : .regular))
+                        .font(.system(size: 13, weight: step == model.onboardingStep ? .semibold : .medium))
                         .foregroundStyle(step == model.onboardingStep ? asterInk : asterSecondary)
                 }
-                if step != .ready { Rectangle().fill(asterLine).frame(width: 34, height: 1) }
+                if step != .ready { Rectangle().fill(asterLine).frame(width: 46, height: 1) }
             }
         }
-        .padding(.vertical, 24)
+        .padding(.vertical, 22)
     }
 
     private var introductionStep: some View {
-        HStack(spacing: 54) {
-            VStack(alignment: .leading, spacing: 24) {
-                Text("THE TUTOR THAT MEETS YOU THERE")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1.5).foregroundStyle(asterSignal)
-                Text("Your screen becomes\nthe whiteboard.")
-                    .font(.system(size: 52, weight: .medium, design: .rounded)).tracking(-2.2)
+        HStack(alignment: .center, spacing: 42) {
+            VStack(alignment: .leading, spacing: 22) {
+                Text("POINT TO IT. LEARN IT IN PLACE.")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced)).tracking(1.4).foregroundStyle(asterSignal)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Your screen becomes the")
+                        .font(.system(size: 43, weight: .medium, design: .rounded)).tracking(-1.7)
+                    Text("whiteboard.")
+                        .font(.system(size: 53, weight: .medium, design: .rounded)).italic().tracking(-1.8)
+                        .foregroundStyle(asterSignal)
+                        .overlay(alignment: .bottom) {
+                            Capsule().fill(asterSignal.opacity(0.52)).frame(height: 4).offset(y: 5)
+                        }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(3)
                 Text("Press Option–Space, point at the exact equation, diagram, paragraph, graph, or code block, and ask. Aster✱ diagnoses first, teaches in place, checks understanding, and remembers what needs work.")
-                    .font(.system(size: 17)).foregroundStyle(asterSecondary).lineSpacing(5).frame(maxWidth: 470, alignment: .leading)
-                HStack(spacing: 18) {
+                    .font(.system(size: 16)).foregroundStyle(asterSecondary).lineSpacing(4).frame(maxWidth: 440, alignment: .leading)
+                HStack(spacing: 14) {
                     feature("viewfinder", "See", "Exact selected context")
                     feature("pencil.and.outline", "Teach", "Voice + spatial marks")
                     feature("brain.head.profile", "Adapt", "Local mastery memory")
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minWidth: 420, maxWidth: .infinity, alignment: .leading)
             presencePreview
         }
     }
 
     private func feature(_ icon: String, _ title: String, _ detail: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Image(systemName: icon).font(.system(size: 17, weight: .semibold)).foregroundStyle(asterSignal)
-            Text(title).font(.system(size: 13, weight: .semibold))
-            Text(detail).font(.system(size: 10)).foregroundStyle(asterSecondary)
+            Image(systemName: icon).font(.system(size: 18, weight: .semibold)).foregroundStyle(asterSignal)
+            Text(title).font(.system(size: 14, weight: .semibold))
+            Text(detail).font(.system(size: 11)).foregroundStyle(asterSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var presencePreview: some View {
         AsterCard {
-            ZStack {
-                RoundedRectangle(cornerRadius: 15).fill(asterSurface.opacity(0.55))
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack { Circle().fill(.red.opacity(0.8)).frame(width: 8, height: 8); Circle().fill(.yellow.opacity(0.8)).frame(width: 8, height: 8); Circle().fill(.green.opacity(0.8)).frame(width: 8, height: 8); Spacer(); Text("YOUR LEARNING CONTEXT").font(.system(size: 8, design: .monospaced)).foregroundStyle(asterSecondary) }
-                    Text("Attention(Q, K, V) = softmax( QKᵀ / √dₖ )V").font(.system(size: 24, design: .serif))
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(asterCoral.opacity(0.15)).frame(width: 88, height: 28).offset(x: 280)
-                        HStack(spacing: 8) { AsterMark(size: 26); Text("I’ll point to the exact term while I explain why it matters.").font(.system(size: 12, weight: .medium)).foregroundStyle(asterSecondary) }
-                    }
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 7) {
+                    Circle().fill(.red.opacity(0.8)).frame(width: 8, height: 8)
+                    Circle().fill(.yellow.opacity(0.8)).frame(width: 8, height: 8)
+                    Circle().fill(.green.opacity(0.8)).frame(width: 8, height: 8)
                     Spacer()
-                    HStack { Label("Quiet until invited", systemImage: "hand.raised.fill"); Spacer(); Text("⌥ SPACE").font(.system(size: 9, weight: .bold, design: .monospaced)) }
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(asterSecondary)
-                }.padding(22)
+                    HStack(spacing: 6) {
+                        Circle().fill(previewStep == 1 ? asterSignal : asterSecondary).frame(width: 6, height: 6)
+                        Text(previewStep == 0 ? "ASTER✱ IS DIAGNOSING" : previewStep == 1 ? "ASTER✱ IS TEACHING" : "YOUR TURN")
+                    }
+                    .font(.system(size: 8, weight: .bold, design: .monospaced)).foregroundStyle(previewStep == 1 ? asterSignal : asterSecondary)
+                }
+
+                Text("Why divide attention by √dₖ?")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(asterSecondary)
+
+                HStack(spacing: 5) {
+                    Text("softmax(").font(.system(size: 22, design: .serif))
+                    VStack(spacing: 3) {
+                        Text("QKᵀ").font(.system(size: 20, design: .serif))
+                        Rectangle().fill(asterInk).frame(width: 55, height: 1)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(asterSignal.opacity(previewStep == 1 ? 0.16 : 0.04))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(asterSignal.opacity(previewStep == 1 ? 0.9 : 0), lineWidth: 2))
+                                .frame(width: 65, height: 34)
+                            Text("√dₖ").font(.system(size: 20, design: .serif))
+                        }
+                    }
+                    Text(")V").font(.system(size: 22, design: .serif))
+                    Spacer()
+                    AsterMark(size: previewStep == 1 ? 34 : 25)
+                        .opacity(previewStep == 1 ? 1 : 0.55)
+                        .rotationEffect(.degrees(previewStep == 1 ? -8 : 0))
+                }
+                .frame(maxWidth: .infinity)
+
+                Group {
+                    if previewStep == 0 {
+                        lessonPreviewCard("DIAGNOSE", "What feels unclear—the dimensions, the square root, or what scaling changes?", "scope")
+                    } else if previewStep == 1 {
+                        lessonPreviewCard("TEACH", "This term keeps larger dot products from making softmax overconfident.", "waveform")
+                    } else {
+                        lessonPreviewCard("CHECK", "If dₖ grows, what happens before we divide by √dₖ?", "arrow.turn.down.right")
+                    }
+                }
+                .id(previewStep)
+                .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
+
+                HStack {
+                    Label("Voice + marks, synchronized", systemImage: "speaker.wave.2.fill")
+                    Spacer()
+                    HStack(spacing: 5) {
+                        ForEach(0..<3, id: \.self) { index in
+                            Capsule().fill(index == previewStep ? asterSignal : asterLine).frame(width: index == previewStep ? 18 : 6, height: 6)
+                        }
+                    }
+                }
+                .font(.system(size: 10, weight: .semibold)).foregroundStyle(asterSecondary)
             }
-            .frame(width: 430, height: 360)
+            .padding(20)
+            .background(asterSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 15))
+            .frame(width: 450, height: 370)
         }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_400_000_000)
+                guard !Task.isCancelled else { break }
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
+                    previewStep = (previewStep + 1) % 3
+                }
+            }
+        }
+    }
+
+    private func lessonPreviewCard(_ label: String, _ text: String, _ icon: String) -> some View {
+        HStack(alignment: .top, spacing: 11) {
+            ZStack {
+                Circle().fill(asterSignal.opacity(0.12)).frame(width: 34, height: 34)
+                Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(asterSignal)
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(label).font(.system(size: 8, weight: .bold, design: .monospaced)).tracking(1).foregroundStyle(asterSignal)
+                Text(text).font(.system(size: 12, weight: .medium)).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(13)
+        .background(asterCanvas.opacity(0.76), in: RoundedRectangle(cornerRadius: 13))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(asterLine.opacity(0.65), lineWidth: 1))
     }
 
     private var permissionsStep: some View {
