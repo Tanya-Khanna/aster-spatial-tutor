@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 @MainActor
@@ -10,7 +11,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
     private var hotKey: HotKeyManager?
     private var observer: NSObjectProtocol?
     private var escapeMonitor: Any?
+    private var externalPointerMonitor: Any?
     private var permissionRefreshTask: Task<Void, Never>?
+
+    private let tutorPanelWidth: CGFloat = 1_080
+    private let tutorPanelCollapsedHeight: CGFloat = 140
+    private let tutorPanelExpandedHeight: CGFloat = 520
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
@@ -18,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         let model = TutorModel.shared
         model.onShowPanel = { [weak self] in self?.showTutorPanel() }
         model.onHidePanel = { [weak self] in self?.tutorPanel?.orderOut(nil) }
+        model.onPanelExpansionChanged = { [weak self] expanded in self?.resizeTutorPanel(expanded: expanded) }
         model.onShowWelcome = { [weak self] in self?.showWelcome() }
         model.onShowSettings = { [weak self] pane in self?.showSettings(pane) }
 
@@ -38,6 +45,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
             }
             return event
         }
+        externalPointerMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]) { _ in
+            let point = NSEvent.mouseLocation
+            Task { @MainActor in TutorModel.shared.updateExternalPointer(point) }
+        }
     }
 
     private func installApplicationIcon() {
@@ -54,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         permissionRefreshTask?.cancel()
         if let observer { NotificationCenter.default.removeObserver(observer) }
         if let escapeMonitor { NSEvent.removeMonitor(escapeMonitor) }
+        if let externalPointerMonitor { NSEvent.removeMonitor(externalPointerMonitor) }
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
@@ -100,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
     private func createTutorPanel() {
         let view = TutorPanelView(model: TutorModel.shared)
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 720),
+            contentRect: NSRect(x: 0, y: 0, width: tutorPanelWidth, height: tutorPanelCollapsedHeight),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -109,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = .floating
+        panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
@@ -217,9 +229,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
 
     private func showTutorPanel() {
         guard let panel = tutorPanel, let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main else { return }
-        let visible = screen.visibleFrame
-        panel.setFrameOrigin(NSPoint(x: visible.maxX - panel.frame.width - 22, y: visible.minY + 24))
+        if !panel.isVisible {
+            let visible = screen.visibleFrame
+            let width = min(tutorPanelWidth, visible.width - 32)
+            let height = TutorModel.shared.isPanelExpanded ? tutorPanelExpandedHeight : tutorPanelCollapsedHeight
+            let destination = NSRect(
+                x: visible.midX - width / 2,
+                y: visible.maxY - height - 16,
+                width: width,
+                height: height
+            )
+            panel.setFrame(destination.offsetBy(dx: 0, dy: height + 28), display: true)
+            panel.alphaValue = 0.2
+            panel.orderFrontRegardless()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.30
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(destination, display: true)
+                panel.animator().alphaValue = 1
+            }
+            return
+        }
         panel.orderFrontRegardless()
+    }
+
+    private func resizeTutorPanel(expanded: Bool) {
+        guard let panel = tutorPanel else { return }
+        let oldFrame = panel.frame
+        let newHeight = expanded ? tutorPanelExpandedHeight : tutorPanelCollapsedHeight
+        guard abs(oldFrame.height - newHeight) > 1 else { return }
+        let newFrame = NSRect(
+            x: oldFrame.minX,
+            y: oldFrame.maxY - newHeight,
+            width: oldFrame.width,
+            height: newHeight
+        )
+        panel.setFrame(newFrame, display: true, animate: panel.isVisible)
     }
 }
 

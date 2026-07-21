@@ -92,6 +92,9 @@ final class SemanticAnchorTracker {
 
     private func localCursor(in screen: CapturedScreen) -> CGPoint? {
         let target = screen.target
+        if let pointer = target.pointer {
+            return CGPoint(x: pointer.x, y: pointer.y)
+        }
         if target.kind == .window, let windowID = target.windowID,
            let bounds = ScreenCaptureService.windowBounds(windowID: CGWindowID(windowID)) {
             let point = CGEvent(source: nil)?.location ?? .zero

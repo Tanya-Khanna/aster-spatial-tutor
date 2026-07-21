@@ -6,7 +6,11 @@ final class ContextSelectionController {
     private var completion: ((CaptureTarget?) -> Void)?
     private var activeDisplayID: CGDirectDisplayID?
 
-    func begin(completion: @escaping (CaptureTarget?) -> Void) {
+    func begin(mode: ContextMode, completion: @escaping (CaptureTarget?) -> Void) {
+        guard mode == .region || mode == .freehandLoop else {
+            completion(nil)
+            return
+        }
         let cursor = NSEvent.mouseLocation
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(cursor) }) ?? NSScreen.main,
               let displayID = ScreenCaptureService.displayID(for: screen) else { completion(nil); return }
@@ -20,17 +24,28 @@ final class ContextSelectionController {
             backing: .buffered,
             defer: false
         )
-        let view = ContextSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
-        view.onComplete = { [weak self] region in
+        let view = ContextSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size), mode: mode)
+        view.onComplete = { [weak self] region, selectionPath in
             guard let self, let displayID = self.activeDisplayID else { return }
-            self.finish(.displayRegion(displayID: displayID, region: region))
+            self.finish(CaptureTarget(
+                kind: .displayRegion,
+                displayID: displayID,
+                region: region,
+                windowID: nil,
+                appName: "",
+                windowTitle: "",
+                anchor: nil,
+                selectionPath: selectionPath
+            ))
         }
         view.onCancel = { [weak self] in self?.finish(nil) }
         panel.contentView = view
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
-        panel.level = .screenSaver
+        // The selector dims the lesson beneath Aster✱ while leaving the summon
+        // bar visible and interactive one level above it.
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue - 1)
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.sharingType = .readOnly
         panel.setFrame(screen.frame, display: true)
@@ -95,10 +110,20 @@ final class ContextSelectionController {
 }
 
 private final class ContextSelectionView: NSView {
-    var onComplete: ((ContextRegion) -> Void)?
+    var onComplete: ((ContextRegion, [NormalizedPoint]?) -> Void)?
     var onCancel: (() -> Void)?
+    private let mode: ContextMode
     private var startPoint: NSPoint?
     private var selection = NSRect.zero
+    private var freehandPoints: [NSPoint] = []
+
+    init(frame frameRect: NSRect, mode: ContextMode) {
+        self.mode = mode
+        super.init(frame: frameRect)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
@@ -111,39 +136,63 @@ private final class ContextSelectionView: NSView {
     override func mouseDown(with event: NSEvent) {
         startPoint = convert(event.locationInWindow, from: nil)
         selection = NSRect(origin: startPoint!, size: .zero)
+        freehandPoints = mode == .freehandLoop ? [startPoint!] : []
         needsDisplay = true
     }
 
     override func mouseDragged(with event: NSEvent) {
         guard let startPoint else { return }
         let current = convert(event.locationInWindow, from: nil)
-        selection = NSRect(
-            x: min(startPoint.x, current.x),
-            y: min(startPoint.y, current.y),
-            width: abs(current.x - startPoint.x),
-            height: abs(current.y - startPoint.y)
-        ).intersection(bounds)
+        if mode == .freehandLoop,
+           freehandPoints.last.map({ hypot($0.x - current.x, $0.y - current.y) >= 3 }) ?? true {
+            freehandPoints.append(current)
+        }
+        if mode == .freehandLoop {
+            selection = boundingRect(for: freehandPoints).intersection(bounds)
+        } else {
+            selection = NSRect(
+                x: min(startPoint.x, current.x),
+                y: min(startPoint.y, current.y),
+                width: abs(current.x - startPoint.x),
+                height: abs(current.y - startPoint.y)
+            ).intersection(bounds)
+        }
         needsDisplay = true
     }
 
     override func mouseUp(with event: NSEvent) {
-        guard let startPoint else { return }
-        var chosen = selection
-        if chosen.width < 24 || chosen.height < 24 {
-            let size = NSSize(width: min(500, bounds.width * 0.44), height: min(330, bounds.height * 0.40))
-            chosen = NSRect(
-                x: min(max(startPoint.x - size.width / 2, 0), bounds.width - size.width),
-                y: min(max(startPoint.y - size.height / 2, 0), bounds.height - size.height),
-                width: size.width,
-                height: size.height
-            )
+        guard startPoint != nil else { return }
+        if mode == .freehandLoop {
+            let current = convert(event.locationInWindow, from: nil)
+            freehandPoints.append(current)
+            selection = boundingRect(for: freehandPoints).intersection(bounds)
         }
-        onComplete?(ContextRegion(
+        let chosen = selection.intersection(bounds)
+        guard chosen.width >= 18, chosen.height >= 18 else {
+            startPoint = nil
+            selection = .zero
+            freehandPoints = []
+            needsDisplay = true
+            return
+        }
+        let region = ContextRegion(
             x: chosen.minX / bounds.width,
             y: chosen.minY / bounds.height,
             width: chosen.width / bounds.width,
             height: chosen.height / bounds.height
-        ))
+        )
+        let path: [NormalizedPoint]?
+        if mode == .freehandLoop, freehandPoints.count >= 3 {
+            path = freehandPoints.map {
+                NormalizedPoint(
+                    x: ($0.x - chosen.minX) / chosen.width,
+                    y: ($0.y - chosen.minY) / chosen.height
+                )
+            }
+        } else {
+            path = nil
+        }
+        onComplete?(region, path)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -157,16 +206,18 @@ private final class ContextSelectionView: NSView {
         if !selection.isEmpty {
             NSGraphicsContext.saveGraphicsState()
             NSGraphicsContext.current?.compositingOperation = .clear
-            NSBezierPath(roundedRect: selection, xRadius: 13, yRadius: 13).fill()
+            selectionPath.fill()
             NSGraphicsContext.restoreGraphicsState()
             AsterGlyphRenderer.signal.setStroke()
-            let border = NSBezierPath(roundedRect: selection.insetBy(dx: -2, dy: -2), xRadius: 15, yRadius: 15)
+            let border = selectionPath
             border.lineWidth = 4
             border.stroke()
         }
 
-        let title = "Select exactly what Aster✱ should teach"
-        let subtitle = "Drag around an equation, diagram, paragraph, chart, code block, or problem  ·  Click for a cursor-centered region  ·  Esc to cancel"
+        let title = mode == .freehandLoop ? "Loop exactly what Aster✱ should see" : "Box exactly what Aster✱ should see"
+        let subtitle = mode == .freehandLoop
+            ? "Draw one freehand loop around the relevant content  ·  Release to lock it  ·  Esc to cancel"
+            : "Drag a box around the relevant content  ·  Release to lock it  ·  Esc to cancel"
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 22, weight: .semibold),
             .foregroundColor: NSColor.white
@@ -185,5 +236,27 @@ private final class ContextSelectionView: NSView {
             at: NSPoint(x: (bounds.width - subtitleSize.width) / 2, y: 75),
             withAttributes: subtitleAttributes
         )
+    }
+
+    private var selectionPath: NSBezierPath {
+        guard mode == .freehandLoop, freehandPoints.count >= 2 else {
+            return NSBezierPath(roundedRect: selection.insetBy(dx: -2, dy: -2), xRadius: 15, yRadius: 15)
+        }
+        let path = NSBezierPath()
+        path.move(to: freehandPoints[0])
+        freehandPoints.dropFirst().forEach { path.line(to: $0) }
+        path.close()
+        path.lineJoinStyle = .round
+        path.lineCapStyle = .round
+        return path
+    }
+
+    private func boundingRect(for points: [NSPoint]) -> NSRect {
+        guard let first = points.first else { return .zero }
+        let minX = points.reduce(first.x) { min($0, $1.x) }
+        let maxX = points.reduce(first.x) { max($0, $1.x) }
+        let minY = points.reduce(first.y) { min($0, $1.y) }
+        let maxY = points.reduce(first.y) { max($0, $1.y) }
+        return NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
 }

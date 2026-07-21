@@ -106,10 +106,10 @@ enum TutorPhase: Equatable {
     var label: String {
         switch self {
         case .ready: return "Ready"
-        case .selectingContext: return "Select the exact learning context"
-        case .following: return "Following the selected context"
+        case .selectingContext: return "Choose the exact visual scope"
+        case .following: return "Following locally"
         case .listening: return "Listening"
-        case .seeing: return "Reading the selected context"
+        case .seeing: return "Reading the chosen scope"
         case .diagnosing: return "Finding the point of confusion"
         case .clarifying: return "Waiting for your diagnosis choice"
         case .thinking: return "Planning one teaching step"
@@ -144,6 +144,52 @@ struct ContextRegion: Codable, Hashable {
     var rect: CGRect { CGRect(x: x, y: y, width: width, height: height) }
 }
 
+enum ContextMode: String, CaseIterable, Codable, Identifiable {
+    case wholeScreen
+    case point
+    case region
+    case freehandLoop
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .wholeScreen: return "Whole Screen"
+        case .point: return "Point"
+        case .region: return "Region"
+        case .freehandLoop: return "Freehand Loop"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .wholeScreen: return "rectangle.inset.filled"
+        case .point: return "cursorarrow"
+        case .region: return "rectangle.dashed"
+        case .freehandLoop: return "lasso"
+        }
+    }
+
+    var guidance: String {
+        switch self {
+        case .wholeScreen: return "Everything visible on this display"
+        case .point: return "The object at your last pointer position"
+        case .region: return "Only the box you draw"
+        case .freehandLoop: return "Only the area inside your loop"
+        }
+    }
+}
+
+struct NormalizedPoint: Codable, Hashable {
+    let x: Double
+    let y: Double
+
+    init(x: Double, y: Double) {
+        self.x = min(max(x, 0), 1)
+        self.y = min(max(y, 0), 1)
+    }
+}
+
 /// A stable, display-aware description of what the learner selected. Regions are
 /// stored relative to a display or window so they survive Retina scaling and moves.
 struct CaptureTarget: Codable, Hashable {
@@ -156,6 +202,34 @@ struct CaptureTarget: Codable, Hashable {
     var appName: String
     var windowTitle: String
     var anchor: SemanticAnchor?
+    /// Optional polygon normalized to the cropped region. Content outside it is
+    /// removed locally before the image can be sent.
+    var selectionPath: [NormalizedPoint]?
+    /// The learner's last pointer position normalized to the cropped region.
+    /// This remains stable while they move into Aster✱ to type a question.
+    var pointer: NormalizedPoint?
+
+    init(
+        kind: Kind,
+        displayID: UInt32,
+        region: ContextRegion,
+        windowID: UInt32?,
+        appName: String,
+        windowTitle: String,
+        anchor: SemanticAnchor?,
+        selectionPath: [NormalizedPoint]? = nil,
+        pointer: NormalizedPoint? = nil
+    ) {
+        self.kind = kind
+        self.displayID = displayID
+        self.region = region
+        self.windowID = windowID
+        self.appName = appName
+        self.windowTitle = windowTitle
+        self.anchor = anchor
+        self.selectionPath = selectionPath
+        self.pointer = pointer
+    }
 
     static func displayRegion(displayID: UInt32, region: ContextRegion) -> CaptureTarget {
         CaptureTarget(kind: .displayRegion, displayID: displayID, region: region, windowID: nil, appName: "", windowTitle: "", anchor: nil)

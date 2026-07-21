@@ -44,8 +44,13 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /own OpenAI API key is required/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS\.zip\?v=0\.3\.7/);
-  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.3\.7"/g) ?? []).length, 3);
+  assert.match(html, /Aster-macOS\.zip\?v=0\.4\.0/);
+  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.4\.0"/g) ?? []).length, 3);
+  assert.match(html, /LOCAL ONLY · NOTHING SENT/);
+  assert.match(html, /Whole Screen/);
+  assert.match(html, /Point/);
+  assert.match(html, /Region/);
+  assert.match(html, /Freehand Loop/);
   assert.match(html, /Screen &amp; System Audio Recording/);
   assert.match(html, /remove old Aster rows with −/);
   assert.match(html, /Request again/);
@@ -76,7 +81,7 @@ test("ships a key-required app archive, social card, and removes the starter pre
 
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(page, /Your screen becomes the/);
-  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.3\.7"/);
+  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.4\.0"/);
   assert.equal((page.match(/href=\{downloadHref\}/g) ?? []).length, 3);
   assert.match(page, /scene-switcher/);
   assert.doesNotMatch(`${page}\n${css}`, /budget-widget|budget-bar|budget-scale/i);
@@ -89,6 +94,10 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.doesNotMatch(`${readme}\n${macReadme}\n${demoScript}`, /Demo mode|without an API key|deterministic demo/i);
   assert.match(nativeViews, /Remove API key \/ Sign out/);
   assert.match(nativeViews, /Validate and save/);
+  assert.match(nativeViews, /SummonBarView/);
+  assert.match(nativeViews, /ForEach\(ContextMode\.allCases\)/);
+  assert.match(nativeViews, /LOCAL ONLY · NOTHING SENT/);
+  assert.doesNotMatch(nativeViews, /Point \/ select|Use current window/);
   assert.match(nativeViews, /switch model\.settingsPane/);
   assert.match(nativeViews, /General|Permissions|Learning|Account/);
   assert.match(asterApp, /NSToolbar/);
@@ -101,6 +110,8 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(overlay, /sharingType = \.readOnly/);
   assert.match(screenCapture, /captureDisplayExcludingAsterWindows/);
   assert.match(screenCapture, /window\.sharingType = \.none/);
+  assert.match(screenCapture, /target\.selectionPath/);
+  assert.match(screenCapture, /mask\.addClip\(\)/);
   assert.match(openAIClient, /"store": false/);
   await assert.rejects(access(new URL("app\/_sites-preview", root)));
 });

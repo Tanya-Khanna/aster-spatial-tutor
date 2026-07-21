@@ -2,7 +2,7 @@
 
 > **Your screen becomes the whiteboard.**
 
-Aster✱ is a native spatial tutor for macOS. Press **Option–Space**, select an equation, research figure, graph, circuit, code block, paragraph, homework problem, or educational anatomy diagram, and ask a question. Aster✱ diagnoses the misconception before explaining, teaches through synchronized voice and on-target drawings, checks an independent answer, and remembers the resulting mastery evidence for the next lesson.
+Aster✱ is a native spatial tutor for macOS. Press **Option–Space** or say **“Hey Aster”** and a slim, movable teaching bar follows you across apps and Spaces. Ask about the whole screen, point at an exact object, box a region, or draw a freehand loop. Aster✱ watches the chosen scope locally until you submit a voice or text question; only then does it send the minimum required visual context and your question. It diagnoses before explaining, teaches through synchronized voice and on-target drawings, checks an independent answer, and remembers the resulting mastery evidence for the next lesson.
 
 The animated **✱** is Aster✱’s physical presence: it lands beside the cursor, pulses while reading, stretches into each teaching mark, then collapses beside the concept as a clickable lesson bookmark. “Hey Aster” offers the same entry point as an explicit opt-in wake mode.
 
@@ -27,14 +27,14 @@ Aster✱ removes that translation layer. Its core unit is not an answer—it is 
 
 ## Product loop
 
-1. **Select** the exact context with a drag—or click for a cursor-centered region.
-2. **Follow** that region locally as the source changes; nothing is sent until the learner asks.
-3. **Diagnose** with one short choice before any explanation appears.
-4. **Teach** through staged narration, notebook insights, and precisely mapped annotations.
-5. **Fade** the scaffolding and ask for an independent prediction or transfer.
-6. **Assess** the learner’s reasoning against explicit success criteria.
-7. **Remember** demonstrated strengths, shaky areas, mastery, and the next teaching strategy across app launches.
-8. **Adapt** the next lesson or offer a learner-controlled Desmos/Manim demonstration.
+1. **Summon** the movable bar with **Option–Space** or the optional **“Hey Aster”** wake phrase.
+2. **Scope** the question with **Whole Screen** (default), **Point**, **Region**, or **Freehand Loop**.
+3. **Follow** that scope locally across the current display; nothing is sent until the learner asks.
+4. **Diagnose** with one short choice before any explanation appears.
+5. **Teach** through staged narration, notebook insights, and precisely mapped annotations.
+6. **Fade** the scaffolding and ask for an independent prediction or transfer.
+7. **Assess** the learner’s reasoning against explicit success criteria.
+8. **Remember and adapt** across launches, or offer a learner-controlled Desmos/Manim demonstration.
 
 ## Why it is different
 
@@ -51,7 +51,7 @@ Aster✱ removes that translation layer. Its core unit is not an answer—it is 
 ```text
 ⌥ Space + voice/text
         ↓
-Any-display region / native window selection + semantic cursor anchor
+Whole display / pointed object / boxed region / freehand loop
         ↓
 Local target recovery + optional recent-frame video buffer (zero API calls)
         ↓
@@ -73,7 +73,7 @@ GPT-5.6 assessment turn
 Persistent concept graph + evidence + spaced review
 ```
 
-Three strict schemas separate diagnosis, teaching, and assessment. A lesson contains one to four synchronized steps; every step has narration, a notebook insight, and no more than four normalized annotations. Coordinates from the cropped context are validated and mapped back into the selected screen region. If localization is uncertain, the model is instructed to use fewer marks and request a tighter selection.
+Three strict schemas separate diagnosis, teaching, and assessment. A lesson contains one to four synchronized steps; every step has narration, a notebook insight, and no more than four normalized annotations. Coordinates from the active scope are validated and mapped back onto the source. Freehand Loop masks everything outside the learner’s path locally before the request is created. If localization is uncertain, the model is instructed to use fewer marks and request a tighter scope.
 
 Learner memory is stored as evidence rather than a transcript: concept mastery, attempts, what the learner demonstrated, remaining shaky areas, and the next teaching strategy. The next diagnostic turn receives that compact profile so Aster✱ can truthfully say, for example, “You demonstrated softmax purpose; square-root scaling is still shaky.”
 
@@ -94,7 +94,7 @@ Codex session ID: <add public session ID>
 ## Efficient API use
 
 - macOS Speech Recognition and `AVSpeechSynthesizer` handle voice without an additional audio-model request.
-- Only the selected region is downsampled to a maximum width of 1600 px.
+- Only the active scope is downsampled to a maximum width of 1600 px; Region and Freehand Loop avoid sending the rest of the screen.
 - Diagnosis uses Terra with a 500-token cap; standard spatial lessons use Terra with a 1,400-token cap; answer assessment uses Luna with a 450-token cap.
 - Precision mode is explicit rather than automatic.
 - Settings shows per-session request and token usage, with direct links to OpenAI’s live usage and budget controls.
@@ -103,7 +103,7 @@ Codex session ID: <add public session ID>
 
 - No continuous or hidden API surveillance.
 - “Hey Aster” listening is off by default, visibly configurable, and uses macOS Speech Recognition only after the learner opts in.
-- Follow mode visibly refreshes only the learner-selected region every two seconds on-device; a screen image is sent only after the learner asks.
+- The visible bar follows Whole Screen, Point, Region, or Freehand Loop context on-device; a screen image is sent only after the learner submits a question.
 - Capture state is visible in the interface.
 - The API key is stored in macOS Keychain only after explicit validation and save, can be removed immediately from Settings, and is excluded from the repository.
 - Every Responses API request sets `store: false`; Aster✱ never bundles or logs the key.

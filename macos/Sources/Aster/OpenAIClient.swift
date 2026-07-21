@@ -49,6 +49,7 @@ final class OpenAIClient {
     ) async throws -> TutorResult<DiagnosticPlan> {
         let prompt = """
         Learner question: \(question)
+        Context mode: \(screen.target.windowTitle.isEmpty ? "Selected context" : screen.target.windowTitle)
 
         Recent notebook:
         \(recentContext.isEmpty ? "No current-session notes." : recentContext)
@@ -56,7 +57,7 @@ final class OpenAIClient {
         Persistent learner memory:
         \(learnerMemory)
 
-        The newest image is the exact context the learner selected. A warm orange cursor halo indicates the object they mean. If multiple timestamped frames are present, reason about what changed across the sequence; do not treat them as unrelated images.
+        The newest image is exactly the scope the learner chose. In Point mode, the warm orange halo is the object they mean. In Freehand Loop mode, everything outside the learner's loop has already been removed locally. If multiple timestamped frames are present, reason about what changed across the sequence; do not treat them as unrelated images.
         Before teaching, identify the visible object and ask ONE short diagnostic question with 2–3 concrete options that distinguish likely misconceptions. Do not explain or solve yet. Use priorConnection only when the stored evidence genuinely supports it; otherwise leave it empty. Use a stable lowercase conceptID such as function-horizontal-translation or attention-scaling.
         """
         return try await structuredRequest(
@@ -88,6 +89,7 @@ final class OpenAIClient {
         let model = precisionMode ? "gpt-5.6-sol" : "gpt-5.6-terra"
         let prompt = """
         Original question: \(originalQuestion)
+        Context mode: \(screen.target.windowTitle.isEmpty ? "Selected context" : screen.target.windowTitle)
         Visible object: \(diagnostic.observedObject)
         Learner selected: \(selectedDiagnosis.label)
         Diagnosed misconception: \(selectedDiagnosis.misconception)

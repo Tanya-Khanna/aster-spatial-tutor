@@ -11,7 +11,7 @@ final class TutorModel: ObservableObject {
     @Published var phase: TutorPhase = .ready
     @Published var query = ""
     @Published var messages: [ChatMessage] = [
-        ChatMessage(role: .aster, text: "Select the exact thing you are learning. I’ll diagnose first, then teach it where it lives.", kind: .message)
+        ChatMessage(role: .aster, text: "Ask about the whole screen, point to one thing, or narrow the view with a region or freehand loop. I’ll diagnose first, then teach it where it lives.", kind: .message)
     ]
     @Published private(set) var apiKey: String
     @Published var apiKeyDraft = ""
@@ -42,6 +42,7 @@ final class TutorModel: ObservableObject {
     }
     @Published var isFollowing = false
     @Published var isVideoMode = false
+    @Published var contextMode: ContextMode = .wholeScreen
     @Published var contextRegion: ContextRegion?
     @Published var contextTarget: CaptureTarget?
     @Published var anchorStatus = "Cursor-local context"
@@ -51,6 +52,7 @@ final class TutorModel: ObservableObject {
     @Published var learnerProfile: LearnerProfile
     @Published var lastAssessment: AssessmentResult?
     @Published var isPanelVisible = false
+    @Published var isPanelExpanded = false
     @Published var actionPermission: ActionPermission = ActionPermission(rawValue: UserDefaults.standard.string(forKey: "actionPermission") ?? "") ?? .askEveryTime {
         didSet { UserDefaults.standard.set(actionPermission.rawValue, forKey: "actionPermission") }
     }
@@ -67,6 +69,7 @@ final class TutorModel: ObservableObject {
 
     var onShowPanel: (() -> Void)?
     var onHidePanel: (() -> Void)?
+    var onPanelExpansionChanged: ((Bool) -> Void)?
     var onShowWelcome: (() -> Void)?
     var onShowSettings: ((SettingsPane) -> Void)?
 
@@ -88,7 +91,9 @@ final class TutorModel: ObservableObject {
     private var phaseBeforeListening: TutorPhase = .ready
     private var lessonAnchor: SemanticAnchor?
     private var resumeVideoAfterCheck = false
-    private var pendingWakeQuestion = false
+    private var lastExternalPointer = NSEvent.mouseLocation
+    private var sourceApplicationName = ""
+    private var consecutiveFrameChanges = 0
 
     private init() {
         let initialRelocationStatus = AppRelocationService.status()
@@ -187,13 +192,7 @@ final class TutorModel: ObservableObject {
             return
         }
         guard requireAPIKey() else { return }
-        if contextRegion == nil {
-            selectContext()
-            overlay.arriveBesideCursor()
-        } else {
-            overlay.arriveBesideCursor()
-            activate()
-        }
+        summon(startListening: false)
     }
 
     private func activateFromWakePhrase() {
@@ -202,15 +201,22 @@ final class TutorModel: ObservableObject {
             return
         }
         guard requireAPIKey() else { return }
-        pendingWakeQuestion = true
-        if contextRegion == nil {
-            selectContext()
-            overlay.arriveBesideCursor()
-        } else {
-            overlay.arriveBesideCursor()
-            activate()
-            if !isListening { toggleListening() }
+        summon(startListening: true)
+    }
+
+    private func summon(startListening: Bool) {
+        lastExternalPointer = NSEvent.mouseLocation
+        if !isPanelVisible {
+            sourceApplicationName = NSWorkspace.shared.frontmostApplication?.localizedName ?? ""
+            contextMode = .wholeScreen
+            isPanelExpanded = false
+            onPanelExpansionChanged?(false)
         }
+        configureLiveTarget()
+        startFollowing()
+        overlay.arriveBesideCursor()
+        activate()
+        if startListening, !isListening { toggleListening() }
     }
 
     private func reopenBookmarkedLesson() {
@@ -220,10 +226,31 @@ final class TutorModel: ObservableObject {
     }
 
     func closePanel() {
+        contextSelector.cancel()
+        stopFollowing()
         overlay.clear()
         voice.stopSpeaking()
+        voice.stopListening()
+        isListening = false
+        contextMode = .wholeScreen
+        contextRegion = nil
+        contextTarget = nil
+        capturedContext = nil
+        recentFrames = []
+        consecutiveFrameChanges = 0
+        diagnostic = nil
+        isVideoMode = false
+        phase = .ready
+        isPanelExpanded = false
+        onPanelExpansionChanged?(false)
         isPanelVisible = false
         onHidePanel?()
+    }
+
+    func setPanelExpanded(_ expanded: Bool) {
+        guard isPanelExpanded != expanded else { return }
+        isPanelExpanded = expanded
+        onPanelExpansionChanged?(expanded)
     }
 
     func clearLesson() {
@@ -433,47 +460,122 @@ final class TutorModel: ObservableObject {
         phase = isFollowing ? .following : .ready
     }
 
-    func selectContext() {
+    func updateExternalPointer(_ point: NSPoint) {
+        lastExternalPointer = point
+        if let frontmost = NSWorkspace.shared.frontmostApplication,
+           frontmost.bundleIdentifier != Bundle.main.bundleIdentifier {
+            sourceApplicationName = frontmost.localizedName ?? sourceApplicationName
+        }
+    }
+
+    func setContextMode(_ mode: ContextMode) {
+        guard isPanelVisible else { return }
         voice.stopSpeaking()
         overlay.clear()
-        onHidePanel?()
-        phase = .selectingContext
-        contextSelector.begin { [weak self] target in
-            guard let self else { return }
-            guard let target else {
-                self.phase = self.contextRegion == nil ? .ready : .following
-                self.activate()
-                if self.pendingWakeQuestion {
-                    self.pendingWakeQuestion = false
-                    if !self.isListening { self.toggleListening() }
+        contextSelector.cancel()
+        stopFollowing()
+        contextMode = mode
+        contextTarget = nil
+        contextRegion = nil
+        capturedContext = nil
+        recentFrames = []
+        consecutiveFrameChanges = 0
+        diagnostic = nil
+        lastAssessment = nil
+
+        switch mode {
+        case .wholeScreen, .point:
+            configureLiveTarget()
+            startFollowing()
+        case .region, .freehandLoop:
+            phase = .selectingContext
+            anchorStatus = mode == .region ? "Draw one box · local only" : "Draw one freehand loop · local only"
+            contextSelector.begin(mode: mode) { [weak self] selectedTarget in
+                guard let self else { return }
+                guard var selectedTarget else {
+                    self.contextMode = .wholeScreen
+                    self.configureLiveTarget()
+                    self.startFollowing()
+                    self.activate()
+                    return
                 }
-                return
-            }
-            self.contextTarget = target
-            self.contextRegion = target.region
-            do {
-                self.capturedContext = try self.capture.capture(target: target)
-                if let screen = self.capturedContext, let anchor = self.anchorTracker.anchor(in: screen) {
-                    var anchoredTarget = target
-                    anchoredTarget.anchor = anchor
-                    self.contextTarget = anchoredTarget
-                    self.anchorStatus = "Pointing at “\(anchor.label)” · \(Int(anchor.confidence * 100))% local confidence"
-                }
-                self.recentFrames = self.capturedContext.map { [$0] } ?? []
-                if self.contextTarget?.anchor == nil {
-                    self.anchorStatus = "Diagram focus locked at the cursor"
-                }
-                self.startFollowing()
-                self.messages.append(ChatMessage(
-                    role: .aster,
-                    text: "Context locked. I’ll refresh this region locally and only send it when you ask a question.",
-                    kind: .memory
-                ))
-                self.activate()
-            } catch {
-                self.report(error)
+                selectedTarget.appName = self.sourceApplicationName
+                selectedTarget.windowTitle = mode.label
+                selectedTarget.pointer = self.pointer(in: selectedTarget.region, on: selectedTarget.displayID)
+                self.lockLocalTarget(selectedTarget)
                 self.activate()
             }
+        }
+    }
+
+    /// Kept as the Region shortcut for menu and legacy call sites.
+    func selectContext() {
+        setContextMode(.region)
+    }
+
+    private func configureLiveTarget() {
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(lastExternalPointer) }) ?? NSScreen.main,
+              let displayID = ScreenCaptureService.displayID(for: screen) else { return }
+        let normalizedX = min(max((lastExternalPointer.x - screen.frame.minX) / screen.frame.width, 0), 1)
+        let normalizedY = min(max((screen.frame.maxY - lastExternalPointer.y) / screen.frame.height, 0), 1)
+        let region: ContextRegion
+        if contextMode == .point {
+            let width = min(0.44, 720 / screen.frame.width)
+            let height = min(0.42, 480 / screen.frame.height)
+            region = ContextRegion(
+                x: min(max(normalizedX - width / 2, 0), 1 - width),
+                y: min(max(normalizedY - height / 2, 0), 1 - height),
+                width: width,
+                height: height
+            )
+        } else {
+            region = .fullScreen
+        }
+        let pointer = NormalizedPoint(
+            x: (normalizedX - region.x) / region.width,
+            y: (normalizedY - region.y) / region.height
+        )
+        contextTarget = CaptureTarget(
+            kind: .displayRegion,
+            displayID: displayID,
+            region: region,
+            windowID: nil,
+            appName: sourceApplicationName,
+            windowTitle: contextMode.label,
+            anchor: contextTarget?.anchor,
+            pointer: pointer
+        )
+        contextRegion = region
+        anchorStatus = contextMode == .point
+            ? "Point locked at your last off-bar cursor position · local only"
+            : "Watching this display locally · nothing sent"
+    }
+
+    private func pointer(in region: ContextRegion, on displayID: UInt32) -> NormalizedPoint? {
+        guard let screen = ScreenCaptureService.screen(for: CGDirectDisplayID(displayID)) else { return nil }
+        let x = (lastExternalPointer.x - screen.frame.minX) / screen.frame.width
+        let y = (screen.frame.maxY - lastExternalPointer.y) / screen.frame.height
+        guard region.rect.contains(CGPoint(x: x, y: y)) else { return nil }
+        return NormalizedPoint(x: (x - region.x) / region.width, y: (y - region.y) / region.height)
+    }
+
+    private func lockLocalTarget(_ target: CaptureTarget) {
+        contextTarget = target
+        contextRegion = target.region
+        do {
+            capturedContext = try capture.capture(target: target)
+            recentFrames = capturedContext.map { [$0] } ?? []
+            anchorStatus = contextMode == .freehandLoop
+                ? "Freehand loop locked · outside content removed locally"
+                : "Region locked · only this box will be sent"
+            startFollowing()
+            messages.append(ChatMessage(
+                role: .aster,
+                text: "\(contextMode.label) context locked locally. Nothing is sent until you ask.",
+                kind: .memory
+            ))
+        } catch {
+            report(error)
         }
     }
 
@@ -523,7 +625,7 @@ final class TutorModel: ObservableObject {
         followTimer?.invalidate()
         isFollowing = true
         phase = .following
-        followTimer = Timer.scheduledTimer(withTimeInterval: isVideoMode ? 0.75 : 2.0, repeats: true) { [weak self] _ in
+        followTimer = Timer.scheduledTimer(withTimeInterval: isVideoMode ? 0.75 : 1.5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshContextSilently() }
         }
     }
@@ -536,13 +638,23 @@ final class TutorModel: ObservableObject {
     }
 
     private func refreshContextSilently() {
+        if contextMode == .wholeScreen || contextMode == .point {
+            configureLiveTarget()
+        }
         guard let target = contextTarget else { return }
-        let video = isVideoMode ? browserVideo.snapshot(appName: target.appName) : nil
+        let detectedVideo = browserVideo.snapshot(appName: target.appName)
+        let wasVideoMode = isVideoMode
+        if detectedVideo != nil { isVideoMode = true }
+        let video = isVideoMode ? detectedVideo : nil
         if let updated = try? capture.capture(target: target, videoContext: video) {
             capturedContext = updated
             contextRegion = updated.contextRegion
             var recoveredTarget = updated.target
-            if let anchor = target.anchor {
+            if contextMode == .point, recoveredTarget.anchor == nil,
+               let anchor = anchorTracker.anchor(in: updated) {
+                recoveredTarget.anchor = anchor
+                anchorStatus = "Pointing at “\(anchor.label)” · local confidence \(Int(anchor.confidence * 100))%"
+            } else if let anchor = target.anchor {
                 if let recovered = anchorTracker.recover(anchor, in: updated) {
                     recoveredTarget.anchor = recovered
                     anchorStatus = "Tracking “\(recovered.label)” · recovered after movement"
@@ -552,12 +664,21 @@ final class TutorModel: ObservableObject {
                 }
             }
             contextTarget = recoveredTarget
-            if isVideoMode, recentFrames.last?.jpegData != updated.jpegData {
+            if let previous = recentFrames.last {
+                if previous.jpegData != updated.jpegData {
+                    consecutiveFrameChanges += 1
+                } else {
+                    consecutiveFrameChanges = 0
+                }
+            }
+            if consecutiveFrameChanges >= 2 { isVideoMode = true }
+            if recentFrames.last?.jpegData != updated.jpegData {
                 recentFrames.append(updated)
                 recentFrames = Array(recentFrames.suffix(4))
-            } else if !isVideoMode {
+            } else if recentFrames.isEmpty {
                 recentFrames = [updated]
             }
+            if !wasVideoMode, isVideoMode { startFollowing() }
         }
     }
 
@@ -582,6 +703,7 @@ final class TutorModel: ObservableObject {
         let wasAwaitingUnderstanding = phase == .awaitingUnderstanding || (isListening && phaseBeforeListening == .awaitingUnderstanding)
         if isListening { toggleListening() }
         query = ""
+        setPanelExpanded(true)
 
         if wasAwaitingUnderstanding, let lesson = lastLesson {
             messages.append(ChatMessage(role: .learner, text: answer, kind: .message))
@@ -723,14 +845,18 @@ final class TutorModel: ObservableObject {
 
     private func beginDiagnosis(for question: String) async {
         guard requireAPIKey() else { return }
+        if contextMode == .wholeScreen || contextMode == .point {
+            configureLiveTarget()
+        }
         pendingQuestion = question
         lastAssessment = nil
         phase = .seeing
         overlay.showReadingState()
         do {
-            if isVideoMode {
-                let appName = contextTarget?.appName ?? ""
-                if let state = browserVideo.snapshot(appName: appName), !state.isPaused {
+            let appName = contextTarget?.appName ?? sourceApplicationName
+            if let state = browserVideo.snapshot(appName: appName) {
+                isVideoMode = true
+                if !state.isPaused {
                     resumeVideoAfterCheck = browserVideo.pause(appName: appName)
                     if resumeVideoAfterCheck {
                         messages.append(ChatMessage(role: .aster, text: "Paused at \(Self.timestamp(state.currentTime)) so we can inspect this teaching moment.", kind: .tool))
@@ -748,6 +874,18 @@ final class TutorModel: ObservableObject {
                 throw CaptureError.captureFailed
             }
             capturedContext = screen
+            if let anchor = anchorTracker.anchor(in: screen) {
+                var anchoredTarget = screen.target
+                anchoredTarget.anchor = anchor
+                contextTarget = anchoredTarget
+                anchorStatus = "\(contextMode.label) · “\(anchor.label)” · local confidence \(Int(anchor.confidence * 100))%"
+            }
+            if isVideoMode {
+                recentFrames.append(screen)
+                recentFrames = Array(recentFrames.suffix(4))
+            } else {
+                recentFrames = [screen]
+            }
             phase = .diagnosing
             let result = try await client.diagnose(
                 apiKey: apiKey,

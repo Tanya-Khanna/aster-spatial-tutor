@@ -276,10 +276,10 @@ struct WelcomeView: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(3)
-                Text("Press Option–Space, point at the exact equation, diagram, paragraph, graph, or code block, and ask. Aster✱ diagnoses first, teaches in place, checks understanding, and remembers what needs work.")
+                Text("Press Option–Space and Aster✱ appears as a slim bar above your work. Ask about the whole screen, point to one thing, draw a region, or loop it freehand—then Aster✱ diagnoses first and teaches in place.")
                     .font(.system(size: isWide ? 18 : 16)).foregroundStyle(asterSecondary).lineSpacing(isWide ? 6 : 4).frame(maxWidth: isWide ? 560 : 440, alignment: .leading)
                 HStack(spacing: 14) {
-                    feature("viewfinder", "See", "Exact selected context")
+                    feature("viewfinder", "See", "Whole, point, box, or loop")
                     feature("pencil.and.outline", "Teach", "Voice + spatial marks")
                     feature("brain.head.profile", "Adapt", "Local mastery memory")
                 }
@@ -398,7 +398,7 @@ struct WelcomeView: View {
                 .font(.system(size: 16)).foregroundStyle(asterSecondary).frame(maxWidth: 680, alignment: .leading)
             AsterCard {
                 VStack(spacing: 0) {
-                    PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen & System Audio Recording", detail: "Required to capture only the region or window you select.", state: model.screenPermission, required: true) {
+                    PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen & System Audio Recording", detail: "Required for the whole-screen, point, region, and freehand-loop views you explicitly choose.", state: model.screenPermission, required: true) {
                         model.requestScreenPermission()
                     }
                     Divider().padding(.vertical, 4)
@@ -437,7 +437,7 @@ struct WelcomeView: View {
         VStack(spacing: 26) {
             ZStack { Circle().fill(asterSignal.opacity(0.12)).frame(width: 126, height: 126); AsterMark(size: 66) }
             Text("Aster✱ is ready.").font(.system(size: 46, weight: .medium, design: .rounded)).tracking(-1.6)
-            Text("Press Option–Space anywhere, drag over what you’re learning, then ask by text or voice. Aster✱ stays above your work while it teaches.")
+            Text("Press Option–Space anywhere. Aster✱ stays above your work with Whole Screen, Point, Region, and Freehand Loop modes. Ask by text or voice; nothing is sent until you do.")
                 .font(.system(size: 16)).foregroundStyle(asterSecondary).multilineTextAlignment(.center).lineSpacing(4).frame(maxWidth: 620)
             HStack(spacing: 10) {
                 readiness("OpenAI", model.isAuthenticated)
@@ -477,17 +477,15 @@ struct WelcomeView: View {
                 Text("READY WHEN YOU ARE").font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1.5).foregroundStyle(asterSignal)
                 Text("Point to the question.\nKeep your place.")
                     .font(.system(size: isWide ? 64 : 52, weight: .medium, design: .rounded)).tracking(-2)
-                Text("Aster✱ follows the exact context you select, diagnoses what is unclear, and teaches with synchronized voice and drawing.")
+                Text("Aster✱ opens as a movable bar above your work, watches the view you choose locally, and teaches with synchronized voice and drawing only after you ask.")
                     .font(.system(size: isWide ? 19 : 17)).foregroundStyle(asterSecondary).lineSpacing(5).frame(maxWidth: isWide ? 580 : 480, alignment: .leading)
                 Button { model.activateFromHotKey() } label: {
-                    HStack(spacing: 11) { Image(systemName: "viewfinder"); Text("Point to something"); Spacer(); Text("⌥ SPACE").font(.system(size: 10, weight: .bold, design: .monospaced)).opacity(0.72) }
+                    HStack(spacing: 11) { Image(systemName: "sparkle.magnifyingglass"); Text("Summon Aster✱"); Spacer(); Text("⌥ SPACE").font(.system(size: 10, weight: .bold, design: .monospaced)).opacity(0.72) }
                         .padding(.horizontal, 18).frame(width: 280, height: 52)
                 }
                 .buttonStyle(.borderedProminent).tint(asterSignal).controlSize(.large)
-                HStack(spacing: 9) {
-                    Button { model.selectCurrentWindow() } label: { Label("Use current window", systemImage: "macwindow") }
-                    Button { model.showSettings() } label: { Label("Settings", systemImage: "gearshape") }
-                }.buttonStyle(.bordered)
+                Button { model.showSettings() } label: { Label("Settings", systemImage: "gearshape") }
+                    .buttonStyle(.bordered)
             }
             .frame(width: isWide ? 620 : nil, alignment: .leading)
             VStack(spacing: 14) {
@@ -498,7 +496,7 @@ struct WelcomeView: View {
                 AsterCard {
                     VStack(alignment: .leading, spacing: 18) {
                         HStack { Text("THE LEARNING LOOP").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(asterSignal); Spacer(); ConnectionPill(status: model.apiKeyStatus) }
-                        ForEach(Array([("1", "See", "The exact thing you selected"), ("2", "Diagnose", "One question before explaining"), ("3", "Teach", "Voice, drawing, and notebook together"), ("4", "Check", "A prediction before moving on")]), id: \.0) { item in
+                        ForEach(Array([("1", "See", "The whole screen, point, box, or loop"), ("2", "Diagnose", "One question before explaining"), ("3", "Teach", "Voice, drawing, and notebook together"), ("4", "Check", "A prediction before moving on")]), id: \.0) { item in
                             HStack(spacing: 13) { Text(item.0).font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(asterSignal).frame(width: 24, height: 24).background(asterSignal.opacity(0.1), in: Circle()); VStack(alignment: .leading, spacing: 2) { Text(item.1).font(.system(size: 13, weight: .semibold)); Text(item.2).font(.system(size: 11)).foregroundStyle(asterSecondary) }; Spacer() }
                         }
                     }
@@ -665,52 +663,227 @@ private struct APIKeyCard: View {
 
 struct TutorPanelView: View {
     @ObservedObject var model: TutorModel
-    @State private var transcriptExpanded = true
+
+    var body: some View {
+        SummonBarView(model: model)
+    }
+}
+
+private struct SummonBarView: View {
+    @ObservedObject var model: TutorModel
     @State private var surface = "Transcript"
     @State private var pulse = false
 
     var body: some View {
-        ZStack {
-            asterCanvas.opacity(0.98).ignoresSafeArea()
-            VStack(spacing: 0) {
-                panelHeader
-                phaseRail
-                if !model.isAuthenticated {
-                    accountRequired
-                } else {
-                    contextBar
-                    if case .error(let message) = model.phase { errorCard(message) }
-                    transcript
-                    if let diagnostic = model.diagnostic { DiagnosticChoiceCard(diagnostic: diagnostic) { model.chooseDiagnostic($0) }.padding(.horizontal, 14).padding(.bottom, 8) }
-                    composer
-                }
+        VStack(spacing: 0) {
+            header
+            composer
+            if model.isPanelExpanded {
+                Divider().opacity(0.6)
+                drawer.transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .frame(width: 420, height: 720)
-    }
-
-    private var panelHeader: some View {
-        HStack(spacing: 11) {
-            ZStack { AsterMark(size: 30); if isActive { Circle().stroke(asterSignal.opacity(0.35), lineWidth: 2).frame(width: 41, height: 41).scaleEffect(pulse ? 1.18 : 0.88).opacity(pulse ? 0 : 1).animation(.easeOut(duration: 1.1).repeatForever(autoreverses: false), value: pulse) } }
-            VStack(alignment: .leading, spacing: 2) { Text("Aster✱").font(.system(size: 15, weight: .semibold, design: .rounded)); Text(model.phase.label).font(.system(size: 10, weight: .medium)).foregroundStyle(asterSecondary).lineLimit(1) }
-            Spacer()
-            Button { model.showSettings() } label: { Image(systemName: "gearshape") }.help("Settings")
-            Button { model.closePanel() } label: { Image(systemName: "xmark") }.help("Close")
-        }
-        .buttonStyle(.plain).padding(.horizontal, 17).padding(.vertical, 14).background(.ultraThinMaterial)
+        .background(.ultraThickMaterial)
+        .background(asterCanvas.opacity(0.84))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(asterLine.opacity(0.75), lineWidth: 1))
+        .shadow(color: .black.opacity(0.24), radius: 26, y: 12)
+        .padding(8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .animation(.spring(response: 0.42, dampingFraction: 0.88), value: model.isPanelExpanded)
         .onAppear { pulse = true }
     }
 
-    private var isActive: Bool { model.phase != .ready && model.phase != .following }
+    private var header: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(asterSecondary.opacity(0.65))
+                .help("Drag the bar to move Aster✱")
+            ZStack {
+                AsterMark(size: 27)
+                if model.phase != .ready && model.phase != .following {
+                    Circle().stroke(asterSignal.opacity(0.32), lineWidth: 1.5)
+                        .frame(width: 38, height: 38)
+                        .scaleEffect(pulse ? 1.16 : 0.88)
+                        .opacity(pulse ? 0 : 1)
+                        .animation(.easeOut(duration: 1.1).repeatForever(autoreverses: false), value: pulse)
+                }
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Aster✱").font(.system(size: 14, weight: .semibold, design: .rounded))
+                HStack(spacing: 5) {
+                    Circle().fill(model.isFollowing ? asterMint : asterSecondary).frame(width: 6, height: 6)
+                    Text(privacyStatus)
+                }
+                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .foregroundStyle(privacyStatus.hasPrefix("LOCAL") ? asterSecondary : asterSignal)
+            }
+
+            HStack(spacing: 5) {
+                ForEach(ContextMode.allCases) { mode in
+                    Button { model.setContextMode(mode) } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: mode.systemImage)
+                            Text(mode.label)
+                        }
+                        .font(.system(size: 10, weight: model.contextMode == mode ? .semibold : .medium))
+                        .foregroundStyle(model.contextMode == mode ? Color.white : asterInk)
+                        .padding(.horizontal, 10).padding(.vertical, 7)
+                        .background(model.contextMode == mode ? asterSignal : asterSurface.opacity(0.82), in: Capsule())
+                        .overlay(Capsule().stroke(model.contextMode == mode ? Color.clear : asterLine.opacity(0.7), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .help(mode.guidance)
+                }
+            }
+
+            Spacer(minLength: 8)
+            if model.isVideoMode {
+                Label("LIVE FRAMES", systemImage: "play.rectangle.fill")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundStyle(asterSignal)
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background(asterSignal.opacity(0.10), in: Capsule())
+            }
+            Button { model.showSettings() } label: { Image(systemName: "gearshape") }.help("Settings")
+            Button { model.setPanelExpanded(!model.isPanelExpanded) } label: {
+                Image(systemName: model.isPanelExpanded ? "chevron.up" : "chevron.down")
+            }.help(model.isPanelExpanded ? "Collapse lesson" : "Open transcript and lesson")
+            Button { model.closePanel() } label: { Image(systemName: "xmark") }.help("Close Aster✱")
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 15).padding(.top, 10).padding(.bottom, 7)
+    }
+
+    private var composer: some View {
+        HStack(spacing: 10) {
+            Button { model.toggleListening() } label: {
+                Image(systemName: model.isListening ? "stop.fill" : "waveform")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(model.isListening ? Color.red : asterSignal)
+                    .frame(width: 36, height: 36)
+                    .background(model.isListening ? Color.red.opacity(0.12) : asterSignal.opacity(0.10), in: Circle())
+            }
+            TextField(composerPlaceholder, text: $model.query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13, weight: .medium))
+                .onSubmit { model.submit() }
+            Text(model.contextMode.guidance)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(asterSecondary)
+                .lineLimit(1)
+            Button { model.submit() } label: {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                    .frame(width: 31, height: 31).background(asterSignal, in: Circle())
+            }
+            .disabled(model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.contextTarget == nil)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(asterSurface.opacity(0.88), in: RoundedRectangle(cornerRadius: 15))
+        .overlay(RoundedRectangle(cornerRadius: 15).stroke(asterLine.opacity(0.75), lineWidth: 1))
+        .padding(.horizontal, 15).padding(.bottom, 10)
+    }
+
+    private var drawer: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                phaseRail
+                Spacer()
+                Text(model.anchorStatus).lineLimit(1)
+                    .font(.system(size: 9, weight: .medium, design: .monospaced)).foregroundStyle(asterSecondary)
+                Picker("Surface", selection: $surface) {
+                    Text("Transcript").tag("Transcript")
+                    Text("Notebook").tag("Notebook")
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 188)
+                Image(systemName: "tortoise").foregroundStyle(asterSecondary)
+                Slider(value: $model.narrationRate, in: 0.34...0.62).frame(width: 120)
+                Image(systemName: "hare").foregroundStyle(asterSecondary)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(asterSurface.opacity(0.34))
+
+            if case .error(let message) = model.phase {
+                errorCard(message).padding(.horizontal, 14).padding(.top, 10)
+            }
+
+            HStack(alignment: .top, spacing: 14) {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 9) {
+                            ForEach(visibleMessages) { message in MessageBubble(message: message).id(message.id) }
+                        }
+                        .padding(.bottom, 12)
+                    }
+                    .onChange(of: model.messages.count) { _ in
+                        if let id = visibleMessages.last?.id { withAnimation { proxy.scrollTo(id, anchor: .bottom) } }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    if let diagnostic = model.diagnostic {
+                        DiagnosticChoiceCard(diagnostic: diagnostic) { model.chooseDiagnostic($0) }
+                    }
+                    teachingControls
+                    if let lesson = model.lastLesson, lesson.toolSuggestion != "none" {
+                        Button { model.runSuggestedTool() } label: {
+                            HStack {
+                                Image(systemName: lesson.toolSuggestion == "desmos" ? "function" : "play.rectangle")
+                                Text(lesson.toolSuggestion == "desmos" ? "Open Desmos sandbox" : "Animate with Manim")
+                                Spacer()
+                                Text("Preview →").foregroundStyle(asterSignal)
+                            }
+                        }
+                        .buttonStyle(.plain).font(.system(size: 10, weight: .semibold))
+                        .padding(10).background(asterSignal.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(width: 330, alignment: .topLeading)
+            }
+            .padding(14)
+        }
+    }
+
+    private var privacyStatus: String {
+        switch model.phase {
+        case .ready, .following, .selectingContext, .listening: return "LOCAL ONLY · NOTHING SENT"
+        default: return "SENT FOR THIS QUESTION"
+        }
+    }
+
+    private var composerPlaceholder: String {
+        if model.phase == .awaitingUnderstanding { return "Answer Aster✱’s understanding check…" }
+        switch model.contextMode {
+        case .wholeScreen: return "Ask anything about what’s visible…"
+        case .point: return "Point at it, then ask…"
+        case .region: return "Ask about the boxed region…"
+        case .freehandLoop: return "Ask about what you looped…"
+        }
+    }
+
+    private var visibleMessages: [ChatMessage] {
+        surface == "Notebook"
+            ? model.messages.filter { [.insight, .check, .assessment, .memory].contains($0.kind) }
+            : model.messages
+    }
 
     private var phaseRail: some View {
         HStack(spacing: 5) {
             ForEach([("See", 0), ("Diagnose", 1), ("Teach", 2), ("Check", 3)], id: \.0) { item in
-                HStack(spacing: 5) { Circle().fill(phaseIndex >= item.1 ? asterSignal : asterLine).frame(width: 6, height: 6); Text(item.0) }
-                    .font(.system(size: 8, weight: phaseIndex == item.1 ? .bold : .medium, design: .monospaced)).foregroundStyle(phaseIndex == item.1 ? asterInk : asterSecondary)
-                if item.1 < 3 { Rectangle().fill(asterLine).frame(height: 1) }
+                HStack(spacing: 5) {
+                    Circle().fill(phaseIndex >= item.1 ? asterSignal : asterLine).frame(width: 6, height: 6)
+                    Text(item.0)
+                }
+                .font(.system(size: 8, weight: phaseIndex == item.1 ? .bold : .medium, design: .monospaced))
+                .foregroundStyle(phaseIndex == item.1 ? asterInk : asterSecondary)
+                if item.1 < 3 { Rectangle().fill(asterLine).frame(width: 20, height: 1) }
             }
-        }.padding(.horizontal, 16).padding(.vertical, 9).background(asterSurface.opacity(0.45))
+        }
     }
 
     private var phaseIndex: Int {
@@ -723,90 +896,47 @@ struct TutorPanelView: View {
         }
     }
 
-    private var accountRequired: some View {
-        VStack(spacing: 18) {
-            Spacer()
-            ZStack { Circle().fill(asterSignal.opacity(0.1)).frame(width: 92, height: 92); Image(systemName: "key.horizontal.fill").font(.system(size: 32)).foregroundStyle(asterSignal) }
-            Text("Connect OpenAI to begin").font(.system(size: 22, weight: .semibold, design: .rounded))
-            Text("Aster✱ does not use canned lessons. Add and validate your API key before selecting learning context.").font(.system(size: 13)).foregroundStyle(asterSecondary).multilineTextAlignment(.center).lineSpacing(3).frame(maxWidth: 300)
-            Button("Open setup") { model.onShowWelcome?() }.buttonStyle(.borderedProminent).tint(asterSignal)
-            Spacer()
-        }.frame(maxWidth: .infinity)
-    }
-
-    private var contextBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Button { model.selectContext() } label: { Label(model.contextRegion == nil ? "Point / select" : "Reselect", systemImage: "viewfinder") }
-                Button { model.selectCurrentWindow() } label: { Label("Window", systemImage: "macwindow") }
-                Button { model.toggleFollowing() } label: { Image(systemName: model.isFollowing ? "dot.radiowaves.left.and.right" : "pause.circle") }.help(model.isFollowing ? "Following locally" : "Resume following")
-                Button { model.toggleVideoMode() } label: { Image(systemName: model.isVideoMode ? "play.rectangle.fill" : "play.rectangle") }.help("Recent-frame video tutoring")
-                Spacer()
-            }
-            HStack(spacing: 6) { Circle().fill(model.isFollowing ? asterMint : asterSecondary).frame(width: 6, height: 6); Text(model.anchorStatus).lineLimit(1); Spacer(); Text(model.isVideoMode ? "4 FRAMES" : "LOCAL") }
-                .font(.system(size: 8, weight: .medium, design: .monospaced)).foregroundStyle(asterSecondary)
-        }
-        .buttonStyle(.plain).font(.system(size: 10, weight: .semibold)).padding(.horizontal, 15).padding(.vertical, 10).background(asterSurface.opacity(0.34))
-    }
-
-    private var transcript: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Picker("Surface", selection: $surface) { Text("Transcript").tag("Transcript"); Text("Notebook").tag("Notebook") }.pickerStyle(.segmented).labelsHidden().frame(width: 190)
-                Spacer()
-                Button { transcriptExpanded.toggle() } label: { Image(systemName: transcriptExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical") }.buttonStyle(.plain).help("Collapse transcript")
-            }.padding(.horizontal, 15).padding(.vertical, 9)
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 11) {
-                        ForEach(visibleMessages) { message in MessageBubble(message: message).id(message.id) }
-                    }.padding(.horizontal, 15).padding(.bottom, 12)
-                }
-                .onChange(of: model.messages.count) { _ in if let id = visibleMessages.last?.id { withAnimation { proxy.scrollTo(id, anchor: .bottom) } } }
-            }
-        }.frame(maxHeight: .infinity)
-    }
-
-    private var visibleMessages: [ChatMessage] {
-        let source = surface == "Notebook" ? model.messages.filter { [.insight, .check, .assessment, .memory].contains($0.kind) } : model.messages
-        return transcriptExpanded ? source : Array(source.suffix(3))
-    }
-
     private func errorCard(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 5) { Text("Aster✱ needs attention").font(.system(size: 11, weight: .semibold)); Text(message).font(.system(size: 10)).foregroundStyle(asterSecondary); HStack { if message.localizedCaseInsensitiveContains("Screen & System Audio Recording") { Button("Fix permission") { model.showSettings(.permissions) } } else if !model.isAuthenticated { Button("Open setup") { model.onShowWelcome?() } }; Button("Dismiss") { model.recoverFromError() } }.buttonStyle(.link) }
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Aster✱ needs attention").font(.system(size: 11, weight: .semibold))
+                Text(message).font(.system(size: 10)).foregroundStyle(asterSecondary)
+                HStack {
+                    if message.localizedCaseInsensitiveContains("Screen & System Audio Recording") {
+                        Button("Fix permission") { model.showSettings(.permissions) }
+                    }
+                    Button("Dismiss") { model.recoverFromError() }
+                }.buttonStyle(.link)
+            }
             Spacer()
-        }.padding(12).background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 13)).padding(.horizontal, 14).padding(.top, 10)
-    }
-
-    private var composer: some View {
-        VStack(spacing: 9) {
-            if let lesson = model.lastLesson, lesson.toolSuggestion != "none" {
-                Button { model.runSuggestedTool() } label: { HStack { Image(systemName: lesson.toolSuggestion == "desmos" ? "function" : "play.rectangle"); Text(lesson.toolSuggestion == "desmos" ? "Show in Desmos sandbox" : "Animate with Manim"); Spacer(); Text("Preview →").font(.system(size: 10, weight: .bold)).foregroundStyle(asterSignal) }.contentShape(Rectangle()) }
-                    .buttonStyle(.plain).font(.system(size: 11, weight: .semibold)).padding(10).background(asterSignal.opacity(0.08), in: RoundedRectangle(cornerRadius: 11))
-            }
-            teachingControls
-            HStack(spacing: 8) {
-                Button { model.toggleListening() } label: { Image(systemName: model.isListening ? "stop.fill" : "waveform").frame(width: 34, height: 34).background(model.isListening ? Color.red.opacity(0.14) : asterSurface, in: Circle()) }
-                TextField(model.phase == .awaitingUnderstanding ? "Answer the understanding check…" : "Ask about the selected context…", text: $model.query, axis: .vertical).textFieldStyle(.plain).font(.system(size: 13)).onSubmit { model.submit() }
-                Button { model.submit() } label: { Image(systemName: "arrow.up").font(.system(size: 12, weight: .bold)).foregroundStyle(.white).frame(width: 30, height: 30).background(asterSignal, in: Circle()) }.disabled(model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .buttonStyle(.plain).padding(8).background(asterSurface, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).stroke(asterLine.opacity(0.7), lineWidth: 1))
-            HStack(spacing: 8) { Image(systemName: "tortoise"); Slider(value: $model.narrationRate, in: 0.34...0.62); Image(systemName: "hare"); Text("Narration").font(.system(size: 9, weight: .medium)) }.foregroundStyle(asterSecondary)
-            HStack { Text("Selected context is sent only after you ask"); Spacer(); Text("⌥ SPACE") }.font(.system(size: 8, weight: .medium, design: .monospaced)).foregroundStyle(asterSecondary)
-        }.padding(13).background(.ultraThinMaterial)
+        }
+        .padding(10).background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder private var teachingControls: some View {
         if model.phase == .teaching, let lesson = model.lastLesson {
-            HStack { Button { model.previousStep() } label: { Image(systemName: "chevron.left") }.disabled(model.lessonStepIndex == 0); Text("Step \(model.lessonStepIndex + 1) of \(lesson.steps.count)"); Button { model.replayCurrentStep() } label: { Label("Replay", systemImage: "arrow.counterclockwise") }; Spacer(); Button("Next →") { model.nextStep() } }.buttonStyle(.plain).font(.system(size: 10, weight: .semibold)).foregroundStyle(asterSecondary)
+            HStack {
+                Button { model.previousStep() } label: { Image(systemName: "chevron.left") }.disabled(model.lessonStepIndex == 0)
+                Text("Step \(model.lessonStepIndex + 1) of \(lesson.steps.count)")
+                Button { model.replayCurrentStep() } label: { Label("Replay", systemImage: "arrow.counterclockwise") }
+                Spacer()
+                Button("Next →") { model.nextStep() }
+            }
+            .buttonStyle(.plain).font(.system(size: 10, weight: .semibold)).foregroundStyle(asterSecondary)
         }
         if model.phase == .awaitingUnderstanding {
-            HStack(spacing: 7) { Button("Simpler") { model.requestReteach("more simply") }; Button("Follow-up") { model.askFollowUpInstead() }; Button("Challenge me") { model.increaseDifficulty() } }.buttonStyle(.bordered).controlSize(.small)
+            HStack(spacing: 7) {
+                Button("Simpler") { model.requestReteach("more simply") }
+                Button("Follow-up") { model.askFollowUpInstead() }
+                Button("Challenge me") { model.increaseDifficulty() }
+            }.buttonStyle(.bordered).controlSize(.small)
         }
         if let assessment = model.lastAssessment, !assessment.correct {
-            HStack(spacing: 7) { Button("Explain more simply") { model.requestReteach("more simply") }; Button("Use an analogy") { model.requestReteach("with a concrete analogy") } }.buttonStyle(.bordered).controlSize(.small)
+            HStack(spacing: 7) {
+                Button("Explain more simply") { model.requestReteach("more simply") }
+                Button("Use an analogy") { model.requestReteach("with a concrete analogy") }
+            }.buttonStyle(.bordered).controlSize(.small)
         }
     }
 }
@@ -905,7 +1035,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 22) {
                 settingsSection("SCREEN", "Required only for the context you choose.") {
                     VStack(spacing: 14) {
-                        PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen & System Audio Recording", detail: "Required for selected-region teaching.", state: model.screenPermission, required: true) {
+                        PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen & System Audio Recording", detail: "Required for Whole Screen, Point, Region, and Freehand Loop context.", state: model.screenPermission, required: true) {
                             model.requestScreenPermission()
                         }
                         if model.screenPermission == .denied { ScreenPermissionRecovery(model: model) }

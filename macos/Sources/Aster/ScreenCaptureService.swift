@@ -109,12 +109,30 @@ final class ScreenCaptureService {
 
         image.lockFocus()
         NSGraphicsContext.current?.imageInterpolation = .high
-        NSImage(cgImage: source, size: targetSize).draw(in: NSRect(origin: .zero, size: targetSize))
+        let imageRect = NSRect(origin: .zero, size: targetSize)
+        NSColor.windowBackgroundColor.setFill()
+        imageRect.fill()
+        if let points = target.selectionPath, points.count >= 3 {
+            NSGraphicsContext.saveGraphicsState()
+            let mask = NSBezierPath()
+            mask.move(to: NSPoint(x: points[0].x * targetWidth, y: targetHeight - points[0].y * targetHeight))
+            points.dropFirst().forEach {
+                mask.line(to: NSPoint(x: $0.x * targetWidth, y: targetHeight - $0.y * targetHeight))
+            }
+            mask.close()
+            mask.addClip()
+            NSImage(cgImage: source, size: targetSize).draw(in: imageRect)
+            NSGraphicsContext.restoreGraphicsState()
+        } else {
+            NSImage(cgImage: source, size: targetSize).draw(in: imageRect)
+        }
 
         let displayBounds = CGDisplayBounds(CGDirectDisplayID(target.displayID))
         let cgCursor = CGPoint(x: cursor.x, y: displayBounds.maxY - cursor.y)
         let local: CGPoint?
-        if target.kind == .window {
+        if let pointer = target.pointer {
+            local = CGPoint(x: pointer.x, y: pointer.y)
+        } else if target.kind == .window {
             if let windowID = target.windowID, let bounds = Self.windowBounds(windowID: CGWindowID(windowID)), bounds.contains(cgCursor) {
                 local = CGPoint(x: (cgCursor.x - bounds.minX) / bounds.width, y: (cgCursor.y - bounds.minY) / bounds.height)
             } else { local = nil }

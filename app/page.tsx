@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
-const downloadHref = "/Aster-macOS.zip?v=0.3.7";
+const downloadHref = "/Aster-macOS.zip?v=0.4.0";
 
 const scenes: Record<
   SceneKey,
@@ -49,18 +49,27 @@ const scenes: Record<
 const lessons = [
   {
     n: "01",
-    title: "Point",
-    copy: "Point at the exact term, structure, or object. Aster✱ anchors to it locally—even when its window moves.",
+    title: "Whole Screen",
+    copy: "The default. Just ask about everything visible on the display you’re using.",
+    glyph: "▣",
   },
   {
     n: "02",
-    title: "Ask",
-    copy: "Press ⌥ Space and speak naturally. Talk back, interrupt, and continue the same tutoring conversation.",
+    title: "Point",
+    copy: "Move your cursor onto a symbol, structure, control, or object, then ask about that exact thing.",
+    glyph: "↖",
   },
   {
     n: "03",
-    title: "See it click",
-    copy: "Aster✱ teaches in voice while drawing, animating flows, simplifying dense diagrams, and checking you.",
+    title: "Region",
+    copy: "Draw a clean box when one paragraph, equation, chart, or video area is all Aster✱ should use.",
+    glyph: "□",
+  },
+  {
+    n: "04",
+    title: "Freehand Loop",
+    copy: "Loop an irregular shape. Everything outside your path is removed locally before your question is sent.",
+    glyph: "◌",
   },
 ];
 
@@ -115,6 +124,16 @@ function ProductStage({ scene }: { scene: SceneKey }) {
 
   return (
     <div className={`product-stage scene-${scene}`}>
+      <div className="summon-demo" aria-label="Aster star summon bar">
+        <span className="summon-handle" aria-hidden="true">⠿</span>
+        <AsterMark />
+        <span className="local-badge"><i /> LOCAL ONLY · NOTHING SENT</span>
+        <div className="summon-modes" aria-label="Ways Aster star can look">
+          <b>Whole Screen</b><span>Point</span><span>Region</span><span>Freehand Loop</span>
+        </div>
+        <span className="summon-prompt">Ask by voice or text…</span>
+        <strong>↑</strong>
+      </div>
       <div className="browser-bar">
         <span className="traffic-lights"><i /><i /><i /></span>
         <span className="document-name">{data.eyebrow}</span>
@@ -307,19 +326,15 @@ export default function Home() {
             <span className="section-kicker">ZERO CONTEXT SWITCHING</span>
             <h2>Stay with the hard part.</h2>
           </div>
-          <p>
-            Learning breaks when you leave the page to describe the page. Aster✱ starts from the material already in
-            front of you and keeps every explanation anchored there.
-          </p>
+          <p>Press ⌥ Space or say “Hey Aster.” The movable bar stays with you until you close it. Choose exactly how much of the screen belongs to this question.</p>
         </div>
         <div className="lesson-steps">
           {lessons.map((lesson, index) => (
             <article key={lesson.n} className="lesson-step">
               <span className="step-number">{lesson.n}</span>
               <div className={`step-visual visual-${index + 1}`}>
-                {index === 0 && <><span className="mini-cursor">⌁</span><i /><b>this part</b></>}
-                {index === 1 && <><AsterMark /><VoiceWave dark /></>}
-                {index === 2 && <><span className="mini-equation">x² + y² = r²</span><i /><b>radius</b></>}
+                <span className="mode-glyph">{lesson.glyph}</span>
+                <small>{lesson.title}</small>
               </div>
               <h3>{lesson.title}</h3>
               <p>{lesson.copy}</p>
@@ -406,24 +421,24 @@ export default function Home() {
             <span className="section-kicker">PRIVACY YOU CAN SEE</span>
             <h2>Quiet until invited.</h2>
             <p>
-              Aster✱ follows only the region or window you chose, visibly marks that boundary, and excludes its own
-              overlay. Following stays local; selected context is sent to OpenAI only after you ask a live question.
+              Aster✱ follows the Whole Screen, Point, Region, or Freehand Loop scope you chose and excludes its own
+              overlay. Watching stays local; the minimum context for that mode is sent to OpenAI only after you submit a live question.
               Your API key is validated before it is saved to macOS Keychain and can be removed from Settings at any time.
             </p>
             <div className="privacy-points">
-              <span><i>✓</i> Selected-region capture</span>
+              <span><i>✓</i> Four explicit visual scopes</span>
               <span><i>✓</i> Optional macOS voice input</span>
               <span><i>✓</i> Local learner memory</span>
             </div>
           </div>
           <div className="privacy-widget">
             <div className="privacy-state"><span><i /> LOCAL UNTIL INVOKED</span><b>No silent background uploads.</b><small>Screen context moves only after an explicit request.</small></div>
-            <div className="request-flow" aria-label="What happens to selected context">
-              <div className="request-step"><span>1</span><div><b>Follow locally</b><small>Refresh the selected region and recover its anchor on your Mac.</small></div></div>
+            <div className="request-flow" aria-label="What happens to chosen context">
+              <div className="request-step"><span>1</span><div><b>Watch the chosen scope locally</b><small>Follow the display, pointer, box, or loop on your Mac.</small></div></div>
               <i>↓</i>
               <div className="request-step active"><span>2</span><div><b>Send only after you ask</b><small>Your selected context and question go to OpenAI for the live teaching turn.</small></div></div>
             </div>
-            <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following selected context locally</b><small>No API request until you ask Aster✱</small></div></div>
+            <div className="capture-state"><span className="capture-icon"><i /></span><div><b>Following your chosen scope locally</b><small>No API request until you submit a question</small></div></div>
           </div>
         </div>
       </section>
@@ -458,7 +473,7 @@ export default function Home() {
           <article className="setup-step">
             <span>05</span>
             <b>Connect &amp; learn</b>
-            <p>Validate and save your own OpenAI API key, then press <strong>⌥ Space</strong>, select the exact context, and ask.</p>
+            <p>Validate and save your own OpenAI API key, then press <strong>⌥ Space</strong>. Ask with Whole Screen, or choose Point, Region, or Freehand Loop.</p>
           </article>
         </div>
         <details className="setup-help">

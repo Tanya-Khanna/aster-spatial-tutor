@@ -65,6 +65,34 @@ import Testing
     #expect(decoded == target)
 }
 
+@Test func summonBarExposesFourIntuitiveContextModes() {
+    #expect(ContextMode.allCases.map(\.label) == ["Whole Screen", "Point", "Region", "Freehand Loop"])
+    #expect(ContextMode.allCases.first == .wholeScreen)
+}
+
+@Test func freehandLoopAndStablePointerRoundTrip() throws {
+    let target = CaptureTarget(
+        kind: .displayRegion,
+        displayID: 7,
+        region: ContextRegion(x: 0.2, y: 0.25, width: 0.4, height: 0.35),
+        windowID: nil,
+        appName: "Safari",
+        windowTitle: ContextMode.freehandLoop.label,
+        anchor: nil,
+        selectionPath: [
+            NormalizedPoint(x: 0.05, y: 0.4),
+            NormalizedPoint(x: 0.45, y: 0.05),
+            NormalizedPoint(x: 0.95, y: 0.55),
+            NormalizedPoint(x: 0.35, y: 0.95)
+        ],
+        pointer: NormalizedPoint(x: 0.4, y: 0.5)
+    )
+    let decoded = try JSONDecoder().decode(CaptureTarget.self, from: JSONEncoder().encode(target))
+    #expect(decoded == target)
+    #expect(decoded.selectionPath?.count == 4)
+    #expect(decoded.pointer == NormalizedPoint(x: 0.4, y: 0.5))
+}
+
 @MainActor
 @Test func wakePhraseRequiresExplicitAsterInvocation() {
     #expect(VoiceServices.containsWakePhrase("Hey Aster, explain this") == true)

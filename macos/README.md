@@ -1,13 +1,13 @@
 # Aster✱ for macOS
 
-Aster✱ is a native spatial tutor for macOS. Press **Option–Space**, drag around the exact learning context, and ask by voice or text. Aster✱ follows that region locally, diagnoses before explaining, teaches through synchronized voice and staged annotations, checks an independent answer, and persists concept-level mastery evidence across launches.
+Aster✱ is a native spatial tutor for macOS. Press **Option–Space** or say **“Hey Aster”** to summon a slim, movable teaching bar above any app. Whole Screen is ready by default; Point, Region, and Freehand Loop narrow the visual scope. Voice and text work in every mode. Following and cursor context stay local until the learner submits a question.
 
 The ✱ cursor companion is the source of the overlay: it lands and reads beside the pointer, morphs into each annotation, and collapses into a clickable bookmark that reopens the exact lesson. The optional “Hey Aster” wake phrase is disabled by default.
 
 ## Product loop
 
-1. Select an exact region on any display, click for cursor context, or lock a native window.
-2. Follow that region locally without spending API tokens.
+1. Summon the persistent bar with Option–Space or the optional wake phrase.
+2. Choose Whole Screen, Point, Region, or Freehand Loop and follow that scope locally without an API request.
 3. Diagnose with one short question and concrete misconception choices.
 4. Reveal a spatial lesson step-by-step through voice, notebook, and overlays.
 5. Fade the scaffolding and collect an independent transfer answer.
@@ -34,7 +34,7 @@ Aster✱’s welcome, tutor, settings, selection, companion, and teaching-overla
 
 - GPT-5.6 Terra diagnoses and teaches; Precision mode uses GPT-5.6 Sol; GPT-5.6 Luna assesses answers.
 - Diagnosis, spatial lessons, and mastery assessment use separate strict schemas.
-- Visible follow mode refreshes only the selected region locally; API capture is question-triggered.
+- The bar visibly follows the active Whole Screen, Point, Region, or Freehand Loop scope locally; API capture is question-triggered.
 - Aster✱ requires the learner’s own OpenAI API key. It is validated before an explicit save to macOS Keychain.
 - Settings shows whether OpenAI is connected and provides an immediate **Remove API key / Sign out** control.
 - Every Responses API request uses `store: false`; the key is never bundled or logged.
