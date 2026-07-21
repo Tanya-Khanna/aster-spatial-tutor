@@ -212,7 +212,15 @@ struct WelcomeView: View {
             Group {
                 switch model.onboardingStep {
                 case .introduction: introductionStep
-                case .permissions: permissionsStep
+                case .permissions:
+                    ScrollView {
+                        HStack(alignment: .top) {
+                            Spacer(minLength: 0)
+                            permissionsStep
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 8)
+                    }
                 case .apiKey: apiKeyStep
                 case .ready: readyStep
                 }
@@ -552,8 +560,14 @@ private struct ScreenPermissionRecovery: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(model.screenPermissionRecoveryMessage == nil ? "Access still not detected?" : "Aster✱ checked again — access is still missing.")
                         .font(.system(size: 12, weight: .semibold))
-                    Text("1. Choose Request again above.  2. If Aster✱ is still absent, open Privacy & Security → Screen & System Audio Recording.  3. Remove old Aster entries, click +, and choose /Applications/Aster.app.  4. Turn it on, return here, and check again; restart if macOS asks.")
-                        .font(.system(size: 10)).foregroundStyle(asterSecondary).lineSpacing(2)
+                    VStack(alignment: .leading, spacing: 5) {
+                        recoveryStep(1, "Choose Request again above.")
+                        recoveryStep(2, "If Aster✱ is still absent, open Privacy & Security → Screen & System Audio Recording.")
+                        recoveryStep(3, "Remove old Aster entries, click +, and choose /Applications/Aster.app.")
+                        recoveryStep(4, "Turn it on, return here, and check again; restart if macOS asks.")
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(2)
                 }
             }
             HStack(spacing: 8) {
@@ -562,6 +576,10 @@ private struct ScreenPermissionRecovery: View {
                 Spacer()
                 Button("Open System Settings") { model.openScreenPermissionSettings() }
                 Button("Show this copy") { model.revealRunningApplication() }
+            }
+            .buttonStyle(.bordered).controlSize(.small)
+            HStack(spacing: 8) {
+                Spacer()
                 Button("I granted access — Check again") { model.checkScreenPermissionAfterGrant() }
                 Button("Restart Aster✱") { model.restartApplication() }.buttonStyle(.borderedProminent).tint(asterSignal)
             }
@@ -570,6 +588,20 @@ private struct ScreenPermissionRecovery: View {
         .padding(13)
         .background(asterSignal.opacity(0.07), in: RoundedRectangle(cornerRadius: 13))
         .overlay(RoundedRectangle(cornerRadius: 13).stroke(asterSignal.opacity(0.20), lineWidth: 1))
+    }
+
+    private func recoveryStep(_ number: Int, _ instruction: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("\(number).")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(asterSignal)
+                .frame(width: 15, alignment: .trailing)
+            Text(instruction)
+                .font(.system(size: 10))
+                .foregroundStyle(asterSecondary)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 
