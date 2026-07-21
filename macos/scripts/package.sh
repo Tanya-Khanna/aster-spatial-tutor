@@ -22,8 +22,8 @@ plutil -insert CFBundleIdentifier -string "com.aster.spatial-tutor" "$APP_DIR/Co
 plutil -insert CFBundleExecutable -string "Aster" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleIconFile -string "Aster" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundlePackageType -string "APPL" "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleShortVersionString -string "0.2.1" "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleVersion -string "3" "$APP_DIR/Contents/Info.plist"
+plutil -insert CFBundleShortVersionString -string "0.2.2" "$APP_DIR/Contents/Info.plist"
+plutil -insert CFBundleVersion -string "4" "$APP_DIR/Contents/Info.plist"
 plutil -insert LSMinimumSystemVersion -string "13.0" "$APP_DIR/Contents/Info.plist"
 plutil -insert NSHighResolutionCapable -bool true "$APP_DIR/Contents/Info.plist"
 plutil -insert NSScreenCaptureUsageDescription -string "Aster✱ sees the screen you explicitly select so it can teach with on-target annotations." "$APP_DIR/Contents/Info.plist"
@@ -31,7 +31,7 @@ plutil -insert NSMicrophoneUsageDescription -string "Aster✱ uses your micropho
 plutil -insert NSSpeechRecognitionUsageDescription -string "Aster✱ transcribes your spoken learning questions on your Mac." "$APP_DIR/Contents/Info.plist"
 
 codesign --force --deep --sign - "$APP_DIR"
-ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ROOT_DIR/public/Aster-macOS-v0.2.1.zip"
+ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ROOT_DIR/public/Aster-macOS-v0.2.2.zip"
 
 echo "Packaged $APP_DIR"
-echo "Download archive: $ROOT_DIR/public/Aster-macOS-v0.2.1.zip"
+echo "Download archive: $ROOT_DIR/public/Aster-macOS-v0.2.2.zip"

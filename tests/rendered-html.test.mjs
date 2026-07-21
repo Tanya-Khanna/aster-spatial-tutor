@@ -40,7 +40,7 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /Set up Aster✱ in two minutes/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS-v0\.2\.1\.zip/);
+  assert.match(html, /Aster-macOS-v0\.2\.2\.zip/);
   assert.doesNotMatch(html, /href="\/Aster-macOS\.zip"/);
   assert.doesNotMatch(html, /\$5|budget guard|hard stop/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
@@ -52,7 +52,7 @@ test("ships the app archive, social card, and removes the starter preview", asyn
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("app/layout.tsx", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
-    access(new URL("public/Aster-macOS-v0.2.1.zip", root)),
+    access(new URL("public/Aster-macOS-v0.2.2.zip", root)),
     access(new URL("public/og.png", root)),
   ]);
 

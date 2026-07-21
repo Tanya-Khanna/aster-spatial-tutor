@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
+        installApplicationIcon()
         createWelcomeWindow()
         createTutorPanel()
         createStatusItem()
@@ -31,6 +32,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             return event
         }
+    }
+
+    private func installApplicationIcon() {
+        guard
+            let iconURL = Bundle.main.url(forResource: "Aster", withExtension: "icns"),
+            let icon = NSImage(contentsOf: iconURL)
+        else { return }
+
+        icon.isTemplate = false
+        NSApp.applicationIconImage = icon
     }
 
     func applicationWillTerminate(_ notification: Notification) {

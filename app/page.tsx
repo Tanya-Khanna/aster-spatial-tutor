@@ -220,7 +220,7 @@ export default function Home() {
           <a href="#learning">For learning</a>
           <a href="#privacy">Privacy</a>
         </div>
-        <a className="nav-download" href="/Aster-macOS-v0.2.1.zip" download>
+        <a className="nav-download" href="/Aster-macOS-v0.2.2.zip" download>
           <span>Download for Mac</span><b>↓</b>
         </a>
       </nav>
@@ -243,7 +243,7 @@ export default function Home() {
           </div>
           <div className="hero-actions">
             <div className="hero-download-stack">
-              <a className="primary-button" href="/Aster-macOS-v0.2.1.zip" download>
+              <a className="primary-button" href="/Aster-macOS-v0.2.2.zip" download>
                 <span className="apple-glyph">⌘</span>
                 <span><small>Prototype for</small>macOS</span>
                 <b>↓</b>
@@ -469,7 +469,7 @@ export default function Home() {
         <span className="section-kicker light">ASTER FOR MAC</span>
         <h2>Meet the material<br />where it lives.</h2>
         <p>The downloadable Build Week prototype. Bring your own OpenAI API key—or explore its built-in demo mode.</p>
-        <a className="light-button" href="/Aster-macOS-v0.2.1.zip" download><span>Download Aster✱</span><b>↓</b></a>
+        <a className="light-button" href="/Aster-macOS-v0.2.2.zip" download><span>Download Aster✱</span><b>↓</b></a>
         <small>macOS 13+ · Apple silicon · Ad-hoc signed prototype</small>
       </section>
 
