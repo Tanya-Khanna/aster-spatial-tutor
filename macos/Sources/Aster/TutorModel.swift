@@ -81,6 +81,9 @@ final class TutorModel: ObservableObject {
     var onShowPanel: (() -> Void)?
     var onHidePanel: (() -> Void)?
     var onPanelExpansionChanged: ((Bool) -> Void)?
+    /// Asks the host to dock the tutor bar away from the content being taught.
+    /// `true` docks it at the bottom (content is in the upper half of the screen).
+    var onRepositionPanel: ((Bool) -> Void)?
     var onShowWelcome: (() -> Void)?
     var onShowSettings: ((SettingsPane) -> Void)?
 
@@ -233,6 +236,7 @@ final class TutorModel: ObservableObject {
     private func openTutorBar(startListening: Bool) {
         lastExternalPointer = NSEvent.mouseLocation
         if !isPanelVisible {
+            resetTranscript()
             sourceApplicationName = NSWorkspace.shared.frontmostApplication?.localizedName ?? ""
             contextMode = .wholeScreen
             isPanelExpanded = false
@@ -268,8 +272,19 @@ final class TutorModel: ObservableObject {
         phase = .ready
         isPanelExpanded = false
         onPanelExpansionChanged?(false)
+        resetTranscript()
         isPanelVisible = false
         onHidePanel?()
+    }
+
+    /// Clears the visible chat transcript so each session starts fresh. Persistent
+    /// learner mastery memory is stored separately and is intentionally NOT cleared here.
+    private func resetTranscript() {
+        messages = [ChatMessage(role: .aster, text: "Ask about the whole screen, point to one thing, or narrow the view with a region or freehand loop. I’ll diagnose first, then teach it where it lives.", kind: .message)]
+        shownStepIDs = []
+        lastAssessment = nil
+        streamingDiagnosticText = ""
+        streamingLessonText = ""
     }
 
     func setPanelExpanded(_ expanded: Bool) {
@@ -284,6 +299,15 @@ final class TutorModel: ObservableObject {
         diagnostic = nil
         lastAssessment = nil
         phase = isFollowing ? .following : .ready
+    }
+
+    var isNarrating: Bool { phase == .teaching }
+
+    /// Interrupts the current spoken step immediately and stops the lesson from
+    /// auto-advancing, while keeping the lesson available to replay.
+    func stopNarration() {
+        voice.stopSpeaking()
+        if phase == .teaching { phase = isFollowing ? .following : .ready }
     }
 
     func saveAPIKey() {
@@ -764,6 +788,7 @@ final class TutorModel: ObservableObject {
         guard !answer.isEmpty else { return }
         guard requireAPIKey() else { return }
         let wasAwaitingUnderstanding = phase == .awaitingUnderstanding || (isListening && phaseBeforeListening == .awaitingUnderstanding)
+        if !wasAwaitingUnderstanding { stopNarration() }
         if isListening { toggleListening() }
         query = ""
         setPanelExpanded(true)
@@ -1054,6 +1079,10 @@ final class TutorModel: ObservableObject {
         shownStepIDs = []
         lessonStepIndex = 0
         messages.append(ChatMessage(role: .aster, text: "Diagnosis: \(lesson.diagnosis)", kind: .diagnostic))
+        if contextMode != .wholeScreen, let region = contextRegion {
+            // Content is in a known sub-region: dock the bar off it so annotations stay visible.
+            onRepositionPanel?(region.y + region.height / 2 < 0.5)
+        }
         showCurrentStep()
     }
 

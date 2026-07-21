@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         model.onShowPanel = { [weak self] in self?.showTutorPanel() }
         model.onHidePanel = { [weak self] in self?.tutorPanel?.orderOut(nil) }
         model.onPanelExpansionChanged = { [weak self] expanded in self?.resizeTutorPanel(expanded: expanded) }
+        model.onRepositionPanel = { [weak self] preferBottom in self?.repositionTutorPanel(preferBottom: preferBottom) }
         model.onShowWelcome = { [weak self] in self?.showWelcome() }
         model.onShowSettings = { [weak self] pane in self?.showSettings(pane) }
 
@@ -271,6 +272,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         }
         panel.orderFrontRegardless()
         focusTutorPanel(panel)
+    }
+
+    /// Slides the tutor bar to the top or bottom edge so it never covers the
+    /// content Aster✱ is teaching on. Called when a sub-region lesson starts.
+    private func repositionTutorPanel(preferBottom: Bool) {
+        guard let panel = tutorPanel, panel.isVisible,
+              let screen = panel.screen ?? NSScreen.main else { return }
+        let visible = screen.visibleFrame
+        let frame = panel.frame
+        let targetY = preferBottom ? visible.minY + 16 : visible.maxY - frame.height - 16
+        guard abs(targetY - frame.minY) > 1 else { return }
+        let destination = NSRect(x: frame.minX, y: targetY, width: frame.width, height: frame.height)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.28
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            panel.animator().setFrame(destination, display: true)
+        }
     }
 
     private func focusTutorPanel(_ panel: NSPanel) {

@@ -7,8 +7,10 @@ final class ContextSelectionController {
     private var activeDisplayID: CGDirectDisplayID?
 
     static func pointTarget(at point: NSPoint, within size: NSSize) -> (ContextRegion, NormalizedPoint) {
-        let width = min(size.width * 0.44, 720)
-        let height = min(size.height * 0.42, 480)
+        // Tighter crop around the cursor: the model localizes a small symbol far
+        // more accurately in a snug region than in a near-half-screen box.
+        let width = min(size.width * 0.24, 420)
+        let height = min(size.height * 0.22, 300)
         let chosen = NSRect(
             x: min(max(point.x - width / 2, 0), size.width - width),
             y: min(max(point.y - height / 2, 0), size.height - height),

@@ -774,6 +774,16 @@ private struct TutorBarView: View {
 
     private var composer: some View {
         HStack(spacing: 10) {
+            if model.isNarrating {
+                Button { model.stopNarration() } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(asterSignal, in: Circle())
+                }
+                .help("Stop narration")
+            }
             Button { model.toggleListening() } label: {
                 Image(systemName: model.isListening ? "waveform" : "mic.slash")
                     .font(.system(size: 13, weight: .semibold))
