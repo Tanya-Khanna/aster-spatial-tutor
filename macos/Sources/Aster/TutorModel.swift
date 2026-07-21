@@ -721,11 +721,10 @@ final class TutorModel: ObservableObject {
             capturedContext = updated
             contextRegion = updated.contextRegion
             var recoveredTarget = updated.target
-            if contextMode == .point, recoveredTarget.anchor == nil,
-               let anchor = anchorTracker.anchor(in: updated) {
-                recoveredTarget.anchor = anchor
-                anchorStatus = "Pointing at “\(anchor.label)” · local confidence \(Int(anchor.confidence * 100))%"
-            } else if let anchor = target.anchor {
+            // Point mode must NOT re-detect the object under the live cursor on every
+            // refresh (that made the pin chase the cursor). It stays on the exact
+            // clicked point, and only tracks the originally locked anchor if one exists.
+            if let anchor = target.anchor {
                 if let recovered = anchorTracker.recover(anchor, in: updated) {
                     recoveredTarget.anchor = recovered
                     anchorStatus = "Tracking “\(recovered.label)” · recovered after movement"
