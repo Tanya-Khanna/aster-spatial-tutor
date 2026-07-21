@@ -70,6 +70,23 @@ import Testing
     #expect(ContextMode.allCases.first == .wholeScreen)
 }
 
+@MainActor
+@Test func tutorPanelFloatsWithoutActivatingTheApplication() {
+    #expect(TutorPanelConfiguration.styleMask.contains(.nonactivatingPanel))
+    #expect(TutorPanelConfiguration.collectionBehavior.contains(.canJoinAllSpaces))
+    #expect(TutorPanelConfiguration.collectionBehavior.contains(.fullScreenAuxiliary))
+
+    let panel = AsterKeyPanel(
+        contentRect: NSRect(x: 0, y: 0, width: 400, height: 120),
+        styleMask: TutorPanelConfiguration.styleMask,
+        backing: .buffered,
+        defer: false
+    )
+    #expect(panel.canBecomeKey)
+    #expect(!panel.canBecomeMain)
+    panel.close()
+}
+
 @Test func freehandLoopAndStablePointerRoundTrip() throws {
     let target = CaptureTarget(
         kind: .displayRegion,

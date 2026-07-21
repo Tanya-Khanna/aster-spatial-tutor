@@ -36,6 +36,8 @@ Aster✱ removes that translation layer. Its core unit is not an answer—it is 
 7. **Assess** the learner’s reasoning against explicit success criteria.
 8. **Remember and adapt** across launches, or offer a learner-controlled Desmos/Manim demonstration.
 
+The tutor bar is a key-capable, non-activating AppKit panel. It floats over the learner’s current app and Space—including full-screen auxiliary Spaces—without activating Aster✱ or pulling the learner back to the desktop. Welcome and Settings remain normal foreground windows.
+
 ## Why it is different
 
 | Existing pattern | Aster✱ |

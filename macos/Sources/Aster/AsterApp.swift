@@ -2,6 +2,22 @@ import AppKit
 import QuartzCore
 import SwiftUI
 
+extension Notification.Name {
+    static let asterFocusComposer = Notification.Name("AsterFocusComposer")
+}
+
+/// Aster✱ overlays must accept typing without activating the application or
+/// pulling the learner away from the Space that contains their source material.
+final class AsterKeyPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
+enum TutorPanelConfiguration {
+    static let styleMask: NSWindow.StyleMask = [.borderless, .fullSizeContentView, .nonactivatingPanel]
+    static let collectionBehavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
     private var welcomeWindow: NSWindow?
@@ -111,9 +127,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
 
     private func createTutorPanel() {
         let view = TutorPanelView(model: TutorModel.shared)
-        let panel = NSPanel(
+        let panel = AsterKeyPanel(
             contentRect: NSRect(x: 0, y: 0, width: tutorPanelWidth, height: tutorPanelCollapsedHeight),
-            styleMask: [.borderless, .fullSizeContentView],
+            styleMask: TutorPanelConfiguration.styleMask,
             backing: .buffered,
             defer: false
         )
@@ -122,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.level = .statusBar
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.collectionBehavior = TutorPanelConfiguration.collectionBehavior
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
         panel.isRestorable = false
@@ -247,10 +263,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 panel.animator().setFrame(destination, display: true)
                 panel.animator().alphaValue = 1
+            } completionHandler: { [weak self, weak panel] in
+                guard let self, let panel else { return }
+                self.focusTutorPanel(panel)
             }
             return
         }
         panel.orderFrontRegardless()
+        focusTutorPanel(panel)
+    }
+
+    private func focusTutorPanel(_ panel: NSPanel) {
+        // A non-activating panel may become key while Chrome, Preview, or the
+        // learner's full-screen app remains the active application.
+        panel.makeKey()
+        DispatchQueue.main.async { [weak panel] in
+            panel?.makeKey()
+            NotificationCenter.default.post(name: .asterFocusComposer, object: nil)
+        }
     }
 
     private func resizeTutorPanel(expanded: Bool) {

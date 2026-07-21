@@ -44,8 +44,8 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /own OpenAI API key is required/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS\.zip\?v=0\.4\.0/);
-  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.4\.0"/g) ?? []).length, 3);
+  assert.match(html, /Aster-macOS\.zip\?v=0\.4\.1/);
+  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.4\.1"/g) ?? []).length, 3);
   assert.match(html, /LOCAL ONLY · NOTHING SENT/);
   assert.match(html, /Whole Screen/);
   assert.match(html, /Point/);
@@ -81,7 +81,7 @@ test("ships a key-required app archive, social card, and removes the starter pre
 
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(page, /Your screen becomes the/);
-  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.4\.0"/);
+  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.4\.1"/);
   assert.equal((page.match(/href=\{downloadHref\}/g) ?? []).length, 3);
   assert.match(page, /scene-switcher/);
   assert.doesNotMatch(`${page}\n${css}`, /budget-widget|budget-bar|budget-scale/i);
@@ -102,6 +102,12 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(nativeViews, /General|Permissions|Learning|Account/);
   assert.match(asterApp, /NSToolbar/);
   assert.match(asterApp, /CommandGroup\(replacing: \.appSettings\)/);
+  assert.match(asterApp, /\.nonactivatingPanel/);
+  assert.match(asterApp, /override var canBecomeKey: Bool \{ true \}/);
+  assert.match(asterApp, /asterFocusComposer/);
+  const summonActivationBody = tutorModel.match(/func activate\(\) \{([^}]*)\}/)?.[1] ?? "";
+  assert.notEqual(summonActivationBody, "");
+  assert.doesNotMatch(summonActivationBody, /NSApp\.activate/);
   assert.match(`${tutorModel}\n${nativeViews}\n${asterApp}`, /Move to Applications & Relaunch|moveToApplicationsAndRelaunch/);
   assert.match(relocationService, /AppTranslocation/);
   assert.match(relocationService, /com\.apple\.quarantine/);

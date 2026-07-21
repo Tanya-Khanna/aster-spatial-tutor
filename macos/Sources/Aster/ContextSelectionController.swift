@@ -18,9 +18,9 @@ final class ContextSelectionController {
         self.completion = completion
         self.activeDisplayID = displayID
 
-        let panel = NSPanel(
+        let panel = AsterKeyPanel(
             contentRect: screen.frame,
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -50,7 +50,6 @@ final class ContextSelectionController {
         panel.sharingType = .readOnly
         panel.setFrame(screen.frame, display: true)
         panel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         self.panel = panel
     }
 

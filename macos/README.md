@@ -4,6 +4,8 @@ Aster✱ is a native spatial tutor for macOS. Press **Option–Space** or say **
 
 The ✱ cursor companion is the source of the overlay: it lands and reads beside the pointer, morphs into each annotation, and collapses into a clickable bookmark that reopens the exact lesson. The optional “Hey Aster” wake phrase is disabled by default.
 
+The summon bar and Region/Freehand selectors are non-activating, key-capable AppKit panels. They can accept typed input over the current app, full-screen Space, or secondary display without making Aster✱ the active application or switching to its desktop Space.
+
 ## Product loop
 
 1. Summon the persistent bar with Option–Space or the optional wake phrase.

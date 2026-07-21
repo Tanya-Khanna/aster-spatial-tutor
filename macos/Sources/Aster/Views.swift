@@ -673,6 +673,7 @@ private struct SummonBarView: View {
     @ObservedObject var model: TutorModel
     @State private var surface = "Transcript"
     @State private var pulse = false
+    @FocusState private var composerFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -692,6 +693,9 @@ private struct SummonBarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(.spring(response: 0.42, dampingFraction: 0.88), value: model.isPanelExpanded)
         .onAppear { pulse = true }
+        .onReceive(NotificationCenter.default.publisher(for: .asterFocusComposer)) { _ in
+            composerFocused = true
+        }
     }
 
     private var header: some View {
@@ -768,6 +772,7 @@ private struct SummonBarView: View {
             TextField(composerPlaceholder, text: $model.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13, weight: .medium))
+                .focused($composerFocused)
                 .onSubmit { model.submit() }
             Text(model.contextMode.guidance)
                 .font(.system(size: 9, weight: .medium))

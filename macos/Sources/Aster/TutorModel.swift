@@ -183,7 +183,6 @@ final class TutorModel: ObservableObject {
     func activate() {
         isPanelVisible = true
         onShowPanel?()
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     func activateFromHotKey() {
