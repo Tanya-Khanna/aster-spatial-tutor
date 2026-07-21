@@ -72,7 +72,9 @@ final class OpenAIClient {
             images: recentFrames.isEmpty ? [screen] : recentFrames,
             imageDetail: "low",
             imageMaxDimension: 1_024,
-            maxOutputTokens: 450,
+            // Reasoning tokens count against this budget, so keep ample headroom or
+            // the structured JSON gets truncated and fails to decode.
+            maxOutputTokens: 2_000,
             format: Self.diagnosticFormat,
             safetyIdentifier: safetyIdentifier,
             partialTextKey: "question",
@@ -123,7 +125,7 @@ final class OpenAIClient {
             images: recentFrames.isEmpty ? [screen] : recentFrames,
             imageDetail: precisionMode ? "original" : "high",
             imageMaxDimension: precisionMode ? nil : 1_024,
-            maxOutputTokens: precisionMode ? 1_400 : 1_200,
+            maxOutputTokens: precisionMode ? 5_000 : 4_000,
             format: Self.lessonFormat,
             safetyIdentifier: safetyIdentifier,
             partialTextKey: "narration",
@@ -160,7 +162,7 @@ final class OpenAIClient {
             images: [],
             imageDetail: "low",
             imageMaxDimension: nil,
-            maxOutputTokens: 450,
+            maxOutputTokens: 2_000,
             format: Self.assessmentFormat,
             safetyIdentifier: safetyIdentifier,
             partialTextKey: nil,
