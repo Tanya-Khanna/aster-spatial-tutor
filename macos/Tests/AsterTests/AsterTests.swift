@@ -102,14 +102,18 @@ import Testing
     #expect(reloaded.memory(for: "attention-scaling")?.isReviewDue == false)
 }
 
-@MainActor
-@Test func demoLoopAlwaysDiagnosesBeforeTeachingAndEndsWithTransfer() {
-    let diagnostic = TutorModel.demoDiagnostic(for: "Why does x minus h move right?")
-    #expect(diagnostic.options.count >= 2)
-    let lesson = TutorModel.demoLesson(for: diagnostic, option: diagnostic.options[0])
-    #expect(!lesson.steps.isEmpty)
-    #expect(lesson.steps.allSatisfy { $0.annotations.count <= 4 })
-    #expect(!lesson.check.question.isEmpty)
-    #expect(!lesson.check.successCriteria.isEmpty)
-    #expect(lesson.toolSuggestion == "desmos")
+@Test func apiKeyFormatRejectsMissingAndPlaceholderValues() {
+    #expect(OpenAIClient.hasPlausibleAPIKeyFormat("") == false)
+    #expect(OpenAIClient.hasPlausibleAPIKeyFormat("sk-demo") == false)
+    #expect(OpenAIClient.hasPlausibleAPIKeyFormat("not-a-key") == false)
+    #expect(OpenAIClient.hasPlausibleAPIKeyFormat("sk-proj-1234567890abcdefghijklmnop") == true)
+}
+
+@Test func apiUsageAccumulatesWithoutEstimatingDollarCost() {
+    var usage = APIUsage.zero
+    usage.add(APIUsage(inputTokens: 120, outputTokens: 30, totalTokens: 150))
+    usage.add(APIUsage(inputTokens: 50, outputTokens: 20, totalTokens: 70))
+    #expect(usage.inputTokens == 170)
+    #expect(usage.outputTokens == 50)
+    #expect(usage.totalTokens == 220)
 }

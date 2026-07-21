@@ -1,6 +1,53 @@
 import CoreGraphics
 import Foundation
 
+enum APIKeyStatus: Equatable {
+    case unauthenticated
+    case validating
+    case authenticated(hint: String)
+    case invalid(message: String)
+
+    var isAuthenticated: Bool {
+        if case .authenticated = self { return true }
+        return false
+    }
+}
+
+enum OnboardingStep: Int, CaseIterable {
+    case introduction
+    case permissions
+    case apiKey
+    case ready
+}
+
+enum PermissionState: Equatable {
+    case notDetermined
+    case granted
+    case denied
+
+    var label: String {
+        switch self {
+        case .notDetermined: return "Not requested"
+        case .granted: return "Allowed"
+        case .denied: return "Needs attention"
+        }
+    }
+}
+
+struct APIUsage: Equatable {
+    var inputTokens: Int = 0
+    var outputTokens: Int = 0
+    var totalTokens: Int = 0
+
+    static let zero = APIUsage()
+
+    mutating func add(_ usage: APIUsage) {
+        inputTokens += usage.inputTokens
+        outputTokens += usage.outputTokens
+        totalTokens += usage.totalTokens
+    }
+}
+
 enum TutorPhase: Equatable {
     case ready
     case selectingContext
@@ -138,6 +185,14 @@ enum ActionPermission: String, Codable, CaseIterable, Identifiable {
     case internalOnly
     case never
     var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .askEveryTime: return "Ask every time"
+        case .internalOnly: return "Internal teaching tools only"
+        case .never: return "Never"
+        }
+    }
 }
 
 struct TutorActionRecord: Codable, Identifiable, Hashable {
@@ -382,4 +437,5 @@ struct ChatMessage: Identifiable, Hashable {
 
 struct TutorResult<Value> {
     let value: Value
+    let usage: APIUsage
 }

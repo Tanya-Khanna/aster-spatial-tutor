@@ -500,8 +500,8 @@ button { cursor: pointer; }
 .setup-heading { max-width: 760px; margin-bottom: 58px; }
 .setup-heading h2 { margin: 0 0 22px; font-size: clamp(48px, 5.3vw, 74px); line-height: .96; letter-spacing: -.06em; font-weight: 530; }
 .setup-heading > p { max-width: 580px; margin: 0; color: #696970; font-size: 16px; line-height: 1.65; }
-.setup-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.setup-step { min-height: 235px; padding: 23px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.48); box-shadow: inset 0 1px rgba(255,255,255,.76); }
+.setup-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.setup-step { min-height: 235px; padding: 20px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.48); box-shadow: inset 0 1px rgba(255,255,255,.76); }
 .setup-step.emphasized { border-color: rgba(239,91,53,.3); background: linear-gradient(145deg, rgba(255,238,232,.84), rgba(255,255,255,.58)); }
 .setup-step > span { color: var(--signal-deep); font: 500 9px var(--mono); letter-spacing: .08em; }
 .setup-step > b { margin: auto 0 16px; font-size: 25px; letter-spacing: -.04em; font-weight: 590; }

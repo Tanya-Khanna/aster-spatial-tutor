@@ -31,7 +31,7 @@ The Swift suite includes a deterministic 400-placement coordinate benchmark span
 - **Arrow endpoint error:** normalized distance from the returned endpoint to the nearest acceptable anchor.
 - **Abstention quality:** when the target is genuinely ambiguous, does Aster✱ use fewer annotations and ask the learner to point again?
 
-Initial release gate: at least 90% target hit rate on the curated demo set, zero annotations outside the visible screen, and no more than four marks per turn.
+Initial release gate: at least 90% target hit rate on the curated benchmark set, zero annotations outside the visible screen, and no more than four marks per turn.
 
 ### 2. Teaching quality
 
@@ -59,6 +59,10 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - denied permissions produce a useful recovery message;
 - microphone can start, stop, and start again without an input-tap crash;
 - API key never appears in process logs or repository files.
+- an unauthenticated teaching request opens key onboarding and never produces canned content;
+- saving validates before Keychain persistence, and Remove API key deletes the Keychain item immediately;
+- the interface makes authenticated and unauthenticated states unmistakable;
+- every Responses API body contains `store: false`.
 
 ### 4. Adaptation and memory
 

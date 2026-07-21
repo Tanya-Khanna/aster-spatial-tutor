@@ -2,11 +2,13 @@ import Foundation
 
 enum TutorAPIError: LocalizedError {
     case invalidResponse
+    case authentication
     case service(String)
 
     var errorDescription: String? {
         switch self {
         case .invalidResponse: return "Aster✱ received an incomplete teaching plan. Try once more."
+        case .authentication: return "That OpenAI API key could not be authenticated. Check the key and try again."
         case .service(let message): return message
         }
     }
@@ -14,6 +16,27 @@ enum TutorAPIError: LocalizedError {
 
 final class OpenAIClient {
     private let endpoint = URL(string: "https://api.openai.com/v1/responses")!
+    private let modelsEndpoint = URL(string: "https://api.openai.com/v1/models")!
+
+    static func hasPlausibleAPIKeyFormat(_ value: String) -> Bool {
+        let key = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return key.hasPrefix("sk-") && key.count >= 20 && !key.contains(where: \.isWhitespace)
+    }
+
+    func validateAPIKey(_ apiKey: String) async throws {
+        guard Self.hasPlausibleAPIKeyFormat(apiKey) else { throw TutorAPIError.authentication }
+        var request = URLRequest(url: modelsEndpoint)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 20
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw TutorAPIError.invalidResponse }
+        if http.statusCode == 401 || http.statusCode == 403 { throw TutorAPIError.authentication }
+        guard (200..<300).contains(http.statusCode) else {
+            throw TutorAPIError.service("OpenAI could not validate the key right now (status \(http.statusCode)). Try again.")
+        }
+    }
 
     func diagnose(
         apiKey: String,
@@ -173,6 +196,7 @@ final class OpenAIClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw TutorAPIError.invalidResponse }
+        if http.statusCode == 401 || http.statusCode == 403 { throw TutorAPIError.authentication }
         guard (200..<300).contains(http.statusCode) else {
             let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
             let error = object?["error"] as? [String: Any]
@@ -190,7 +214,15 @@ final class OpenAIClient {
         }
 
         let value = try JSONDecoder().decode(Value.self, from: valueData)
-        return TutorResult(value: value)
+        let usageObject = root["usage"] as? [String: Any]
+        let inputTokens = usageObject?["input_tokens"] as? Int ?? 0
+        let outputTokens = usageObject?["output_tokens"] as? Int ?? 0
+        let usage = APIUsage(
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            totalTokens: usageObject?["total_tokens"] as? Int ?? (inputTokens + outputTokens)
+        )
+        return TutorResult(value: value, usage: usage)
     }
 
     private static let diagnosticInstructions = """

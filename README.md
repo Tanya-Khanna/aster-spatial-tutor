@@ -10,10 +10,10 @@ Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-
 
 ## Try it
 
-- Download: [`public/Aster-macOS-v0.2.2.zip`](public/Aster-macOS-v0.2.2.zip)
+- Download: [`public/Aster-macOS.zip`](public/Aster-macOS.zip)
 - App bundle after packaging: `macos/dist/Aster.app`
 - Landing page locally: `npm install && npm run dev`
-- No API key? Choose Research, Math, or Anatomy on the welcome screen and run Demo mode.
+- Aster✱ requires the learner’s own OpenAI API key. First-run onboarding validates it before an explicit save to macOS Keychain.
 
 The prototype is ad-hoc signed. On first use, macOS may ask for permission to open it and for Screen Recording, Microphone, and Speech Recognition access.
 
@@ -95,7 +95,7 @@ Codex session ID: <add public session ID>
 - Only the selected region is downsampled to a maximum width of 1600 px.
 - Diagnosis uses Terra with a 500-token cap; standard spatial lessons use Terra with a 1,400-token cap; answer assessment uses Luna with a 450-token cap.
 - Precision mode is explicit rather than automatic.
-- Demo mode is deterministic and makes no OpenAI API request.
+- Settings shows per-session request and token usage, with direct links to OpenAI’s live usage and budget controls.
 
 ## Privacy and safety
 
@@ -103,7 +103,8 @@ Codex session ID: <add public session ID>
 - “Hey Aster” listening is off by default, visibly configurable, and uses macOS Speech Recognition only after the learner opts in.
 - Follow mode visibly refreshes only the learner-selected region every two seconds on-device; a screen image is sent only after the learner asks.
 - Capture state is visible in the interface.
-- The API key is stored in macOS Keychain and excluded from the repository.
+- The API key is stored in macOS Keychain only after explicit validation and save, can be removed immediately from Settings, and is excluded from the repository.
+- Every Responses API request sets `store: false`; Aster✱ never bundles or logs the key.
 - Aster✱ teaches labeled educational anatomy; it does not interpret radiology, diagnose disease, or give medical advice.
 - Tool suggestions are previews. This prototype does not silently type into or modify another app.
 
@@ -117,7 +118,7 @@ zsh scripts/package.sh
 open dist/Aster.app
 ```
 
-The script compiles a release binary, assembles a `.app`, applies an ad-hoc signature, and updates `public/Aster-macOS-v0.2.2.zip`.
+The script compiles a release binary, assembles a `.app`, applies an ad-hoc signature, and updates `public/Aster-macOS.zip`.
 
 ## Run the landing page
 
@@ -139,9 +140,9 @@ cd macos && swift build -c release
 
 | Criterion | Evidence in this repository |
 | --- | --- |
-| Technological Implementation | Multi-display/window capture, semantic cursor anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, Keychain, spend guard |
+| Technological Implementation | Multi-display/window capture, semantic cursor anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, explicit Keychain lifecycle, and session usage visibility |
 | Design | One coherent Aster✱ system across macOS and responsive web; visible context/follow states; mandatory diagnostic choices; staged annotation choreography; voice, notebook, mastery, and memory states |
-| Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams; demo emphasizes comprehension rather than answer generation |
+| Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams while emphasizing comprehension rather than answer generation |
 | Quality of Idea | OS-native spatial tutoring, cursor-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
 
 See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submission story and [`docs/EVALS.md`](docs/EVALS.md) for the annotation-quality evaluation plan.
@@ -151,4 +152,4 @@ See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submis
 - Aster✱ deliberately does not provide general autonomous Mac control, submit graded work, or run model-authored Python. Cross-app content is previewed and copied for learner-controlled paste.
 - Browser video controls are limited to the active HTML5 video in Safari/Chrome and may require the browser’s JavaScript-from-Apple-Events setting.
 - Manim uses fixed local templates and requires a local Manim CLI installation.
-- A live API turn requires the learner’s own OpenAI API key. The submission can be evaluated fully in free Demo mode.
+- Every teaching turn requires the learner’s own validated OpenAI API key; there is no canned or keyless teaching path.

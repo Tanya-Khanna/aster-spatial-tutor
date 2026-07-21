@@ -37,6 +37,10 @@ final class LearnerMemoryStore {
         }
     }
 
+    func reset() {
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
     func update(
         profile: LearnerProfile,
         conceptID: String,

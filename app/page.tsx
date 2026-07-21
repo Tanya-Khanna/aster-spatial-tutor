@@ -220,7 +220,7 @@ export default function Home() {
           <a href="#learning">For learning</a>
           <a href="#privacy">Privacy</a>
         </div>
-        <a className="nav-download" href="/Aster-macOS-v0.2.2.zip" download>
+        <a className="nav-download" href="/Aster-macOS.zip?v=0.3.0" download>
           <span>Download for Mac</span><b>↓</b>
         </a>
       </nav>
@@ -243,9 +243,9 @@ export default function Home() {
           </div>
           <div className="hero-actions">
             <div className="hero-download-stack">
-              <a className="primary-button" href="/Aster-macOS-v0.2.2.zip" download>
+              <a className="primary-button" href="/Aster-macOS.zip?v=0.3.0" download>
                 <span className="apple-glyph">⌘</span>
-                <span><small>Prototype for</small>macOS</span>
+                <span><small>Download for</small>macOS</span>
                 <b>↓</b>
               </a>
               <aside className="first-launch-note" aria-label="First launch instructions">
@@ -271,8 +271,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="hero-stage" aria-label="Interactive Aster star teaching demonstration">
-          <div className="scene-switcher" role="tablist" aria-label="Choose a lesson demo">
+        <div className="hero-stage" aria-label="Interactive Aster star teaching example">
+          <div className="scene-switcher" role="tablist" aria-label="Choose a lesson example">
             {(Object.keys(scenes) as SceneKey[]).map((key) => (
               <button
                 key={key}
@@ -406,7 +406,7 @@ export default function Home() {
             <p>
               Aster✱ follows only the region or window you chose, visibly marks that boundary, and excludes its own
               overlay. Following stays local; selected context is sent to OpenAI only after you ask a live question.
-              Your API key stays in macOS Keychain.
+              Your API key is validated before it is saved to macOS Keychain and can be removed from Settings at any time.
             </p>
             <div className="privacy-points">
               <span><i>✓</i> Selected-region capture</span>
@@ -429,8 +429,8 @@ export default function Home() {
       <section className="setup-section" id="setup">
         <div className="setup-heading">
           <span className="section-kicker">FIRST LAUNCH</span>
-          <h2>Set up Aster✱ in two minutes.</h2>
-          <p>Four steps from download to your first spatial lesson. No Terminal commands required.</p>
+          <h2>Set up Aster✱ in three minutes.</h2>
+          <p>Five steps from download to your first live spatial lesson. No Terminal commands required.</p>
         </div>
         <div className="setup-grid">
           <article className="setup-step">
@@ -450,6 +450,11 @@ export default function Home() {
           </article>
           <article className="setup-step">
             <span>04</span>
+            <b>Connect OpenAI</b>
+            <p>Paste your own API key. Aster✱ validates it, then saves it to macOS Keychain only when you choose <strong>Validate and save</strong>.</p>
+          </article>
+          <article className="setup-step">
+            <span>05</span>
             <b>Start learning</b>
             <p>Press <strong>⌥ Space</strong>, select the exact context, then ask by voice or text.</p>
           </article>
@@ -457,7 +462,7 @@ export default function Home() {
         <details className="setup-help">
           <summary>Seeing a Keychain prompt or missing a permission?<span>+</span></summary>
           <div>
-            <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build.</p>
+            <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build. Remove the saved key anytime from Aster✱ Settings.</p>
             <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording, then quit and reopen Aster✱.</p>
           </div>
         </details>
@@ -468,8 +473,8 @@ export default function Home() {
         <AsterMark />
         <span className="section-kicker light">ASTER FOR MAC</span>
         <h2>Meet the material<br />where it lives.</h2>
-        <p>The downloadable Build Week prototype. Bring your own OpenAI API key—or explore its built-in demo mode.</p>
-        <a className="light-button" href="/Aster-macOS-v0.2.2.zip" download><span>Download Aster✱</span><b>↓</b></a>
+        <p>The native Build Week app for live spatial tutoring. Your own OpenAI API key is required, validated before saving, and removable at any time.</p>
+        <a className="light-button" href="/Aster-macOS.zip?v=0.3.0" download><span>Download Aster✱</span><b>↓</b></a>
         <small>macOS 13+ · Apple silicon · Ad-hoc signed prototype</small>
       </section>
 

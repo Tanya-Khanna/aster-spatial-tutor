@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onShowPanel = { [weak self] in self?.showTutorPanel() }
         model.onHidePanel = { [weak self] in self?.tutorPanel?.orderOut(nil) }
         model.onShowWelcome = { [weak self] in self?.showWelcome() }
+        model.onShowSettings = { [weak self] in self?.showSettings() }
         observer = NotificationCenter.default.addObserver(forName: .asterHotKey, object: nil, queue: .main) { _ in
             Task { @MainActor in TutorModel.shared.activateFromHotKey() }
         }
@@ -49,11 +50,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let escapeMonitor { NSEvent.removeMonitor(escapeMonitor) }
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+        TutorModel.shared.refreshPermissionStatuses()
+    }
+
     private func createWelcomeWindow() {
         let view = WelcomeView(model: TutorModel.shared)
         let controller = NSHostingController(rootView: view)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1020, height: 710),
+            contentRect: NSRect(x: 0, y: 0, width: 1_080, height: 760),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -62,10 +67,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
+        window.isRestorable = false
         window.contentViewController = controller
         window.sharingType = .none
         window.center()
-        window.minSize = NSSize(width: 980, height: 680)
+        window.minSize = NSSize(width: 1_040, height: 720)
         window.makeKeyAndOrderFront(nil)
         welcomeWindow = window
         NSApp.activate(ignoringOtherApps: true)
@@ -74,7 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func createTutorPanel() {
         let view = TutorPanelView(model: TutorModel.shared)
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 390, height: 620),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 720),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -87,6 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
+        panel.isRestorable = false
         panel.sharingType = .none
         tutorPanel = panel
     }
@@ -97,6 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "Ask Aster✱  ⌥ Space", action: #selector(askAster), keyEquivalent: "")
         menu.addItem(withTitle: "Welcome", action: #selector(showWelcomeMenu), keyEquivalent: "")
+        menu.addItem(withTitle: "Settings…", action: #selector(showSettingsMenu), keyEquivalent: ",")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Aster✱", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
@@ -105,9 +113,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func askAster() { TutorModel.shared.activateFromHotKey() }
     @objc private func showWelcomeMenu() { showWelcome() }
+    @objc private func showSettingsMenu() { showSettings() }
 
     private func showWelcome() {
         welcomeWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func showSettings() {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -125,7 +139,7 @@ struct AsterApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
+            SettingsView(model: TutorModel.shared)
         }
     }
 }

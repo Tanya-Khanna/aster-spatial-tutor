@@ -37,22 +37,31 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /Open Anyway/);
   assert.match(html, /scroll down to <strong>Security<\/strong>/);
   assert.match(html, /Aster was blocked to protect your Mac/);
-  assert.match(html, /Set up Aster✱ in two minutes/);
+  assert.match(html, /Set up Aster✱ in three minutes/);
+  assert.match(html, /Connect OpenAI/);
+  assert.match(html, /validates it, then saves it to macOS Keychain/);
+  assert.match(html, /own OpenAI API key is required/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS-v0\.2\.2\.zip/);
-  assert.doesNotMatch(html, /href="\/Aster-macOS\.zip"/);
+  assert.match(html, /Aster-macOS\.zip\?v=0\.3\.0/);
+  assert.doesNotMatch(html, /demo mode|without an? API key|leave empty for/i);
   assert.doesNotMatch(html, /\$5|budget guard|hard stop/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
-test("ships the app archive, social card, and removes the starter preview", async () => {
-  const [packageJson, page, layout, css] = await Promise.all([
+test("ships a key-required app archive, social card, and removes the starter preview", async () => {
+  const [packageJson, page, layout, css, tutorModel, nativeViews, openAIClient, readme, macReadme, demoScript] = await Promise.all([
     readFile(new URL("package.json", root), "utf8"),
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("app/layout.tsx", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
-    access(new URL("public/Aster-macOS-v0.2.2.zip", root)),
+    readFile(new URL("macos/Sources/Aster/TutorModel.swift", root), "utf8"),
+    readFile(new URL("macos/Sources/Aster/Views.swift", root), "utf8"),
+    readFile(new URL("macos/Sources/Aster/OpenAIClient.swift", root), "utf8"),
+    readFile(new URL("README.md", root), "utf8"),
+    readFile(new URL("macos/README.md", root), "utf8"),
+    readFile(new URL("docs/DEMO_SCRIPT.md", root), "utf8"),
+    access(new URL("public/Aster-macOS.zip", root)),
     access(new URL("public/og.png", root)),
   ]);
 
@@ -65,5 +74,10 @@ test("ships the app archive, social card, and removes the starter preview", asyn
   assert.match(css, /@media \(max-width: 1240px\)/);
   assert.doesNotMatch(css, /perspective\(1400px\) rotateY/);
   assert.match(layout, /\/og\.png/);
+  assert.doesNotMatch(`${tutorModel}\n${nativeViews}`, /runDemo|demoDiagnostic|demoLesson|demoAssessment|personalizedDemoDiagnostic|Demo mode/i);
+  assert.doesNotMatch(`${readme}\n${macReadme}\n${demoScript}`, /Demo mode|without an API key|deterministic demo/i);
+  assert.match(nativeViews, /Remove API key \/ Sign out/);
+  assert.match(nativeViews, /Validate and save/);
+  assert.match(openAIClient, /"store": false/);
   await assert.rejects(access(new URL("app\/_sites-preview", root)));
 });

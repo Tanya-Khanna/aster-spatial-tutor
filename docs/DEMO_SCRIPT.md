@@ -28,7 +28,7 @@ Launch Aster✱ and briefly show its welcome screen.
 
 ## 1:18–1:48 — Breadth without losing the story
 
-Use Demo mode to switch to Anatomy, then Math. Do not run three full lessons.
+Cut briefly to two prepared source windows—one anatomy diagram and one graph—then use Option–Space to point at each. Do not run three full lessons; show that the same live selection flow begins on both.
 
 > “The interaction generalizes to visual material where prose alone is weak: trace blood flow through a heart, pair a function with its derivative, or explain the role of a term in a circuit. Aster✱ stays above the learner’s existing app instead of forcing an upload workflow.”
 
@@ -40,9 +40,9 @@ Show the “Show in graph sandbox” preview row.
 
 ## 2:15–2:35 — Technical proof and budget
 
-Quickly show the README architecture diagram and the local budget line in the app.
+Quickly show the README architecture diagram and Settings → Usage & Budget.
 
-> “The app is native SwiftUI and AppKit: exact context cropping, Retina coordinate mapping, local follow mode, a click-through overlay, native speech, Keychain, persistent concept memory, and three strict Responses API contracts. Terra handles vision, Luna checks answers, and Sol is an explicit precision mode. The deterministic demo costs zero.”
+> “The app is native SwiftUI and AppKit: exact context cropping, Retina coordinate mapping, local follow mode, a click-through overlay, native speech, explicit Keychain sign-in and sign-out, persistent concept memory, and three strict Responses API contracts. Terra handles vision, Luna checks answers, and Sol is an explicit precision mode. Every Responses request opts out of storage.”
 
 ## 2:35–2:45 — Close
 
@@ -55,7 +55,7 @@ Return to the annotated page.
 - 16:9, 1080p, no notifications, cursor large enough to see.
 - Keep the final video below 3:00.
 - Demonstrate an actual packaged build.
-- If using a live API call, rehearse once and keep Demo mode ready as fallback.
+- Rehearse the live API flow once and keep a clean second take ready as the recording fallback.
 - Show the capture permission prompt only if it helps the privacy story.
 - Add captions; the product voice must not compete with narration.
 - End card: product name, Education Track, repository URL, landing-page URL.

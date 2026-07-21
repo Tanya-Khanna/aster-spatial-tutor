@@ -39,6 +39,14 @@ final class VoiceServices: NSObject, AVSpeechSynthesizerDelegate {
         requestSpeechAccess { [weak self] in self?.beginAudioCapture(wakeOnly: false) }
     }
 
+    func requestPermissions(completion: @escaping @MainActor () -> Void) {
+        SFSpeechRecognizer.requestAuthorization { _ in
+            AVCaptureDevice.requestAccess(for: .audio) { _ in
+                Task { @MainActor in completion() }
+            }
+        }
+    }
+
     func startWakeListening() {
         wakeRequested = true
         requestSpeechAccess { [weak self] in self?.beginAudioCapture(wakeOnly: true) }
