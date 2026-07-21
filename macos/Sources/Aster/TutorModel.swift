@@ -338,7 +338,7 @@ final class TutorModel: ObservableObject {
             screenPermissionRecoveryMessage = nil
         } else {
             screenPermission = .denied
-            screenPermissionRecoveryMessage = "macOS has not attached Screen Recording access to this copy of Aster✱ yet."
+            screenPermissionRecoveryMessage = "macOS has not attached Screen & System Audio Recording access to this copy of Aster✱ yet."
         }
     }
 
@@ -349,7 +349,7 @@ final class TutorModel: ObservableObject {
             screenPermissionRecoveryMessage = nil
         } else {
             screenPermission = .denied
-            screenPermissionRecoveryMessage = "Aster✱ still cannot see Screen Recording access. Remove every old Aster entry in Privacy & Security → Screen & System Audio Recording, add /Applications/Aster.app again, turn it on, then restart Aster✱."
+            screenPermissionRecoveryMessage = "Aster✱ still cannot see Screen & System Audio Recording access. Remove every old Aster entry in Privacy & Security → Screen & System Audio Recording, add /Applications/Aster.app again, turn it on, then restart Aster✱."
         }
     }
 

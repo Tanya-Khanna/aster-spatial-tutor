@@ -19,7 +19,7 @@ enum CaptureError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .permissionDenied: return "Allow Screen Recording in System Settings, then reopen Aster✱."
+        case .permissionDenied: return "Allow Screen & System Audio Recording in System Settings, then reopen Aster✱."
         case .captureFailed: return "Aster✱ could not capture the selected learning context."
         case .targetMoved: return "The selected window closed. Select the learning context again."
         case .encodingFailed: return "Aster✱ could not prepare the selected context."
@@ -28,10 +28,12 @@ enum CaptureError: LocalizedError {
 }
 
 final class ScreenCaptureService {
+    @MainActor
     func capture(region: ContextRegion = .fullScreen) throws -> CapturedScreen {
         try capture(target: .displayRegion(displayID: CGMainDisplayID(), region: region))
     }
 
+    @MainActor
     func capture(target originalTarget: CaptureTarget, videoContext: VideoContext? = nil) throws -> CapturedScreen {
         if !CGPreflightScreenCaptureAccess() {
             guard CGRequestScreenCaptureAccess() else { throw CaptureError.permissionDenied }
@@ -45,7 +47,7 @@ final class ScreenCaptureService {
         let overlayRegion: ContextRegion
         switch target.kind {
         case .displayRegion:
-            guard let fullImage = CGDisplayCreateImage(displayID) else { throw CaptureError.captureFailed }
+            let fullImage = try captureDisplayExcludingAsterWindows(displayID)
             let pixelRect = Self.pixelRect(for: target.region, imageWidth: fullImage.width, imageHeight: fullImage.height)
             guard let cropped = fullImage.cropping(to: pixelRect) else { throw CaptureError.captureFailed }
             sourceImage = cropped
@@ -80,6 +82,20 @@ final class ScreenCaptureService {
             capturedAt: Date(),
             videoContext: videoContext
         )
+    }
+
+    /// Keep Aster✱ visible in user-created screenshots while excluding its UI from
+    /// the context image sent to the tutor. Window sharing is disabled only for the
+    /// synchronous internal display capture, then restored immediately.
+    @MainActor
+    private func captureDisplayExcludingAsterWindows(_ displayID: CGDirectDisplayID) throws -> CGImage {
+        let windowsAndSharing = NSApp.windows.map { ($0, $0.sharingType) }
+        windowsAndSharing.forEach { window, _ in window.sharingType = .none }
+        defer {
+            windowsAndSharing.forEach { window, sharingType in window.sharingType = sharingType }
+        }
+        guard let image = CGDisplayCreateImage(displayID) else { throw CaptureError.captureFailed }
+        return image
     }
 
     private func render(_ source: CGImage, target: CaptureTarget, screen: NSScreen) throws -> Data {

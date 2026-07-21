@@ -34,7 +34,7 @@ final class OverlayController {
         panel.ignoresMouseEvents = true
         panel.level = .screenSaver
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        panel.sharingType = .none
+        panel.sharingType = .readOnly
         canvas.frame = NSRect(origin: .zero, size: frame.size)
         canvas.annotations = []
         canvas.primitives = primitives

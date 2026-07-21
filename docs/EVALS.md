@@ -57,7 +57,7 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - overlay is click-through and does not block the source app;
 - `Esc` or closing the panel clears annotations;
 - denied permissions produce a useful recovery message;
-- if Screen Recording is enabled for a stale ad-hoc build, the app identifies the current copy, refreshes status after activation, and offers an exact-copy restart;
+- if Screen & System Audio Recording is enabled for a stale ad-hoc build, the app identifies the current copy, refreshes status after activation, and offers an exact-copy restart;
 - if the app is launched from Downloads, App Translocation, or with quarantine metadata, onboarding is blocked until the one-click Applications relocation and relaunch succeeds;
 - the welcome window launches maximized and its first-run and home compositions expand at wide display sizes without clipping;
 - Settings opens as one compact native window, restores the last toolbar pane, supports Command–Comma, and deep-links permission recovery without interrupting onboarding;
@@ -91,5 +91,5 @@ Record time-to-first-useful-explanation, number of context switches, and mastery
 
 - If screen localization confidence is low, do not invent a target; ask the learner to point more tightly.
 - If the lesson schema fails to decode, show a concise retry message and draw nothing.
-- If Screen Recording permission is absent, explain exactly where to grant it.
+- If Screen & System Audio Recording permission is absent, explain exactly where to grant it.
 - If a page appears clinical or diagnostic, decline interpretation and offer general educational anatomy instead.

@@ -85,7 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         window.isMovableByWindowBackground = true
         window.isRestorable = false
         window.contentViewController = controller
-        window.sharingType = .none
+        window.sharingType = .readOnly
         window.minSize = NSSize(width: 1_040, height: 720)
         if let screen = NSScreen.main {
             window.setFrame(screen.visibleFrame, display: true)
@@ -114,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
         panel.isRestorable = false
-        panel.sharingType = .none
+        panel.sharingType = .readOnly
         tutorPanel = panel
     }
 
@@ -154,7 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
             window.isReleasedWhenClosed = false
             window.tabbingMode = .disallowed
             window.collectionBehavior = [.fullScreenNone]
-            window.sharingType = .none
+            window.sharingType = .readOnly
             let toolbar = NSToolbar(identifier: "AsterSettingsToolbar")
             toolbar.delegate = self
             toolbar.allowsUserCustomization = false

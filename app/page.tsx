@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
-const downloadHref = "/Aster-macOS.zip?v=0.3.5";
+const downloadHref = "/Aster-macOS.zip?v=0.3.6";
 
 const scenes: Record<
   SceneKey,
@@ -448,12 +448,12 @@ export default function Home() {
           <article className="setup-step">
             <span>03</span>
             <b>Move safely</b>
-            <p>On Aster✱’s first screen, click <strong>Move to Applications &amp; Relaunch</strong>. This prevents macOS’s temporary Downloads path from breaking Screen Recording.</p>
+            <p>On Aster✱’s first screen, click <strong>Move to Applications &amp; Relaunch</strong>. This prevents macOS’s temporary Downloads path from breaking Screen &amp; System Audio Recording.</p>
           </article>
           <article className="setup-step">
             <span>04</span>
             <b>Allow access</b>
-            <p>Enable Screen Recording. Allow Microphone and Speech Recognition only if you want voice conversation.</p>
+            <p>Enable <strong>Screen &amp; System Audio Recording</strong>. Allow Microphone and Speech Recognition only if you want voice conversation.</p>
           </article>
           <article className="setup-step">
             <span>05</span>
@@ -465,7 +465,7 @@ export default function Home() {
           <summary>Seeing a Keychain prompt or missing a permission?<span>+</span></summary>
           <div>
             <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build. Remove the saved key anytime from Aster✱ Settings.</p>
-            <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording. If Aster✱ still reports that access is missing, remove every old Aster row with −, add <strong>/Applications/Aster.app</strong> with +, turn it on, return to Aster✱ and choose <strong>I granted access — Check again</strong>. Restart if macOS asks. Ad-hoc prototype builds may need approval again after an update.</p>
+            <p><b>Screen &amp; System Audio Recording:</b> choose <strong>Request again</strong> in Aster✱ first. If access is still missing, open Privacy &amp; Security → Screen &amp; System Audio Recording, remove old Aster rows with −, add <strong>/Applications/Aster.app</strong> with +, turn it on, then return to Aster✱ and choose <strong>I granted access — Check again</strong>. Restart if macOS asks.</p>
           </div>
         </details>
       </section>

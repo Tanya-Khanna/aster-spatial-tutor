@@ -143,7 +143,7 @@ struct WelcomeView: View {
                 VStack(spacing: 12) {
                     Text("Aster✱ needs a permanent home.")
                         .font(.system(size: 43, weight: .medium, design: .rounded)).tracking(-1.4)
-                    Text("macOS can run downloaded apps from a temporary, randomized location. Screen Recording cannot reliably attach to that copy, so Aster✱ must live in Applications before setup begins.")
+                    Text("macOS can run downloaded apps from a temporary, randomized location. Screen & System Audio Recording cannot reliably attach to that copy, so Aster✱ must live in Applications before setup begins.")
                         .font(.system(size: 16)).foregroundStyle(asterSecondary)
                         .multilineTextAlignment(.center).lineSpacing(4).frame(maxWidth: 690)
                 }
@@ -386,12 +386,12 @@ struct WelcomeView: View {
     private var permissionsStep: some View {
         VStack(alignment: .leading, spacing: 24) {
             Text("Permission, with purpose.").font(.system(size: 42, weight: .medium, design: .rounded)).tracking(-1.5)
-            Text("Aster✱ asks only for capabilities a spatial tutor needs. Screen Recording is required. Voice remains optional.")
+            Text("Aster✱ asks only for capabilities a spatial tutor needs. Screen & System Audio Recording is required. Voice remains optional.")
                 .font(.system(size: 16)).foregroundStyle(asterSecondary).frame(maxWidth: 680, alignment: .leading)
             AsterCard {
                 VStack(spacing: 0) {
-                    PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen Recording", detail: "Required to capture only the region or window you select.", state: model.screenPermission, required: true) {
-                        model.screenPermission == .denied ? model.openScreenPermissionSettings() : model.requestScreenPermission()
+                    PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen & System Audio Recording", detail: "Required to capture only the region or window you select.", state: model.screenPermission, required: true) {
+                        model.requestScreenPermission()
                     }
                     Divider().padding(.vertical, 4)
                     PermissionRow(icon: "waveform", title: "Microphone + Speech Recognition", detail: "Optional. Enables questions and follow-ups by voice.", state: voicePermissionState, required: false) {
@@ -536,7 +536,7 @@ private struct PermissionRow: View {
             if state == .granted {
                 Label("Allowed", systemImage: "checkmark.circle.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(.green)
             } else {
-                Button(state == .denied ? "Open Settings" : "Allow") { action() }.buttonStyle(.bordered).controlSize(.small)
+                Button(state == .denied ? "Request again" : "Allow") { action() }.buttonStyle(.bordered).controlSize(.small)
             }
         }.padding(.vertical, 8)
     }
@@ -552,7 +552,7 @@ private struct ScreenPermissionRecovery: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(model.screenPermissionRecoveryMessage == nil ? "Access still not detected?" : "Aster✱ checked again — access is still missing.")
                         .font(.system(size: 12, weight: .semibold))
-                    Text("1. Open Privacy & Security → Screen & System Audio Recording.  2. Select every old Aster entry and click −.  3. Click +, choose /Applications/Aster.app, and turn it on.  4. Return here and check again; restart Aster✱ if macOS asks.")
+                    Text("1. Choose Request again above.  2. If Aster✱ is still absent, open Privacy & Security → Screen & System Audio Recording.  3. Remove old Aster entries, click +, and choose /Applications/Aster.app.  4. Turn it on, return here, and check again; restart if macOS asks.")
                         .font(.system(size: 10)).foregroundStyle(asterSecondary).lineSpacing(2)
                 }
             }
@@ -560,6 +560,7 @@ private struct ScreenPermissionRecovery: View {
                 Label(model.isRunningFromApplications ? "Running from Applications" : "Not running from Applications", systemImage: model.isRunningFromApplications ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .font(.system(size: 10, weight: .semibold)).foregroundStyle(model.isRunningFromApplications ? Color.green : asterSignal)
                 Spacer()
+                Button("Open System Settings") { model.openScreenPermissionSettings() }
                 Button("Show this copy") { model.revealRunningApplication() }
                 Button("I granted access — Check again") { model.checkScreenPermissionAfterGrant() }
                 Button("Restart Aster✱") { model.restartApplication() }.buttonStyle(.borderedProminent).tint(asterSignal)
@@ -742,7 +743,7 @@ struct TutorPanelView: View {
     private func errorCard(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 5) { Text("Aster✱ needs attention").font(.system(size: 11, weight: .semibold)); Text(message).font(.system(size: 10)).foregroundStyle(asterSecondary); HStack { if message.localizedCaseInsensitiveContains("Screen Recording") { Button("Fix permission") { model.showSettings(.permissions) } } else if !model.isAuthenticated { Button("Open setup") { model.onShowWelcome?() } }; Button("Dismiss") { model.recoverFromError() } }.buttonStyle(.link) }
+            VStack(alignment: .leading, spacing: 5) { Text("Aster✱ needs attention").font(.system(size: 11, weight: .semibold)); Text(message).font(.system(size: 10)).foregroundStyle(asterSecondary); HStack { if message.localizedCaseInsensitiveContains("Screen & System Audio Recording") { Button("Fix permission") { model.showSettings(.permissions) } } else if !model.isAuthenticated { Button("Open setup") { model.onShowWelcome?() } }; Button("Dismiss") { model.recoverFromError() } }.buttonStyle(.link) }
             Spacer()
         }.padding(12).background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 13)).padding(.horizontal, 14).padding(.top, 10)
     }
@@ -872,8 +873,8 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 22) {
                 settingsSection("SCREEN", "Required only for the context you choose.") {
                     VStack(spacing: 14) {
-                        PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen Recording", detail: "Required for selected-region teaching.", state: model.screenPermission, required: true) {
-                            model.screenPermission == .denied ? model.openScreenPermissionSettings() : model.requestScreenPermission()
+                        PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen & System Audio Recording", detail: "Required for selected-region teaching.", state: model.screenPermission, required: true) {
+                            model.requestScreenPermission()
                         }
                         if model.screenPermission == .denied { ScreenPermissionRecovery(model: model) }
                     }

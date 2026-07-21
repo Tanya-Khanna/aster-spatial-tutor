@@ -56,7 +56,7 @@ final class AsterStarCompanion {
         panel.level = .screenSaver
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.ignoresMouseEvents = mode != .bookmark
-        panel.sharingType = .none
+        panel.sharingType = .readOnly
         panel.orderFrontRegardless()
         self.panel = panel
         starView = view

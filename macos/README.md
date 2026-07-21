@@ -26,7 +26,9 @@ zsh scripts/package.sh
 
 The packaged application is written to `macos/dist/Aster.app` and the downloadable archive to `public/Aster-macOS.zip`.
 
-Before onboarding, Aster✱ blocks launches from Downloads/App Translocation or any quarantined copy. **Move to Applications & Relaunch** stages the bundle in `/Applications`, removes quarantine recursively, launches that stable copy, and closes the temporary process. Because the prototype is ad-hoc signed, replacing it can still leave Screen Recording enabled for an older code identity; the recovery state explains how to remove old entries, re-add `/Applications/Aster.app`, check access, and restart.
+Before onboarding, Aster✱ blocks launches from Downloads/App Translocation or any quarantined copy. **Move to Applications & Relaunch** stages the bundle in `/Applications`, removes quarantine recursively, launches that stable copy, and closes the temporary process. Because the prototype is ad-hoc signed, replacing it can still leave **Screen & System Audio Recording** enabled for an older code identity; the recovery state explains how to remove old entries, re-add `/Applications/Aster.app`, check access, and restart.
+
+Aster✱’s welcome, tutor, settings, selection, companion, and teaching-overlay windows are visible in user-created screenshots. During Aster✱’s own internal context capture, those windows are temporarily marked non-shareable so they are excluded from the image sent for tutoring.
 
 ## API and privacy
 

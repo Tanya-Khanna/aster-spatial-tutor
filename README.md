@@ -15,7 +15,7 @@ Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-
 - Landing page locally: `npm install && npm run dev`
 - Aster✱ requires the learner’s own OpenAI API key. First-run onboarding validates it before an explicit save to macOS Keychain.
 
-The prototype is ad-hoc signed. A first-run relocation guard detects Downloads/App Translocation and quarantine metadata before onboarding, then offers **Move to Applications & Relaunch** so Screen Recording attaches to one stable app identity. After replacing Aster✱ with a newer build, macOS may require approval again; the permission-repair state gives exact remove-old-entry, re-add, check, and restart steps.
+The prototype is ad-hoc signed. A first-run relocation guard detects Downloads/App Translocation and quarantine metadata before onboarding, then offers **Move to Applications & Relaunch** so **Screen & System Audio Recording** attaches to one stable app identity. After replacing Aster✱ with a newer build, macOS may require approval again; the permission-repair state gives exact remove-old-entry, re-add, check, and restart steps.
 
 After onboarding, Aster✱ uses a single compact native Settings window with General, Voice, Permissions, Learning, and Account panes. It remembers the last pane, opens with **Command–Comma**, and routes permission errors directly to recovery controls.
 
