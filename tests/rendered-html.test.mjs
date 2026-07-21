@@ -44,8 +44,8 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /own OpenAI API key is required/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS\.zip\?v=0\.5\.2/);
-  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.5\.2"/g) ?? []).length, 3);
+  assert.match(html, /Aster-macOS\.zip\?v=0\.5\.3/);
+  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.5\.3"/g) ?? []).length, 3);
   assert.match(html, /Whole Screen/);
   assert.match(html, /Point/);
   assert.match(html, /Region/);
@@ -83,7 +83,7 @@ test("ships a key-required app archive, social card, and removes the starter pre
 
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(page, /Your screen becomes the/);
-  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.5\.2"/);
+  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.5\.3"/);
   assert.equal((page.match(/href=\{downloadHref\}/g) ?? []).length, 3);
   assert.match(page, /scene-switcher/);
   assert.doesNotMatch(`${page}\n${css}`, /summon-demo|summon-modes|summon-prompt/);
