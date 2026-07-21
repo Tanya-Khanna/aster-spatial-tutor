@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import ImageIO
 
 enum TutorAPIError: LocalizedError {
     case invalidResponse
@@ -45,7 +47,8 @@ final class OpenAIClient {
         recentFrames: [CapturedScreen] = [],
         recentContext: String,
         learnerMemory: String,
-        safetyIdentifier: String
+        safetyIdentifier: String,
+        onQuestionProgress: (@MainActor (String) -> Void)? = nil
     ) async throws -> TutorResult<DiagnosticPlan> {
         let prompt = """
         Learner question: \(question)
@@ -67,10 +70,13 @@ final class OpenAIClient {
             instructions: Self.diagnosticInstructions,
             prompt: prompt,
             images: recentFrames.isEmpty ? [screen] : recentFrames,
-            imageDetail: "original",
-            maxOutputTokens: 500,
+            imageDetail: "low",
+            imageMaxDimension: 1_024,
+            maxOutputTokens: 450,
             format: Self.diagnosticFormat,
-            safetyIdentifier: safetyIdentifier
+            safetyIdentifier: safetyIdentifier,
+            partialTextKey: "question",
+            onPartialText: onQuestionProgress
         )
     }
 
@@ -84,7 +90,8 @@ final class OpenAIClient {
         recentContext: String,
         learnerMemory: String,
         precisionMode: Bool,
-        safetyIdentifier: String
+        safetyIdentifier: String,
+        onNarrationProgress: (@MainActor (String) -> Void)? = nil
     ) async throws -> TutorResult<LessonPlan> {
         let model = precisionMode ? "gpt-5.6-sol" : "gpt-5.6-terra"
         let prompt = """
@@ -115,9 +122,12 @@ final class OpenAIClient {
             prompt: prompt,
             images: recentFrames.isEmpty ? [screen] : recentFrames,
             imageDetail: precisionMode ? "original" : "high",
-            maxOutputTokens: 1_400,
+            imageMaxDimension: precisionMode ? nil : 1_024,
+            maxOutputTokens: precisionMode ? 1_400 : 1_200,
             format: Self.lessonFormat,
-            safetyIdentifier: safetyIdentifier
+            safetyIdentifier: safetyIdentifier,
+            partialTextKey: "narration",
+            onPartialText: onNarrationProgress
         )
     }
 
@@ -149,9 +159,12 @@ final class OpenAIClient {
             prompt: prompt,
             images: [],
             imageDetail: "low",
+            imageMaxDimension: nil,
             maxOutputTokens: 450,
             format: Self.assessmentFormat,
-            safetyIdentifier: safetyIdentifier
+            safetyIdentifier: safetyIdentifier,
+            partialTextKey: nil,
+            onPartialText: nil
         )
     }
 
@@ -163,9 +176,12 @@ final class OpenAIClient {
         prompt: String,
         images: [CapturedScreen],
         imageDetail: String,
+        imageMaxDimension: Int?,
         maxOutputTokens: Int,
         format: [String: Any],
-        safetyIdentifier: String
+        safetyIdentifier: String,
+        partialTextKey: String?,
+        onPartialText: (@MainActor (String) -> Void)?
     ) async throws -> TutorResult<Value> {
         var content: [[String: Any]] = [["type": "input_text", "text": prompt]]
         for (index, image) in images.suffix(4).enumerated() {
@@ -173,7 +189,7 @@ final class OpenAIClient {
             content.append(["type": "input_text", "text": "Frame \(index + 1), captured \(String(format: "%.1f", age)) seconds ago\(image.videoContext.map { ", video time \(String(format: "%.1f", $0.currentTime))s, captions: \($0.captions)" } ?? "")."])
             content.append([
                 "type": "input_image",
-                "image_url": "data:image/jpeg;base64,\(image.jpegData.base64EncodedString())",
+                "image_url": "data:image/jpeg;base64,\(Self.preparedImageData(image.jpegData, maxDimension: imageMaxDimension).base64EncodedString())",
                 "detail": index == images.suffix(4).count - 1 ? imageDetail : "low"
             ])
         }
@@ -181,6 +197,7 @@ final class OpenAIClient {
         let requestBody: [String: Any] = [
             "model": model,
             "store": false,
+            "stream": true,
             "safety_identifier": safetyIdentifier,
             "reasoning": ["effort": reasoningEffort],
             "max_output_tokens": maxOutputTokens,
@@ -196,27 +213,56 @@ final class OpenAIClient {
         request.timeoutInterval = 55
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw TutorAPIError.invalidResponse }
         if http.statusCode == 401 || http.statusCode == 403 { throw TutorAPIError.authentication }
         guard (200..<300).contains(http.statusCode) else {
-            let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            var errorData = Data()
+            for try await byte in bytes { errorData.append(byte) }
+            let object = (try? JSONSerialization.jsonObject(with: errorData)) as? [String: Any]
             let error = object?["error"] as? [String: Any]
-            let message = error?["message"] as? String ?? "OpenAI returned status \(http.statusCode)."
-            throw TutorAPIError.service(message)
+            throw TutorAPIError.service(error?["message"] as? String ?? "OpenAI returned status \(http.statusCode).")
         }
 
-        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let output = root["output"] as? [[String: Any]],
-              let message = output.first(where: { $0["type"] as? String == "message" }),
-              let messageContent = message["content"] as? [[String: Any]],
-              let outputText = messageContent.first(where: { $0["type"] as? String == "output_text" })?["text"] as? String,
-              let valueData = outputText.data(using: .utf8) else {
+        var outputText = ""
+        var completedResponse: [String: Any]?
+        var lastPartial = ""
+        for try await line in bytes.lines {
+            guard line.hasPrefix("data:") else { continue }
+            let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+            guard payload != "[DONE]", let data = payload.data(using: .utf8),
+                  let event = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            switch event["type"] as? String {
+            case "response.output_text.delta":
+                outputText += event["delta"] as? String ?? ""
+                if let partialTextKey,
+                   let partial = Self.partialJSONStringValue(forKey: partialTextKey, in: outputText),
+                   partial != lastPartial {
+                    lastPartial = partial
+                    await onPartialText?(partial)
+                }
+            case "response.completed":
+                completedResponse = event["response"] as? [String: Any]
+            case "response.failed":
+                let response = event["response"] as? [String: Any]
+                let error = response?["error"] as? [String: Any]
+                throw TutorAPIError.service(error?["message"] as? String ?? "OpenAI could not complete this teaching turn.")
+            case "error":
+                throw TutorAPIError.service(event["message"] as? String ?? "OpenAI could not complete this teaching turn.")
+            default:
+                continue
+            }
+        }
+
+        if outputText.isEmpty, let completedResponse {
+            outputText = Self.outputText(from: completedResponse) ?? ""
+        }
+        guard let valueData = outputText.data(using: .utf8) else {
             throw TutorAPIError.invalidResponse
         }
 
         let value = try JSONDecoder().decode(Value.self, from: valueData)
-        let usageObject = root["usage"] as? [String: Any]
+        let usageObject = completedResponse?["usage"] as? [String: Any]
         let inputTokens = usageObject?["input_tokens"] as? Int ?? 0
         let outputTokens = usageObject?["output_tokens"] as? Int ?? 0
         let usage = APIUsage(
@@ -225,6 +271,96 @@ final class OpenAIClient {
             totalTokens: usageObject?["total_tokens"] as? Int ?? (inputTokens + outputTokens)
         )
         return TutorResult(value: value, usage: usage)
+    }
+
+    /// Keeps ordinary tutor turns economical while retaining original pixels for
+    /// the explicit high-precision path used for dense spatial localization.
+    static func preparedImageData(_ data: Data, maxDimension: Int?) -> Data {
+        guard let maxDimension,
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int,
+              max(width, height) > maxDimension else { return data }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDimension
+        ]
+        guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
+              let resized = NSBitmapImageRep(cgImage: thumbnail).representation(
+                using: .jpeg,
+                properties: [.compressionFactor: 0.82]
+              ) else { return data }
+        return resized
+    }
+
+    static func imagePixelSize(_ data: Data) -> CGSize? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat else { return nil }
+        return CGSize(width: width, height: height)
+    }
+
+    /// Extracts a string field that may not have closed yet. The completed JSON
+    /// is still decoded strictly; this is display-only progress for SSE deltas.
+    static func partialJSONStringValue(forKey key: String, in json: String) -> String? {
+        guard let keyRange = json.range(of: "\"\(key)\"") else { return nil }
+        var cursor = keyRange.upperBound
+        while cursor < json.endIndex, json[cursor] != ":" { cursor = json.index(after: cursor) }
+        guard cursor < json.endIndex else { return nil }
+        cursor = json.index(after: cursor)
+        while cursor < json.endIndex, json[cursor].isWhitespace { cursor = json.index(after: cursor) }
+        guard cursor < json.endIndex, json[cursor] == "\"" else { return nil }
+        cursor = json.index(after: cursor)
+
+        var value = ""
+        while cursor < json.endIndex {
+            let character = json[cursor]
+            if character == "\"" { return value }
+            if character != "\\" {
+                value.append(character)
+                cursor = json.index(after: cursor)
+                continue
+            }
+
+            let escapedIndex = json.index(after: cursor)
+            guard escapedIndex < json.endIndex else { return value }
+            let escaped = json[escapedIndex]
+            switch escaped {
+            case "\"", "\\", "/": value.append(escaped)
+            case "b": value.append("\u{8}")
+            case "f": value.append("\u{c}")
+            case "n": value.append("\n")
+            case "r": value.append("\r")
+            case "t": value.append("\t")
+            case "u":
+                var digits = ""
+                var digitIndex = json.index(after: escapedIndex)
+                for _ in 0..<4 {
+                    guard digitIndex < json.endIndex else { return value }
+                    digits.append(json[digitIndex])
+                    digitIndex = json.index(after: digitIndex)
+                }
+                if let scalarValue = UInt32(digits, radix: 16), let scalar = UnicodeScalar(scalarValue) {
+                    value.unicodeScalars.append(scalar)
+                }
+                cursor = digitIndex
+                continue
+            default: value.append(escaped)
+            }
+            cursor = json.index(after: escapedIndex)
+        }
+        return value
+    }
+
+    private static func outputText(from root: [String: Any]) -> String? {
+        guard let output = root["output"] as? [[String: Any]],
+              let message = output.first(where: { $0["type"] as? String == "message" }),
+              let content = message["content"] as? [[String: Any]] else { return nil }
+        return content.first(where: { $0["type"] as? String == "output_text" })?["text"] as? String
     }
 
     private static let diagnosticInstructions = """

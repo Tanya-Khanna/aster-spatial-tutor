@@ -57,7 +57,7 @@ Whole display / pointed object / boxed region / freehand loop
         ↓
 Local target recovery + optional recent-frame video buffer (zero API calls)
         ↓
-GPT-5.6 diagnostic turn → learner choice
+GPT-5.6 diagnostic turn → learner choice, learner-described confusion, or quiet skip
         ↓
 GPT-5.6 spatial lesson turn
   • Terra by default / Sol precision mode
@@ -75,7 +75,7 @@ GPT-5.6 assessment turn
 Persistent concept graph + evidence + spaced review
 ```
 
-Three strict schemas separate diagnosis, teaching, and assessment. A lesson contains one to four synchronized steps; every step has narration, a notebook insight, and no more than four normalized annotations. Coordinates from the active scope are validated and mapped back onto the source. Freehand Loop masks everything outside the learner’s path locally before the request is created. If localization is uncertain, the model is instructed to use fewer marks and request a tighter scope.
+Three strict schemas separate diagnosis, teaching, and assessment. Diagnosis offers 2–3 likely misconceptions by default, plus a learner-authored “None of these” path and a quiet “Skip, just explain” escape. A lesson contains one to four synchronized steps; every step has narration, a notebook insight, and no more than four normalized annotations. Coordinates from the active scope are validated and mapped back onto the source. Freehand Loop masks everything outside the learner’s path locally before the request is created. If localization is uncertain, the model is instructed to use fewer marks and request a tighter scope.
 
 Learner memory is stored as evidence rather than a transcript: concept mastery, attempts, what the learner demonstrated, remaining shaky areas, and the next teaching strategy. The next diagnostic turn receives that compact profile so Aster✱ can truthfully say, for example, “You demonstrated softmax purpose; square-root scaling is still shaky.”
 
@@ -145,7 +145,7 @@ cd macos && swift build -c release
 | Criterion | Evidence in this repository |
 | --- | --- |
 | Technological Implementation | Multi-display/window capture, semantic point anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, explicit Keychain lifecycle, and session usage visibility |
-| Design | One coherent Aster✱ system across macOS and responsive web; visible context/follow states; mandatory diagnostic choices; staged annotation choreography; voice, notebook, mastery, and memory states |
+| Design | One coherent Aster✱ system across macOS and responsive web; visible context/follow states; diagnosis-first choices with learner-controlled escapes; staged annotation choreography; voice, notebook, mastery, and memory states |
 | Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams while emphasizing comprehension rather than answer generation |
 | Quality of Idea | OS-native spatial tutoring, explicit point-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
 

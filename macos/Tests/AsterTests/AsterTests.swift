@@ -1,6 +1,7 @@
 import CoreGraphics
 import Darwin
 import Foundation
+import AppKit
 import Testing
 @testable import Aster
 
@@ -69,6 +70,13 @@ import Testing
     #expect(ContextMode.allCases.map(\.label) == ["Whole Screen", "Point", "Region", "Freehand Loop"])
     #expect(ContextMode.allCases.first == .wholeScreen)
     #expect(ContextMode.point.guidance.contains("Click once"))
+}
+
+@MainActor
+@Test func videoContextRequiresAConfirmedVideoAndRespectsManualOff() {
+    #expect(TutorModel.shouldEnableDetectedVideo(hasConfirmedVideo: true, isSuppressed: false))
+    #expect(!TutorModel.shouldEnableDetectedVideo(hasConfirmedVideo: false, isSuppressed: false))
+    #expect(!TutorModel.shouldEnableDetectedVideo(hasConfirmedVideo: true, isSuppressed: true))
 }
 
 @MainActor
@@ -176,6 +184,40 @@ import Testing
     #expect(usage.inputTokens == 170)
     #expect(usage.outputTokens == 50)
     #expect(usage.totalTokens == 220)
+}
+
+@MainActor
+@Test func diagnosticEscapeOptionsPreserveLearnerIntent() {
+    let custom = TutorModel.learnerDescribedDiagnosticOption("I understand the denominator; the arrow direction is confusing.")
+    #expect(custom.id == "learner-described")
+    #expect(custom.label.contains("arrow direction"))
+    #expect(custom.misconception.contains("arrow direction"))
+    #expect(TutorModel.skipDiagnosticOption.id == "skip-explanation")
+    #expect(TutorModel.skipDiagnosticOption.label == "Skip, just explain")
+}
+
+@Test func streamedStructuredTextCanBeRevealedBeforeJSONCompletes() {
+    let diagnosticChunk = #"{"conceptID":"attention","question":"Why does the square root keep softmax"#
+    #expect(OpenAIClient.partialJSONStringValue(forKey: "question", in: diagnosticChunk) == "Why does the square root keep softmax")
+
+    let lessonChunk = #"{"steps":[{"narration":"First, look at the highlighted \"scale\" term.\nIt controls"#
+    #expect(OpenAIClient.partialJSONStringValue(forKey: "narration", in: lessonChunk) == "First, look at the highlighted \"scale\" term.\nIt controls")
+}
+
+@Test func ordinaryModelImagesAreDownscaledButPrecisionCanKeepOriginalPixels() throws {
+    guard let context = CGContext(
+        data: nil, width: 2_048, height: 1_024,
+        bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ), let image = context.makeImage(),
+       let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.9]) else {
+        throw TutorAPIError.invalidResponse
+    }
+    let resized = OpenAIClient.preparedImageData(jpeg, maxDimension: 1_024)
+    let original = OpenAIClient.preparedImageData(jpeg, maxDimension: nil)
+    #expect(OpenAIClient.imagePixelSize(resized) == CGSize(width: 1_024, height: 512))
+    #expect(OpenAIClient.imagePixelSize(original) == CGSize(width: 2_048, height: 1_024))
 }
 
 @MainActor

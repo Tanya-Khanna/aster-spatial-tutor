@@ -99,6 +99,9 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(nativeViews, /Validate and save/);
   assert.match(nativeViews, /TutorBarView/);
   assert.match(nativeViews, /ForEach\(ContextMode\.allCases\)/);
+  assert.match(nativeViews, /VIDEO CONTEXT · LOCAL/);
+  assert.match(nativeViews, /toggleStyle\(\.switch\)/);
+  assert.match(nativeViews, /asterLearnerBubble/);
   assert.match(nativeViews, /LOCAL ONLY · NOTHING SENT/);
   assert.doesNotMatch(nativeViews, /Point \/ select|Use current window/);
   assert.match(nativeViews, /switch model\.settingsPane/);
@@ -123,6 +126,8 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(screenCapture, /mask\.addClip\(\)/);
   assert.match(contextSelector, /Click the exact thing you mean/);
   assert.match(contextSelector, /pointer: pointer/);
+  assert.match(tutorModel, /shouldEnableDetectedVideo/);
+  assert.doesNotMatch(tutorModel, /consecutiveFrameChanges/);
   assert.match(voiceServices, /questionAfterWakePhrase/);
   assert.match(voiceServices, /requiresOnDeviceRecognition = true/);
   assert.match(voiceServices, /1\.15/);

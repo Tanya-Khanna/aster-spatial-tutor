@@ -56,7 +56,7 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - “Hey Aster” preserves and transcribes the words spoken after the wake phrase in the same recognition session;
 - voice and text submit through the same scoped capture pipeline in all four modes;
 - local follow produces zero OpenAI requests before the learner submits a question;
-- changing pages or video frames builds at most four recent local frames and sends them only as part of the submitted teaching turn;
+- a confirmed browser video or learner-enabled video context builds at most four recent local frames and sends them only as part of the submitted teaching turn; ordinary pixel changes never enable video context;
 - the ✱ remains inside the tutor bar; opening Aster✱ never creates a second floating mascot or clipped reading stroke;
 - Point places one quiet target pin at the learner’s explicit click and uses it as the spatial origin for the teaching marks;
 - opt-in “Hey Aster” activates Aster✱, hands off to normal conversational listening, and returns to wake listening afterward;
@@ -79,7 +79,7 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 
 ### 4. Adaptation and memory
 
-- a diagnostic choice occurs before every new explanation;
+- a diagnostic question is offered before every new explanation, with explicit learner-authored and skip escapes;
 - an answer is assessed against the lesson’s explicit success criteria;
 - mastery changes only after learner evidence, never merely after viewing a lesson;
 - demonstrated strengths and shaky areas survive app restart;

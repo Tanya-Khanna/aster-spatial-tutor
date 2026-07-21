@@ -8,6 +8,7 @@ private let asterSecondary = Color(nsColor: .secondaryLabelColor)
 private let asterCanvas = Color(nsColor: .windowBackgroundColor)
 private let asterSurface = Color(nsColor: .controlBackgroundColor)
 private let asterLine = Color(nsColor: .separatorColor)
+private let asterLearnerBubble = Color(red: 0.43, green: 0.15, blue: 0.11)
 
 struct AsterMark: View {
     var size: CGFloat = 28
@@ -743,13 +744,24 @@ private struct TutorBarView: View {
             }
 
             Spacer(minLength: 8)
-            if model.isVideoMode {
-                Label("LIVE FRAMES", systemImage: "play.rectangle.fill")
+            Button { model.toggleVideoMode() } label: {
+                if model.isVideoMode {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.rectangle.fill")
+                        Text("VIDEO CONTEXT · LOCAL")
+                        Image(systemName: "xmark.circle.fill")
+                    }
                     .font(.system(size: 8, weight: .bold, design: .monospaced))
                     .foregroundStyle(asterSignal)
                     .padding(.horizontal, 8).padding(.vertical, 5)
                     .background(asterSignal.opacity(0.10), in: Capsule())
+                } else {
+                    Image(systemName: "play.rectangle")
+                        .foregroundStyle(asterSecondary)
+                        .frame(width: 26, height: 26)
+                }
             }
+            .help(model.isVideoMode ? "Turn off video context and use one current frame" : "Turn on video context for a changing sequence")
             Button { model.showSettings() } label: { Image(systemName: "gearshape") }.help("Settings")
             Button { model.setPanelExpanded(!model.isPanelExpanded) } label: {
                 Image(systemName: model.isPanelExpanded ? "chevron.up" : "chevron.down")
@@ -831,8 +843,19 @@ private struct TutorBarView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 VStack(alignment: .leading, spacing: 10) {
+                    if !model.streamingDiagnosticText.isEmpty {
+                        StreamingTutorCard(label: "DIAGNOSING", text: model.streamingDiagnosticText)
+                    }
+                    if !model.streamingLessonText.isEmpty {
+                        StreamingTutorCard(label: "TEACHING", text: model.streamingLessonText)
+                    }
                     if let diagnostic = model.diagnostic {
-                        DiagnosticChoiceCard(diagnostic: diagnostic) { model.chooseDiagnostic($0) }
+                        DiagnosticChoiceCard(
+                            diagnostic: diagnostic,
+                            choose: { model.chooseDiagnostic($0) },
+                            describeInstead: { model.describeDiagnosticInstead($0) },
+                            skip: { model.skipDiagnostic() }
+                        )
                     }
                     teachingControls
                     if let lesson = model.lastLesson, lesson.toolSuggestion != "none" {
@@ -1030,14 +1053,14 @@ struct SettingsView: View {
                     }
                 }
                 settingsSection("CONVERSATION", "Voice remains optional and learner-controlled.") {
-                    VStack(spacing: 16) {
-                        Toggle(isOn: $model.listenOnOpen) { settingLabel("Listen when Aster✱ opens", "Start listening immediately; typing always remains available.") }
+                    VStack(alignment: .leading, spacing: 16) {
+                        SettingsSwitchRow(title: "Listen when Aster✱ opens", detail: "Start listening immediately; typing always remains available.", isOn: $model.listenOnOpen)
                         Divider()
-                        Toggle(isOn: $model.autoSendVoice) { settingLabel("Send after a short pause", "Aster✱ submits your spoken question after about one second of silence.") }
+                        SettingsSwitchRow(title: "Send after a short pause", detail: "Aster✱ submits your spoken question after about one second of silence.", isOn: $model.autoSendVoice)
                         Divider()
-                        Toggle(isOn: $model.conversationMode) { settingLabel("Conversational follow-ups", "Listen again after each understanding check.") }
+                        SettingsSwitchRow(title: "Conversational follow-ups", detail: "Listen again after each understanding check.", isOn: $model.conversationMode)
                         Divider()
-                        Toggle(isOn: $model.wakePhraseEnabled) { settingLabel("“Hey Aster” wake phrase", "Optional continuous on-device wake listening.") }
+                        SettingsSwitchRow(title: "“Hey Aster” wake phrase", detail: "Optional continuous on-device wake listening.", isOn: $model.wakePhraseEnabled)
                         HStack(spacing: 9) {
                             Circle()
                                 .fill(model.wakeListeningState.isListening ? Color.green : asterSecondary.opacity(0.7))
@@ -1048,9 +1071,13 @@ struct SettingsView: View {
                             Spacer()
                             Button("Test “Hey Aster”") { model.testWakePhrase() }
                                 .buttonStyle(.bordered)
+                                .tint(asterSignal)
                                 .controlSize(.small)
                         }
+                        .padding(11)
+                        .background(asterSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 11))
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         case .permissions:
@@ -1104,6 +1131,10 @@ struct SettingsView: View {
                             usageMetric(model.sessionUsage.inputTokens.formatted(), "Input tokens")
                             usageMetric(model.sessionUsage.outputTokens.formatted(), "Output tokens")
                         }
+                        HStack(spacing: 12) {
+                            usageMetric(model.diagnosticLatencyLabel, "Ask → first diagnostic text")
+                            usageMetric(model.lessonLatencyLabel, "Choice → first teaching text")
+                        }
                         HStack {
                             Text("Aster✱ does not estimate dollar cost because model pricing can change.").font(.system(size: 10)).foregroundStyle(asterSecondary)
                             Spacer()
@@ -1152,12 +1183,88 @@ struct SettingsView: View {
 struct DiagnosticChoiceCard: View {
     let diagnostic: DiagnosticPlan
     let choose: (DiagnosticOption) -> Void
+    let describeInstead: (String) -> Void
+    let skip: () -> Void
+    @State private var isDescribingInstead = false
+    @State private var learnerDescription = ""
+    @FocusState private var descriptionFocused: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack { Label("DIAGNOSE FIRST", systemImage: "scope"); Spacer(); Text(diagnostic.conceptTitle).foregroundStyle(asterSecondary) }.font(.system(size: 8, weight: .bold, design: .monospaced)).foregroundStyle(asterSignal)
             Text(diagnostic.question).font(.system(size: 12, weight: .semibold))
             ForEach(diagnostic.options) { option in Button { choose(option) } label: { HStack { Text(option.label); Spacer(); Image(systemName: "arrow.right") }.padding(.horizontal, 11).padding(.vertical, 9).background(asterSurface, in: RoundedRectangle(cornerRadius: 10)).contentShape(Rectangle()) }.buttonStyle(.plain).font(.system(size: 10, weight: .medium)) }
+
+            Button {
+                withAnimation(.easeOut(duration: 0.16)) { isDescribingInstead.toggle() }
+                descriptionFocused = isDescribingInstead
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 7) {
+                    Image(systemName: "text.bubble")
+                    Text("None of these — here’s what I’m stuck on")
+                    Spacer()
+                    Image(systemName: isDescribingInstead ? "chevron.up" : "chevron.down")
+                }
+                .padding(.horizontal, 11).padding(.vertical, 9)
+                .background(asterSignal.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(asterSignal.opacity(0.22)))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).font(.system(size: 10, weight: .medium))
+
+            if isDescribingInstead {
+                HStack(spacing: 7) {
+                    TextField("Tell Aster✱ what is actually confusing…", text: $learnerDescription, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .lineLimit(2...4)
+                        .focused($descriptionFocused)
+                        .onSubmit { submitDescription() }
+                    Button("Continue") { submitDescription() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(asterSignal)
+                        .controlSize(.small)
+                        .disabled(learnerDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(10)
+                .background(asterSurface, in: RoundedRectangle(cornerRadius: 10))
+            }
+
+            Button("Skip, just explain", action: skip)
+                .buttonStyle(.plain)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(asterSecondary)
+                .padding(.horizontal, 3).padding(.top, 2)
         }.padding(13).background(asterSignal.opacity(0.08), in: RoundedRectangle(cornerRadius: 15))
+    }
+
+    private func submitDescription() {
+        let cleaned = learnerDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+        describeInstead(cleaned)
+    }
+}
+
+private struct StreamingTutorCard: View {
+    let label: String
+    let text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                AsterMark(size: 14)
+                Text(label)
+                Spacer()
+                ProgressView().controlSize(.mini).tint(asterSignal)
+            }
+            .font(.system(size: 8, weight: .bold, design: .monospaced))
+            .foregroundStyle(asterSignal)
+            Text(text)
+                .font(.system(size: 12, weight: .medium))
+                .lineSpacing(3)
+        }
+        .padding(13)
+        .background(asterSignal.opacity(0.08), in: RoundedRectangle(cornerRadius: 15))
+        .overlay(RoundedRectangle(cornerRadius: 15).stroke(asterSignal.opacity(0.14)))
     }
 }
 
@@ -1187,7 +1294,7 @@ struct MessageBubble: View {
     }
 
     private var background: Color {
-        if message.role == .learner { return Color(nsColor: .labelColor) }
+        if message.role == .learner { return asterLearnerBubble }
         switch message.kind {
         case .insight, .diagnostic: return asterSignal.opacity(0.09)
         case .check, .assessment: return asterMint.opacity(0.22)
@@ -1195,5 +1302,27 @@ struct MessageBubble: View {
         case .tool: return Color.orange.opacity(0.10)
         case .message: return asterSurface
         }
+    }
+}
+
+private struct SettingsSwitchRow: View {
+    let title: String
+    let detail: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 24) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.system(size: 12, weight: .semibold))
+                Text(detail).font(.system(size: 10)).foregroundStyle(asterSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(asterSignal)
+                .controlSize(.regular)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

@@ -10,7 +10,7 @@ The tutor bar and Point/Region/Freehand selectors are non-activating, key-capabl
 
 1. Open the persistent bar with Option–Space or the optional wake phrase.
 2. Choose Whole Screen, Point, Region, or Freehand Loop and follow that scope locally without an API request.
-3. Diagnose with one short question and concrete misconception choices.
+3. Diagnose with one short question and concrete misconception choices, while allowing the learner to describe a different confusion or quietly skip.
 4. Reveal a spatial lesson step-by-step through voice, notebook, and overlays.
 5. Fade the scaffolding and collect an independent transfer answer.
 6. Assess against explicit success criteria.
@@ -34,7 +34,7 @@ Aster✱’s welcome, tutor, settings, selection, companion, and teaching-overla
 
 ## API and privacy
 
-- GPT-5.6 Terra diagnoses and teaches; Precision mode uses GPT-5.6 Sol; GPT-5.6 Luna assesses answers.
+- GPT-5.6 Terra diagnoses and teaches; Precision mode uses GPT-5.6 Sol; GPT-5.6 Luna assesses answers. Ordinary visual turns are capped near 1024 px and Responses API output streams into the tutor surface; Precision mode retains original pixels.
 - Diagnosis, spatial lessons, and mastery assessment use separate strict schemas.
 - The bar visibly follows the active Whole Screen, Point, Region, or Freehand Loop scope locally; API capture is question-triggered.
 - Aster✱ requires the learner’s own OpenAI API key. It is validated before an explicit save to macOS Keychain.

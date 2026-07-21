@@ -54,6 +54,8 @@ final class TutorModel: ObservableObject {
     @Published var contextTarget: CaptureTarget?
     @Published var anchorStatus = "Cursor-local context"
     @Published var diagnostic: DiagnosticPlan?
+    @Published private(set) var streamingDiagnosticText = ""
+    @Published private(set) var streamingLessonText = ""
     @Published var lastLesson: LessonPlan?
     @Published var lessonStepIndex = 0
     @Published var learnerProfile: LearnerProfile
@@ -73,6 +75,8 @@ final class TutorModel: ObservableObject {
     @Published private(set) var screenPermissionRecoveryMessage: String?
     @Published private(set) var sessionUsage: APIUsage = .zero
     @Published private(set) var sessionRequestCount = 0
+    @Published private(set) var lastDiagnosticFirstResponseLatency: TimeInterval?
+    @Published private(set) var lastLessonFirstResponseLatency: TimeInterval?
 
     var onShowPanel: (() -> Void)?
     var onHidePanel: (() -> Void)?
@@ -100,7 +104,9 @@ final class TutorModel: ObservableObject {
     private var resumeVideoAfterCheck = false
     private var lastExternalPointer = NSEvent.mouseLocation
     private var sourceApplicationName = ""
-    private var consecutiveFrameChanges = 0
+    private var videoContextSuppressed = false
+    private var diagnosticRequestStartedAt: Date?
+    private var lessonRequestStartedAt: Date?
 
     private init() {
         let initialRelocationStatus = AppRelocationService.status()
@@ -182,6 +188,14 @@ final class TutorModel: ObservableObject {
         sessionUsage.totalTokens.formatted() + " tokens"
     }
 
+    var diagnosticLatencyLabel: String {
+        Self.latencyLabel(lastDiagnosticFirstResponseLatency)
+    }
+
+    var lessonLatencyLabel: String {
+        Self.latencyLabel(lastLessonFirstResponseLatency)
+    }
+
     var isRunningFromApplications: Bool {
         relocationStatus.isInApplications && !relocationStatus.isTranslocated
     }
@@ -246,9 +260,11 @@ final class TutorModel: ObservableObject {
         contextTarget = nil
         capturedContext = nil
         recentFrames = []
-        consecutiveFrameChanges = 0
         diagnostic = nil
+        streamingDiagnosticText = ""
+        streamingLessonText = ""
         isVideoMode = false
+        videoContextSuppressed = false
         phase = .ready
         isPanelExpanded = false
         onPanelExpansionChanged?(false)
@@ -494,7 +510,6 @@ final class TutorModel: ObservableObject {
         contextRegion = nil
         capturedContext = nil
         recentFrames = []
-        consecutiveFrameChanges = 0
         diagnostic = nil
         lastAssessment = nil
 
@@ -621,13 +636,24 @@ final class TutorModel: ObservableObject {
     }
 
     func toggleVideoMode() {
-        isVideoMode.toggle()
+        if isVideoMode {
+            isVideoMode = false
+            videoContextSuppressed = true
+            recentFrames = capturedContext.map { [$0] } ?? []
+        } else {
+            isVideoMode = true
+            videoContextSuppressed = false
+        }
         if isFollowing { startFollowing() }
         messages.append(ChatMessage(
             role: .aster,
-            text: isVideoMode ? "Video context on. I’ll retain four changing local frames and send them only when you ask." : "Video context off. I’ll use the current frame.",
+            text: isVideoMode ? "Video context on. I’ll retain up to four local frames and send them only when you ask." : "Video context off for this session. I’ll send only the current frame.",
             kind: .memory
         ))
+    }
+
+    static func shouldEnableDetectedVideo(hasConfirmedVideo: Bool, isSuppressed: Bool) -> Bool {
+        hasConfirmedVideo && !isSuppressed
     }
 
     func toggleFollowing() {
@@ -660,7 +686,12 @@ final class TutorModel: ObservableObject {
         guard let target = contextTarget else { return }
         let detectedVideo = browserVideo.snapshot(appName: target.appName)
         let wasVideoMode = isVideoMode
-        if detectedVideo != nil { isVideoMode = true }
+        if Self.shouldEnableDetectedVideo(
+            hasConfirmedVideo: detectedVideo != nil,
+            isSuppressed: videoContextSuppressed
+        ) {
+            isVideoMode = true
+        }
         let video = isVideoMode ? detectedVideo : nil
         if let updated = try? capture.capture(target: target, videoContext: video) {
             capturedContext = updated
@@ -692,14 +723,6 @@ final class TutorModel: ObservableObject {
                 default: break
                 }
             }
-            if let previous = recentFrames.last {
-                if previous.jpegData != updated.jpegData {
-                    consecutiveFrameChanges += 1
-                } else {
-                    consecutiveFrameChanges = 0
-                }
-            }
-            if consecutiveFrameChanges >= 2 { isVideoMode = true }
             if recentFrames.last?.jpegData != updated.jpegData {
                 recentFrames.append(updated)
                 recentFrames = Array(recentFrames.suffix(4))
@@ -762,6 +785,30 @@ final class TutorModel: ObservableObject {
         phase = .thinking
         Task { await buildLesson(diagnostic: diagnostic, option: option, screen: screen) }
     }
+
+    func describeDiagnosticInstead(_ description: String) {
+        let cleaned = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+        chooseDiagnostic(Self.learnerDescribedDiagnosticOption(cleaned))
+    }
+
+    func skipDiagnostic() {
+        chooseDiagnostic(Self.skipDiagnosticOption)
+    }
+
+    static func learnerDescribedDiagnosticOption(_ description: String) -> DiagnosticOption {
+        DiagnosticOption(
+            id: "learner-described",
+            label: description,
+            misconception: "The learner explicitly says this is what is confusing: \(description)"
+        )
+    }
+
+    static let skipDiagnosticOption = DiagnosticOption(
+        id: "skip-explanation",
+        label: "Skip, just explain",
+        misconception: "The learner chose to skip diagnosis. Explain the visible idea directly and concisely without assuming a specific misconception."
+    )
 
     func replayCurrentStep() {
         guard let lesson = lastLesson, lesson.steps.indices.contains(lessonStepIndex), let screen = capturedContext else { return }
@@ -890,11 +937,15 @@ final class TutorModel: ObservableObject {
         }
         pendingQuestion = question
         lastAssessment = nil
+        streamingDiagnosticText = ""
+        streamingLessonText = ""
+        lastDiagnosticFirstResponseLatency = nil
+        diagnosticRequestStartedAt = Date()
         phase = .seeing
         overlay.showReadingState()
         do {
             let appName = contextTarget?.appName ?? sourceApplicationName
-            if let state = browserVideo.snapshot(appName: appName) {
+            if !videoContextSuppressed, let state = browserVideo.snapshot(appName: appName) {
                 isVideoMode = true
                 if !state.isPaused {
                     resumeVideoAfterCheck = browserVideo.pause(appName: appName)
@@ -934,20 +985,37 @@ final class TutorModel: ObservableObject {
                 recentFrames: requestFrames(endingWith: screen),
                 recentContext: recentContext,
                 learnerMemory: learnerProfile.promptSummary,
-                safetyIdentifier: safetyIdentifier
+                safetyIdentifier: safetyIdentifier,
+                onQuestionProgress: { [weak self] question in
+                    guard let self else { return }
+                    if self.lastDiagnosticFirstResponseLatency == nil, let started = self.diagnosticRequestStartedAt {
+                        self.lastDiagnosticFirstResponseLatency = Date().timeIntervalSince(started)
+                    }
+                    self.streamingDiagnosticText = question
+                }
             )
             record(result.usage)
             diagnostic = result.value
+            streamingDiagnosticText = ""
+            if lastDiagnosticFirstResponseLatency == nil, let started = diagnosticRequestStartedAt {
+                lastDiagnosticFirstResponseLatency = Date().timeIntervalSince(started)
+            }
             if !result.value.priorConnection.isEmpty {
                 messages.append(ChatMessage(role: .aster, text: result.value.priorConnection, kind: .memory))
             }
             messages.append(ChatMessage(role: .aster, text: result.value.question, kind: .diagnostic))
             phase = .clarifying
-        } catch { report(error) }
+        } catch {
+            streamingDiagnosticText = ""
+            report(error)
+        }
     }
 
     private func buildLesson(diagnostic: DiagnosticPlan, option: DiagnosticOption, screen: CapturedScreen) async {
         guard requireAPIKey() else { return }
+        streamingLessonText = ""
+        lastLessonFirstResponseLatency = nil
+        lessonRequestStartedAt = Date()
         do {
             let result = try await client.makeLesson(
                 apiKey: apiKey,
@@ -959,11 +1027,25 @@ final class TutorModel: ObservableObject {
                 recentContext: recentContext,
                 learnerMemory: learnerProfile.promptSummary,
                 precisionMode: precisionMode,
-                safetyIdentifier: safetyIdentifier
+                safetyIdentifier: safetyIdentifier,
+                onNarrationProgress: { [weak self] narration in
+                    guard let self else { return }
+                    if self.lastLessonFirstResponseLatency == nil, let started = self.lessonRequestStartedAt {
+                        self.lastLessonFirstResponseLatency = Date().timeIntervalSince(started)
+                    }
+                    self.streamingLessonText = narration
+                }
             )
             record(result.usage)
+            streamingLessonText = ""
+            if lastLessonFirstResponseLatency == nil, let started = lessonRequestStartedAt {
+                lastLessonFirstResponseLatency = Date().timeIntervalSince(started)
+            }
             present(result.value)
-        } catch { report(error) }
+        } catch {
+            streamingLessonText = ""
+            report(error)
+        }
     }
 
     private func present(_ lesson: LessonPlan) {
@@ -1083,6 +1165,8 @@ final class TutorModel: ObservableObject {
     }
 
     private func report(_ error: Error) {
+        streamingDiagnosticText = ""
+        streamingLessonText = ""
         if resumeVideoAfterCheck {
             _ = browserVideo.resume(appName: contextTarget?.appName ?? "")
             resumeVideoAfterCheck = false
@@ -1147,6 +1231,11 @@ final class TutorModel: ObservableObject {
     private static func timestamp(_ seconds: Double) -> String {
         let value = max(Int(seconds.rounded()), 0)
         return String(format: "%d:%02d", value / 60, value % 60)
+    }
+
+    private static func latencyLabel(_ latency: TimeInterval?) -> String {
+        guard let latency else { return "—" }
+        return String(format: "%.2fs", latency)
     }
 
 }
