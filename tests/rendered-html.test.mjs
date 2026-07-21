@@ -38,21 +38,22 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /scroll down to <strong>Security<\/strong>/);
   assert.match(html, /Aster was blocked to protect your Mac/);
   assert.match(html, /Set up Aster✱ in three minutes/);
-  assert.match(html, /Connect OpenAI/);
-  assert.match(html, /validates it, then saves it to macOS Keychain/);
+  assert.match(html, /Connect &amp; learn/);
+  assert.match(html, /Validate and save/);
+  assert.match(html, /Move to Applications &amp; Relaunch/);
   assert.match(html, /own OpenAI API key is required/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS\.zip\?v=0\.3\.4/);
-  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.3\.4"/g) ?? []).length, 3);
-  assert.match(html, /remove older Aster rows with −/);
+  assert.match(html, /Aster-macOS\.zip\?v=0\.3\.5/);
+  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.3\.5"/g) ?? []).length, 3);
+  assert.match(html, /remove every old Aster row with −/);
   assert.doesNotMatch(html, /demo mode|without an? API key|leave empty for/i);
   assert.doesNotMatch(html, /\$5|budget guard|hard stop/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
 test("ships a key-required app archive, social card, and removes the starter preview", async () => {
-  const [packageJson, page, layout, css, tutorModel, nativeViews, asterApp, openAIClient, readme, macReadme, demoScript] = await Promise.all([
+  const [packageJson, page, layout, css, tutorModel, nativeViews, asterApp, relocationService, openAIClient, readme, macReadme, demoScript] = await Promise.all([
     readFile(new URL("package.json", root), "utf8"),
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("app/layout.tsx", root), "utf8"),
@@ -60,6 +61,7 @@ test("ships a key-required app archive, social card, and removes the starter pre
     readFile(new URL("macos/Sources/Aster/TutorModel.swift", root), "utf8"),
     readFile(new URL("macos/Sources/Aster/Views.swift", root), "utf8"),
     readFile(new URL("macos/Sources/Aster/AsterApp.swift", root), "utf8"),
+    readFile(new URL("macos/Sources/Aster/AppRelocationService.swift", root), "utf8"),
     readFile(new URL("macos/Sources/Aster/OpenAIClient.swift", root), "utf8"),
     readFile(new URL("README.md", root), "utf8"),
     readFile(new URL("macos/README.md", root), "utf8"),
@@ -70,7 +72,7 @@ test("ships a key-required app archive, social card, and removes the starter pre
 
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(page, /Your screen becomes the/);
-  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.3\.4"/);
+  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.3\.5"/);
   assert.equal((page.match(/href=\{downloadHref\}/g) ?? []).length, 3);
   assert.match(page, /scene-switcher/);
   assert.doesNotMatch(`${page}\n${css}`, /budget-widget|budget-bar|budget-scale/i);
@@ -87,6 +89,10 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(nativeViews, /General|Permissions|Learning|Account/);
   assert.match(asterApp, /NSToolbar/);
   assert.match(asterApp, /CommandGroup\(replacing: \.appSettings\)/);
+  assert.match(`${tutorModel}\n${nativeViews}\n${asterApp}`, /Move to Applications & Relaunch|moveToApplicationsAndRelaunch/);
+  assert.match(relocationService, /AppTranslocation/);
+  assert.match(relocationService, /com\.apple\.quarantine/);
+  assert.match(relocationService, /removeQuarantineRecursively/);
   assert.match(openAIClient, /"store": false/);
   await assert.rejects(access(new URL("app\/_sites-preview", root)));
 });

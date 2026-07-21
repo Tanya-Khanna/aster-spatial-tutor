@@ -22,14 +22,16 @@ plutil -insert CFBundleIdentifier -string "com.aster.spatial-tutor" "$APP_DIR/Co
 plutil -insert CFBundleExecutable -string "Aster" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleIconFile -string "Aster" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundlePackageType -string "APPL" "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleShortVersionString -string "0.3.4" "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleVersion -string "9" "$APP_DIR/Contents/Info.plist"
+plutil -insert CFBundleShortVersionString -string "0.3.5" "$APP_DIR/Contents/Info.plist"
+plutil -insert CFBundleVersion -string "10" "$APP_DIR/Contents/Info.plist"
 plutil -insert LSMinimumSystemVersion -string "13.0" "$APP_DIR/Contents/Info.plist"
 plutil -insert NSHighResolutionCapable -bool true "$APP_DIR/Contents/Info.plist"
 plutil -insert NSScreenCaptureUsageDescription -string "Aster✱ sees the screen you explicitly select so it can teach with on-target annotations." "$APP_DIR/Contents/Info.plist"
 plutil -insert NSMicrophoneUsageDescription -string "Aster✱ uses your microphone when you ask a question by voice." "$APP_DIR/Contents/Info.plist"
 plutil -insert NSSpeechRecognitionUsageDescription -string "Aster✱ transcribes your spoken learning questions on your Mac." "$APP_DIR/Contents/Info.plist"
 
+# Ad-hoc signing can trigger Gatekeeper App Translocation and a changing TCC identity.
+# Developer ID signing plus Apple notarization is the durable distribution fix.
 codesign --force --deep --sign - "$APP_DIR"
 ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ROOT_DIR/public/Aster-macOS.zip"
 

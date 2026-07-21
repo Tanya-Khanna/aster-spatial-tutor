@@ -15,16 +15,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         installApplicationIcon()
-        createWelcomeWindow()
-        createTutorPanel()
-        createStatusItem()
-        hotKey = HotKeyManager()
-
         let model = TutorModel.shared
         model.onShowPanel = { [weak self] in self?.showTutorPanel() }
         model.onHidePanel = { [weak self] in self?.tutorPanel?.orderOut(nil) }
         model.onShowWelcome = { [weak self] in self?.showWelcome() }
         model.onShowSettings = { [weak self] pane in self?.showSettings(pane) }
+
+        createWelcomeWindow()
+        if !model.requiresApplicationRelocation {
+            createTutorPanel()
+            createStatusItem()
+            hotKey = HotKeyManager()
+        }
+
         observer = NotificationCenter.default.addObserver(forName: .asterHotKey, object: nil, queue: .main) { _ in
             Task { @MainActor in TutorModel.shared.activateFromHotKey() }
         }
@@ -54,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        guard !TutorModel.shared.requiresApplicationRelocation else { return }
         permissionRefreshTask?.cancel()
         TutorModel.shared.refreshPermissionStatuses()
         permissionRefreshTask = Task { @MainActor in
@@ -75,7 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSToolbarDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Aster✱"
+        window.title = TutorModel.shared.requiresApplicationRelocation ? "Aster✱ — Move to Applications" : "Aster✱"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true

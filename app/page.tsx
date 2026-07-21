@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
-const downloadHref = "/Aster-macOS.zip?v=0.3.4";
+const downloadHref = "/Aster-macOS.zip?v=0.3.5";
 
 const scenes: Record<
   SceneKey,
@@ -437,8 +437,8 @@ export default function Home() {
         <div className="setup-grid">
           <article className="setup-step">
             <span>01</span>
-            <b>Download</b>
-            <p>Unzip Aster✱, then move <strong>Aster.app</strong> into your Applications folder.</p>
+            <b>Download &amp; open</b>
+            <p>Unzip Aster✱ and open <strong>Aster.app</strong>. The first Gatekeeper warning is expected for this ad-hoc signed prototype.</p>
           </article>
           <article className="setup-step emphasized">
             <span>02</span>
@@ -447,25 +447,25 @@ export default function Home() {
           </article>
           <article className="setup-step">
             <span>03</span>
+            <b>Move safely</b>
+            <p>On Aster✱’s first screen, click <strong>Move to Applications &amp; Relaunch</strong>. This prevents macOS’s temporary Downloads path from breaking Screen Recording.</p>
+          </article>
+          <article className="setup-step">
+            <span>04</span>
             <b>Allow access</b>
             <p>Enable Screen Recording. Allow Microphone and Speech Recognition only if you want voice conversation.</p>
           </article>
           <article className="setup-step">
-            <span>04</span>
-            <b>Connect OpenAI</b>
-            <p>Paste your own API key. Aster✱ validates it, then saves it to macOS Keychain only when you choose <strong>Validate and save</strong>.</p>
-          </article>
-          <article className="setup-step">
             <span>05</span>
-            <b>Start learning</b>
-            <p>Press <strong>⌥ Space</strong>, select the exact context, then ask by voice or text.</p>
+            <b>Connect &amp; learn</b>
+            <p>Validate and save your own OpenAI API key, then press <strong>⌥ Space</strong>, select the exact context, and ask.</p>
           </article>
         </div>
         <details className="setup-help">
           <summary>Seeing a Keychain prompt or missing a permission?<span>+</span></summary>
           <div>
             <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build. Remove the saved key anytime from Aster✱ Settings.</p>
-            <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording, then choose Quit Aster✱ from its menu-bar menu and reopen it. Closing only the window does not quit the app. If the switch is already on but Aster✱ still cannot see it, remove older Aster rows with −, add the current <strong>/Applications/Aster.app</strong> with +, and restart. Ad-hoc prototype builds may need permission approved again after an update.</p>
+            <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording. If Aster✱ still reports that access is missing, remove every old Aster row with −, add <strong>/Applications/Aster.app</strong> with +, turn it on, return to Aster✱ and choose <strong>I granted access — Check again</strong>. Restart if macOS asks. Ad-hoc prototype builds may need approval again after an update.</p>
           </div>
         </details>
       </section>

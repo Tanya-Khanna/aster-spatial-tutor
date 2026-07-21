@@ -98,16 +98,100 @@ struct WelcomeView: View {
             asterCanvas.ignoresSafeArea()
             Circle().fill(asterSignal.opacity(0.12)).frame(width: 680, height: 680).blur(radius: 80).offset(x: 470, y: -320)
             Circle().fill(asterMint.opacity(0.08)).frame(width: 520, height: 520).blur(radius: 90).offset(x: -460, y: 350)
-            VStack(spacing: 0) {
-                appHeader
-                if model.isOnboardingComplete {
-                    home
-                } else {
-                    onboarding
+            if model.requiresApplicationRelocation {
+                relocationGuard
+            } else {
+                VStack(spacing: 0) {
+                    appHeader
+                    if model.isOnboardingComplete {
+                        home
+                    } else {
+                        onboarding
+                    }
                 }
             }
         }
         .frame(minWidth: 1_040, minHeight: 720)
+    }
+
+    private var relocationGuard: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 11) {
+                AsterMark(size: 31)
+                Text("Aster✱").font(.system(size: 20, weight: .semibold, design: .rounded))
+                Spacer()
+                Label("SETUP REQUIRED", systemImage: "lock.shield.fill")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(asterSignal)
+            }
+            .padding(.horizontal, 34).padding(.vertical, 20)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .bottom) { Divider() }
+
+            VStack(spacing: 28) {
+                ZStack {
+                    Circle().fill(asterSignal.opacity(0.12)).frame(width: 140, height: 140)
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(asterSurface)
+                        .frame(width: 92, height: 92)
+                        .overlay(Image(systemName: "folder.fill").font(.system(size: 46, weight: .medium)).foregroundStyle(asterSignal))
+                        .shadow(color: asterSignal.opacity(0.16), radius: 24, y: 10)
+                    AsterMark(size: 34).offset(x: 50, y: 47)
+                }
+
+                VStack(spacing: 12) {
+                    Text("Aster✱ needs a permanent home.")
+                        .font(.system(size: 43, weight: .medium, design: .rounded)).tracking(-1.4)
+                    Text("macOS can run downloaded apps from a temporary, randomized location. Screen Recording cannot reliably attach to that copy, so Aster✱ must live in Applications before setup begins.")
+                        .font(.system(size: 16)).foregroundStyle(asterSecondary)
+                        .multilineTextAlignment(.center).lineSpacing(4).frame(maxWidth: 690)
+                }
+
+                AsterCard {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Label("ONE SAFE COPY", systemImage: "checkmark.shield.fill")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1).foregroundStyle(asterSignal)
+                        Text(model.relocationStatus.isInApplications
+                             ? "Aster✱ is already in Applications, but macOS quarantine is still attached. Finish setup to clear it and relaunch this same copy."
+                             : "Aster✱ will copy itself to /Applications, clear the download quarantine, reopen from its stable location, and close this temporary copy.")
+                            .font(.system(size: 13, weight: .medium)).foregroundStyle(asterSecondary).lineSpacing(3)
+                        if let message = model.relocationErrorMessage {
+                            Label(message, systemImage: "exclamationmark.triangle.fill")
+                                .font(.system(size: 12, weight: .medium)).foregroundStyle(asterSignal)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Button {
+                            model.moveToApplicationsAndRelaunch()
+                        } label: {
+                            HStack {
+                                if model.isRelocatingApplication { ProgressView().controlSize(.small) }
+                                Text(model.isRelocatingApplication
+                                     ? "Moving Aster✱…"
+                                     : model.relocationStatus.isInApplications
+                                        ? "Finish Setup & Relaunch"
+                                        : "Move to Applications & Relaunch")
+                                Spacer()
+                                Image(systemName: "arrow.right")
+                            }
+                            .padding(.horizontal, 6).frame(height: 38)
+                        }
+                        .buttonStyle(.borderedProminent).tint(asterSignal).controlSize(.large)
+                        .disabled(model.isRelocatingApplication)
+                    }
+                }
+                .frame(maxWidth: 690)
+
+                HStack(spacing: 8) {
+                    Text("Prefer to do it yourself? Drag Aster✱ to your Applications folder, then reopen it.")
+                    Button("Show Applications") { model.revealApplicationsFolder() }
+                        .buttonStyle(.plain).foregroundStyle(asterSignal).fontWeight(.semibold)
+                }
+                .font(.system(size: 12)).foregroundStyle(asterSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(48)
+        }
     }
 
     private var appHeader: some View {
@@ -466,8 +550,9 @@ private struct ScreenPermissionRecovery: View {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "arrow.triangle.2.circlepath.circle.fill").foregroundStyle(asterSignal)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Switch already on?").font(.system(size: 12, weight: .semibold))
-                    Text("macOS may still be showing permission for an older ad-hoc build. Keep one Aster✱ copy in Applications, remove older Aster rows with the − button, add the current Aster.app with +, then restart the exact running copy.")
+                    Text(model.screenPermissionRecoveryMessage == nil ? "Access still not detected?" : "Aster✱ checked again — access is still missing.")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("1. Open Privacy & Security → Screen & System Audio Recording.  2. Select every old Aster entry and click −.  3. Click +, choose /Applications/Aster.app, and turn it on.  4. Return here and check again; restart Aster✱ if macOS asks.")
                         .font(.system(size: 10)).foregroundStyle(asterSecondary).lineSpacing(2)
                 }
             }
@@ -476,7 +561,7 @@ private struct ScreenPermissionRecovery: View {
                     .font(.system(size: 10, weight: .semibold)).foregroundStyle(model.isRunningFromApplications ? Color.green : asterSignal)
                 Spacer()
                 Button("Show this copy") { model.revealRunningApplication() }
-                Button("Refresh") { model.refreshPermissionStatuses() }
+                Button("I granted access — Check again") { model.checkScreenPermissionAfterGrant() }
                 Button("Restart Aster✱") { model.restartApplication() }.buttonStyle(.borderedProminent).tint(asterSignal)
             }
             .buttonStyle(.bordered).controlSize(.small)

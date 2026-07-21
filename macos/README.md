@@ -26,7 +26,7 @@ zsh scripts/package.sh
 
 The packaged application is written to `macos/dist/Aster.app` and the downloadable archive to `public/Aster-macOS.zip`.
 
-Keep one installed copy in `/Applications`. Because the prototype is ad-hoc signed, replacing it with a new build can leave Screen Recording enabled for an older code identity. Aster✱ detects this recovery state, can reveal the exact running copy, refresh permission status, and restart itself after the current app is re-added in System Settings.
+Before onboarding, Aster✱ blocks launches from Downloads/App Translocation or any quarantined copy. **Move to Applications & Relaunch** stages the bundle in `/Applications`, removes quarantine recursively, launches that stable copy, and closes the temporary process. Because the prototype is ad-hoc signed, replacing it can still leave Screen Recording enabled for an older code identity; the recovery state explains how to remove old entries, re-add `/Applications/Aster.app`, check access, and restart.
 
 ## API and privacy
 

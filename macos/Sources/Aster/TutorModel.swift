@@ -58,6 +58,10 @@ final class TutorModel: ObservableObject {
     @Published private(set) var screenPermission: PermissionState = .notDetermined
     @Published private(set) var microphonePermission: PermissionState = .notDetermined
     @Published private(set) var speechPermission: PermissionState = .notDetermined
+    @Published private(set) var relocationStatus: AppRelocationStatus
+    @Published private(set) var isRelocatingApplication = false
+    @Published private(set) var relocationErrorMessage: String?
+    @Published private(set) var screenPermissionRecoveryMessage: String?
     @Published private(set) var sessionUsage: APIUsage = .zero
     @Published private(set) var sessionRequestCount = 0
 
@@ -68,7 +72,7 @@ final class TutorModel: ObservableObject {
 
     private let capture = ScreenCaptureService()
     private let client = OpenAIClient()
-    private let voice = VoiceServices()
+    private lazy var voice = VoiceServices()
     private let memoryStore = LearnerMemoryStore()
     private let anchorTracker = SemanticAnchorTracker()
     private let browserVideo = BrowserVideoService()
@@ -87,7 +91,13 @@ final class TutorModel: ObservableObject {
     private var pendingWakeQuestion = false
 
     private init() {
-        let storedKey = KeychainStore.load().trimmingCharacters(in: .whitespacesAndNewlines)
+        let initialRelocationStatus = AppRelocationService.status()
+        relocationStatus = initialRelocationStatus
+        // Relocation is a true pre-onboarding gate. Do not touch Keychain from a
+        // temporary/translocated process because that can prompt before the guard.
+        let storedKey = initialRelocationStatus.requiresRelocation
+            ? ""
+            : KeychainStore.load().trimmingCharacters(in: .whitespacesAndNewlines)
         apiKey = storedKey
         apiKeyStatus = storedKey.isEmpty ? .unauthenticated : .authenticated(hint: Self.keyHint(storedKey))
         let completed = UserDefaults.standard.bool(forKey: "onboardingComplete")
@@ -105,23 +115,27 @@ final class TutorModel: ObservableObject {
         UserDefaults.standard.set(currentInstallIdentifier, forKey: "installIdentifier")
         onboardingStep = shouldRestartOnboarding ? .introduction : .ready
         learnerProfile = memoryStore.load()
-        voice.onText = { [weak self] text in self?.query = text }
-        voice.onFinalText = { [weak self] text in
-            guard let self else { return }
-            self.isListening = false
-            self.query = text
-            if self.conversationMode { self.submit() }
+        if !initialRelocationStatus.requiresRelocation {
+            voice.onText = { [weak self] text in self?.query = text }
+            voice.onFinalText = { [weak self] text in
+                guard let self else { return }
+                self.isListening = false
+                self.query = text
+                if self.conversationMode { self.submit() }
+            }
+            voice.onFinished = { [weak self] in self?.voiceDidFinish() }
+            voice.onWakeWord = { [weak self] in self?.activateFromWakePhrase() }
         }
-        voice.onFinished = { [weak self] in self?.voiceDidFinish() }
-        voice.onWakeWord = { [weak self] in self?.activateFromWakePhrase() }
         overlay.onBookmarkClick = { [weak self] in self?.reopenBookmarkedLesson() }
         tools.onAction = { [weak self] action in
             guard let self else { return }
             self.actionHistory.append(action)
             self.actionHistory = Array(self.actionHistory.suffix(30))
         }
-        refreshPermissionStatuses()
-        if wakePhraseEnabled { voice.startWakeListening() }
+        if !initialRelocationStatus.requiresRelocation {
+            refreshPermissionStatuses()
+            if wakePhraseEnabled && isOnboardingComplete { voice.startWakeListening() }
+        }
     }
 
     static func shouldStartOnboarding(
@@ -154,7 +168,11 @@ final class TutorModel: ObservableObject {
     }
 
     var isRunningFromApplications: Bool {
-        Bundle.main.bundleURL.path.hasPrefix("/Applications/")
+        relocationStatus.isInApplications && !relocationStatus.isTranslocated
+    }
+
+    var requiresApplicationRelocation: Bool {
+        relocationStatus.requiresRelocation
     }
 
     func activate() {
@@ -164,6 +182,10 @@ final class TutorModel: ObservableObject {
     }
 
     func activateFromHotKey() {
+        guard !requiresApplicationRelocation else {
+            onShowWelcome?()
+            return
+        }
         guard requireAPIKey() else { return }
         if contextRegion == nil {
             selectContext()
@@ -175,6 +197,10 @@ final class TutorModel: ObservableObject {
     }
 
     private func activateFromWakePhrase() {
+        guard !requiresApplicationRelocation else {
+            onShowWelcome?()
+            return
+        }
         guard requireAPIKey() else { return }
         pendingWakeQuestion = true
         if contextRegion == nil {
@@ -271,6 +297,10 @@ final class TutorModel: ObservableObject {
     }
 
     func showSettings(_ pane: SettingsPane? = nil) {
+        guard !requiresApplicationRelocation else {
+            onShowWelcome?()
+            return
+        }
         if let pane { settingsPane = pane }
         onShowSettings?(settingsPane)
     }
@@ -285,6 +315,7 @@ final class TutorModel: ObservableObject {
     func refreshPermissionStatuses() {
         if CGPreflightScreenCaptureAccess() {
             screenPermission = .granted
+            screenPermissionRecoveryMessage = nil
         } else {
             screenPermission = UserDefaults.standard.bool(forKey: "screenPermissionRequested") ? .denied : .notDetermined
         }
@@ -302,7 +333,24 @@ final class TutorModel: ObservableObject {
 
     func requestScreenPermission() {
         UserDefaults.standard.set(true, forKey: "screenPermissionRequested")
-        screenPermission = CGRequestScreenCaptureAccess() ? .granted : .denied
+        if CGRequestScreenCaptureAccess() {
+            screenPermission = .granted
+            screenPermissionRecoveryMessage = nil
+        } else {
+            screenPermission = .denied
+            screenPermissionRecoveryMessage = "macOS has not attached Screen Recording access to this copy of Aster✱ yet."
+        }
+    }
+
+    func checkScreenPermissionAfterGrant() {
+        UserDefaults.standard.set(true, forKey: "screenPermissionRequested")
+        if CGPreflightScreenCaptureAccess() {
+            screenPermission = .granted
+            screenPermissionRecoveryMessage = nil
+        } else {
+            screenPermission = .denied
+            screenPermissionRecoveryMessage = "Aster✱ still cannot see Screen Recording access. Remove every old Aster entry in Privacy & Security → Screen & System Audio Recording, add /Applications/Aster.app again, turn it on, then restart Aster✱."
+        }
     }
 
     func requestVoicePermissions() {
@@ -315,6 +363,41 @@ final class TutorModel: ObservableObject {
 
     func revealRunningApplication() {
         NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+    }
+
+    func revealApplicationsFolder() {
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications", isDirectory: true))
+    }
+
+    func moveToApplicationsAndRelaunch() {
+        guard !isRelocatingApplication else { return }
+        isRelocatingApplication = true
+        relocationErrorMessage = nil
+        let sourceURL = relocationStatus.bundleURL
+
+        Task {
+            do {
+                let destinationURL = try await Task.detached(priority: .userInitiated) {
+                    try AppRelocationService.installInApplications(from: sourceURL)
+                }.value
+                let configuration = NSWorkspace.OpenConfiguration()
+                configuration.activates = true
+                configuration.createsNewApplicationInstance = true
+                NSWorkspace.shared.openApplication(at: destinationURL, configuration: configuration) { _, error in
+                    Task { @MainActor in
+                        if let error {
+                            self.isRelocatingApplication = false
+                            self.relocationErrorMessage = "Aster✱ was copied to Applications, but macOS could not relaunch it: \(error.localizedDescription) Open /Applications/Aster.app manually."
+                            return
+                        }
+                        NSApp.terminate(nil)
+                    }
+                }
+            } catch {
+                isRelocatingApplication = false
+                relocationErrorMessage = "Aster✱ could not move itself: \(error.localizedDescription) Drag Aster.app to Applications manually, then reopen it."
+            }
+        }
     }
 
     func restartApplication() {

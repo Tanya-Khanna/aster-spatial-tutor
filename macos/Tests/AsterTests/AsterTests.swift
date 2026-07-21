@@ -1,4 +1,5 @@
 import CoreGraphics
+import Darwin
 import Foundation
 import Testing
 @testable import Aster
@@ -144,4 +145,55 @@ import Testing
     #expect(SettingsPane.allCases.map(\.rawValue) == ["general", "voice", "permissions", "learning", "account"])
     #expect(SettingsPane.permissions.systemImage == "lock.shield")
     #expect(SettingsPane.account.title == "Account")
+}
+
+@Test func relocationGuardRecognizesStableAndTemporaryLocations() {
+    let installed = AppRelocationService.status(
+        for: URL(fileURLWithPath: "/Applications/Aster.app", isDirectory: true),
+        quarantineOverride: false
+    )
+    #expect(installed.isInApplications)
+    #expect(!installed.requiresRelocation)
+
+    let downloaded = AppRelocationService.status(
+        for: URL(fileURLWithPath: "/Users/test/Downloads/Aster.app", isDirectory: true),
+        quarantineOverride: true
+    )
+    #expect(downloaded.isQuarantined)
+    #expect(downloaded.requiresRelocation)
+
+    let translocated = AppRelocationService.status(
+        for: URL(fileURLWithPath: "/private/var/folders/xy/AppTranslocation/ABC123/d/Aster.app", isDirectory: true),
+        quarantineOverride: false
+    )
+    #expect(translocated.isTranslocated)
+    #expect(translocated.requiresRelocation)
+}
+
+@Test func relocationInstallCopiesBundleAndClearsQuarantine() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let source = root.appendingPathComponent("Downloads/Aster.app", isDirectory: true)
+    let applications = root.appendingPathComponent("Applications", isDirectory: true)
+    let executable = source.appendingPathComponent("Contents/MacOS/Aster")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try fileManager.createDirectory(at: applications, withIntermediateDirectories: true)
+    try Data("aster".utf8).write(to: executable)
+    source.withUnsafeFileSystemRepresentation { path in
+        guard let path else { return }
+        "0081;test".withCString { value in
+            _ = setxattr(path, "com.apple.quarantine", value, strlen(value), 0, 0)
+        }
+    }
+
+    let installed = try AppRelocationService.installInApplications(from: source, applicationsDirectory: applications)
+    #expect(installed == applications.appendingPathComponent("Aster.app", isDirectory: true))
+    #expect(fileManager.fileExists(atPath: installed.appendingPathComponent("Contents/MacOS/Aster").path))
+    let quarantineSize = installed.withUnsafeFileSystemRepresentation { path in
+        guard let path else { return -1 }
+        return getxattr(path, "com.apple.quarantine", nil, 0, 0, XATTR_NOFOLLOW)
+    }
+    #expect(quarantineSize < 0)
 }

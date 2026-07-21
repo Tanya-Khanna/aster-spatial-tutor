@@ -58,6 +58,7 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - `Esc` or closing the panel clears annotations;
 - denied permissions produce a useful recovery message;
 - if Screen Recording is enabled for a stale ad-hoc build, the app identifies the current copy, refreshes status after activation, and offers an exact-copy restart;
+- if the app is launched from Downloads, App Translocation, or with quarantine metadata, onboarding is blocked until the one-click Applications relocation and relaunch succeeds;
 - the welcome window launches maximized and its first-run and home compositions expand at wide display sizes without clipping;
 - Settings opens as one compact native window, restores the last toolbar pane, supports Command–Comma, and deep-links permission recovery without interrupting onboarding;
 - General, Voice, Permissions, Learning, and Account controls retain their values across app restarts;
