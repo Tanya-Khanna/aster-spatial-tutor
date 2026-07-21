@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
+const downloadHref = "/Aster-macOS.zip?v=0.3.0";
+
 const scenes: Record<
   SceneKey,
   {
@@ -220,7 +222,7 @@ export default function Home() {
           <a href="#learning">For learning</a>
           <a href="#privacy">Privacy</a>
         </div>
-        <a className="nav-download" href="/Aster-macOS.zip?v=0.3.0" download>
+        <a className="nav-download" href={downloadHref} download>
           <span>Download for Mac</span><b>↓</b>
         </a>
       </nav>
@@ -243,7 +245,7 @@ export default function Home() {
           </div>
           <div className="hero-actions">
             <div className="hero-download-stack">
-              <a className="primary-button" href="/Aster-macOS.zip?v=0.3.0" download>
+              <a className="primary-button" href={downloadHref} download>
                 <span className="apple-glyph">⌘</span>
                 <span><small>Download for</small>macOS</span>
                 <b>↓</b>
@@ -474,7 +476,7 @@ export default function Home() {
         <span className="section-kicker light">ASTER FOR MAC</span>
         <h2>Meet the material<br />where it lives.</h2>
         <p>The native Build Week app for live spatial tutoring. Your own OpenAI API key is required, validated before saving, and removable at any time.</p>
-        <a className="light-button" href="/Aster-macOS.zip?v=0.3.0" download><span>Download Aster✱</span><b>↓</b></a>
+        <a className="light-button" href={downloadHref} download><span>Download Aster✱</span><b>↓</b></a>
         <small>macOS 13+ · Apple silicon · Ad-hoc signed prototype</small>
       </section>
 
