@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
-const downloadHref = "/Aster-macOS.zip?v=0.3.2";
+const downloadHref = "/Aster-macOS.zip?v=0.3.3";
 
 const scenes: Record<
   SceneKey,
@@ -465,7 +465,7 @@ export default function Home() {
           <summary>Seeing a Keychain prompt or missing a permission?<span>+</span></summary>
           <div>
             <p><b>Keychain:</b> enter your Mac login password—not your OpenAI API key—and choose Always Allow for this build. Remove the saved key anytime from Aster✱ Settings.</p>
-            <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording, then quit and reopen Aster✱.</p>
+            <p><b>Screen capture:</b> enable Aster✱ in Privacy &amp; Security → Screen &amp; System Audio Recording, then choose Quit Aster✱ from its menu-bar menu and reopen it. Closing only the window does not quit the app. If the switch is already on but Aster✱ still cannot see it, remove older Aster rows with −, add the current <strong>/Applications/Aster.app</strong> with +, and restart. Ad-hoc prototype builds may need permission approved again after an update.</p>
           </div>
         </details>
       </section>

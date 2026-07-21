@@ -148,6 +148,10 @@ final class TutorModel: ObservableObject {
         sessionUsage.totalTokens.formatted() + " tokens"
     }
 
+    var isRunningFromApplications: Bool {
+        Bundle.main.bundleURL.path.hasPrefix("/Applications/")
+    }
+
     func activate() {
         isPanelVisible = true
         onShowPanel?()
@@ -299,6 +303,23 @@ final class TutorModel: ObservableObject {
 
     func openScreenPermissionSettings() {
         openSystemSettings(anchor: "Privacy_ScreenCapture")
+    }
+
+    func revealRunningApplication() {
+        NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+    }
+
+    func restartApplication() {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        configuration.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, error in
+            guard error == nil else {
+                self.report(error ?? CaptureError.captureFailed)
+                return
+            }
+            NSApp.terminate(nil)
+        }
     }
 
     func openVoicePermissionSettings() {

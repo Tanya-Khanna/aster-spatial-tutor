@@ -26,6 +26,8 @@ zsh scripts/package.sh
 
 The packaged application is written to `macos/dist/Aster.app` and the downloadable archive to `public/Aster-macOS.zip`.
 
+Keep one installed copy in `/Applications`. Because the prototype is ad-hoc signed, replacing it with a new build can leave Screen Recording enabled for an older code identity. Aster✱ detects this recovery state, can reveal the exact running copy, refresh permission status, and restart itself after the current app is re-added in System Settings.
+
 ## API and privacy
 
 - GPT-5.6 Terra diagnoses and teaches; Precision mode uses GPT-5.6 Sol; GPT-5.6 Luna assesses answers.

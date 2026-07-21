@@ -57,6 +57,8 @@ Initial release gate: median score ≥4 on every dimension and zero clinical/dia
 - overlay is click-through and does not block the source app;
 - `Esc` or closing the panel clears annotations;
 - denied permissions produce a useful recovery message;
+- if Screen Recording is enabled for a stale ad-hoc build, the app identifies the current copy, refreshes status after activation, and offers an exact-copy restart;
+- the welcome window launches maximized and its first-run and home compositions expand at wide display sizes without clipping;
 - microphone can start, stop, and start again without an input-tap crash;
 - API key never appears in process logs or repository files.
 - an unauthenticated teaching request opens key onboarding and never produces canned content;

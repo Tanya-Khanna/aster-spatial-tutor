@@ -15,7 +15,7 @@ Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-
 - Landing page locally: `npm install && npm run dev`
 - Aster✱ requires the learner’s own OpenAI API key. First-run onboarding validates it before an explicit save to macOS Keychain.
 
-The prototype is ad-hoc signed. On first use, macOS may ask for permission to open it and for Screen Recording, Microphone, and Speech Recognition access.
+The prototype is ad-hoc signed. On first use, macOS may ask for permission to open it and for Screen Recording, Microphone, and Speech Recognition access. Keep one copy in `/Applications`; after replacing it with a newer build, macOS may require Screen Recording approval again. If an enabled toggle is stale, remove older Aster rows, add the current app, and use Aster✱’s permission-repair restart.
 
 ## The problem
 

@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKey: HotKeyManager?
     private var observer: NSObjectProtocol?
     private var escapeMonitor: Any?
+    private var permissionRefreshTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
@@ -47,12 +48,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        permissionRefreshTask?.cancel()
         if let observer { NotificationCenter.default.removeObserver(observer) }
         if let escapeMonitor { NSEvent.removeMonitor(escapeMonitor) }
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        permissionRefreshTask?.cancel()
         TutorModel.shared.refreshPermissionStatuses()
+        permissionRefreshTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            guard !Task.isCancelled else { return }
+            TutorModel.shared.refreshPermissionStatuses()
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard !Task.isCancelled else { return }
+            TutorModel.shared.refreshPermissionStatuses()
+        }
     }
 
     private func createWelcomeWindow() {
@@ -71,8 +82,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.isRestorable = false
         window.contentViewController = controller
         window.sharingType = .none
-        window.center()
         window.minSize = NSSize(width: 1_040, height: 720)
+        if let screen = NSScreen.main {
+            window.setFrame(screen.visibleFrame, display: true)
+        } else {
+            window.center()
+        }
         window.makeKeyAndOrderFront(nil)
         welcomeWindow = window
         NSApp.activate(ignoringOtherApps: true)

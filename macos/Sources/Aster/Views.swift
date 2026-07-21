@@ -161,15 +161,26 @@ struct WelcomeView: View {
     }
 
     private var introductionStep: some View {
-        HStack(alignment: .center, spacing: 42) {
-            VStack(alignment: .leading, spacing: 22) {
+        GeometryReader { geometry in
+            let isWide = geometry.size.width >= 1_260
+            HStack(alignment: .center, spacing: isWide ? 68 : 36) {
+                introductionCopy(isWide: isWide)
+                presencePreview(isWide: isWide)
+            }
+            .frame(maxWidth: isWide ? 1_440 : .infinity, maxHeight: .infinity)
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+    }
+
+    private func introductionCopy(isWide: Bool) -> some View {
+        VStack(alignment: .leading, spacing: isWide ? 28 : 22) {
                 Text("POINT TO IT. LEARN IT IN PLACE.")
-                    .font(.system(size: 12, weight: .bold, design: .monospaced)).tracking(1.4).foregroundStyle(asterSignal)
+                    .font(.system(size: isWide ? 14 : 12, weight: .bold, design: .monospaced)).tracking(1.4).foregroundStyle(asterSignal)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Your screen becomes the")
-                        .font(.system(size: 43, weight: .medium, design: .rounded)).tracking(-1.7)
+                        .font(.system(size: isWide ? 54 : 40, weight: .medium, design: .rounded)).tracking(-1.7)
                     Text("whiteboard.")
-                        .font(.system(size: 53, weight: .medium, design: .rounded)).italic().tracking(-1.8)
+                        .font(.system(size: isWide ? 66 : 50, weight: .medium, design: .rounded)).italic().tracking(-1.8)
                         .foregroundStyle(asterSignal)
                         .overlay(alignment: .bottom) {
                             Capsule().fill(asterSignal.opacity(0.52)).frame(height: 4).offset(y: 5)
@@ -178,16 +189,14 @@ struct WelcomeView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(3)
                 Text("Press Option–Space, point at the exact equation, diagram, paragraph, graph, or code block, and ask. Aster✱ diagnoses first, teaches in place, checks understanding, and remembers what needs work.")
-                    .font(.system(size: 16)).foregroundStyle(asterSecondary).lineSpacing(4).frame(maxWidth: 440, alignment: .leading)
+                    .font(.system(size: isWide ? 18 : 16)).foregroundStyle(asterSecondary).lineSpacing(isWide ? 6 : 4).frame(maxWidth: isWide ? 560 : 440, alignment: .leading)
                 HStack(spacing: 14) {
                     feature("viewfinder", "See", "Exact selected context")
                     feature("pencil.and.outline", "Teach", "Voice + spatial marks")
                     feature("brain.head.profile", "Adapt", "Local mastery memory")
                 }
             }
-            .frame(minWidth: 420, maxWidth: .infinity, alignment: .leading)
-            presencePreview
-        }
+            .frame(width: isWide ? 600 : 410, alignment: .leading)
     }
 
     private func feature(_ icon: String, _ title: String, _ detail: String) -> some View {
@@ -199,7 +208,7 @@ struct WelcomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var presencePreview: some View {
+    private func presencePreview(isWide: Bool) -> some View {
         AsterCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 7) {
@@ -264,7 +273,7 @@ struct WelcomeView: View {
             }
             .padding(20)
             .background(asterSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 15))
-            .frame(width: 450, height: 370)
+            .frame(width: isWide ? 560 : 440, height: isWide ? 430 : 370)
         }
         .task {
             while !Task.isCancelled {
@@ -311,6 +320,9 @@ struct WelcomeView: View {
                 }
             }
             .frame(maxWidth: 760)
+            if model.screenPermission == .denied {
+                ScreenPermissionRecovery(model: model).frame(maxWidth: 760)
+            }
             Label("No screen content is sent to OpenAI until you explicitly ask Aster✱ a question.", systemImage: "lock.shield.fill")
                 .font(.system(size: 12, weight: .medium)).foregroundStyle(asterSecondary)
         }
@@ -370,13 +382,15 @@ struct WelcomeView: View {
     }
 
     private var home: some View {
-        HStack(spacing: 42) {
-            VStack(alignment: .leading, spacing: 25) {
+        GeometryReader { geometry in
+            let isWide = geometry.size.width >= 1_360
+            HStack(spacing: isWide ? 80 : 42) {
+                VStack(alignment: .leading, spacing: isWide ? 31 : 25) {
                 Text("READY WHEN YOU ARE").font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1.5).foregroundStyle(asterSignal)
                 Text("Point to the question.\nKeep your place.")
-                    .font(.system(size: 52, weight: .medium, design: .rounded)).tracking(-2)
+                    .font(.system(size: isWide ? 64 : 52, weight: .medium, design: .rounded)).tracking(-2)
                 Text("Aster✱ follows the exact context you select, diagnoses what is unclear, and teaches with synchronized voice and drawing.")
-                    .font(.system(size: 17)).foregroundStyle(asterSecondary).lineSpacing(5).frame(maxWidth: 480, alignment: .leading)
+                    .font(.system(size: isWide ? 19 : 17)).foregroundStyle(asterSecondary).lineSpacing(5).frame(maxWidth: isWide ? 580 : 480, alignment: .leading)
                 Button { model.activateFromHotKey() } label: {
                     HStack(spacing: 11) { Image(systemName: "viewfinder"); Text("Point to something"); Spacer(); Text("⌥ SPACE").font(.system(size: 10, weight: .bold, design: .monospaced)).opacity(0.72) }
                         .padding(.horizontal, 18).frame(width: 280, height: 52)
@@ -387,6 +401,7 @@ struct WelcomeView: View {
                     Button { model.showSettings() } label: { Label("Settings", systemImage: "gearshape") }
                 }.buttonStyle(.bordered)
             }
+            .frame(width: isWide ? 620 : nil, alignment: .leading)
             VStack(spacing: 14) {
                 HStack(spacing: 14) {
                     MetricCard(value: "\(model.learnerProfile.concepts.count)", label: "Concepts remembered", icon: "brain.head.profile")
@@ -401,7 +416,10 @@ struct WelcomeView: View {
                     }
                 }
             }
-            .frame(width: 430)
+            .frame(width: isWide ? 540 : 430)
+            }
+            .frame(maxWidth: isWide ? 1_440 : .infinity, maxHeight: .infinity)
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .padding(54).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -441,6 +459,35 @@ private struct PermissionRow: View {
                 Button(state == .denied ? "Open Settings" : "Allow") { action() }.buttonStyle(.bordered).controlSize(.small)
             }
         }.padding(.vertical, 8)
+    }
+}
+
+private struct ScreenPermissionRecovery: View {
+    @ObservedObject var model: TutorModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "arrow.triangle.2.circlepath.circle.fill").foregroundStyle(asterSignal)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Switch already on?").font(.system(size: 12, weight: .semibold))
+                    Text("macOS may still be showing permission for an older ad-hoc build. Keep one Aster✱ copy in Applications, remove older Aster rows with the − button, add the current Aster.app with +, then restart the exact running copy.")
+                        .font(.system(size: 10)).foregroundStyle(asterSecondary).lineSpacing(2)
+                }
+            }
+            HStack(spacing: 8) {
+                Label(model.isRunningFromApplications ? "Running from Applications" : "Not running from Applications", systemImage: model.isRunningFromApplications ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(model.isRunningFromApplications ? Color.green : asterSignal)
+                Spacer()
+                Button("Show this copy") { model.revealRunningApplication() }
+                Button("Refresh") { model.refreshPermissionStatuses() }
+                Button("Restart Aster✱") { model.restartApplication() }.buttonStyle(.borderedProminent).tint(asterSignal)
+            }
+            .buttonStyle(.bordered).controlSize(.small)
+        }
+        .padding(13)
+        .background(asterSignal.opacity(0.07), in: RoundedRectangle(cornerRadius: 13))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(asterSignal.opacity(0.20), lineWidth: 1))
     }
 }
 
@@ -686,6 +733,7 @@ struct SettingsView: View {
                     settingsSection("PRIVACY & MEMORY", "Local evidence, visible controls.") {
                         VStack(spacing: 14) {
                             PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen Recording", detail: "Required for selected-region teaching.", state: model.screenPermission, required: true) { model.screenPermission == .denied ? model.openScreenPermissionSettings() : model.requestScreenPermission() }
+                            if model.screenPermission == .denied { ScreenPermissionRecovery(model: model) }
                             Divider()
                             PermissionRow(icon: "waveform", title: "Microphone + Speech Recognition", detail: "Optional voice questions and wake phrase.", state: settingsVoicePermissionState, required: false) { settingsVoicePermissionState == .denied ? model.openVoicePermissionSettings() : model.requestVoicePermissions() }
                             Divider()
