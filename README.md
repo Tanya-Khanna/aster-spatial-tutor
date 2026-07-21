@@ -10,7 +10,7 @@ Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-
 
 ## Try it
 
-- Download: [`public/Aster-macOS.zip`](public/Aster-macOS.zip)
+- Download: [`public/Aster-macOS-v0.2.1.zip`](public/Aster-macOS-v0.2.1.zip)
 - App bundle after packaging: `macos/dist/Aster.app`
 - Landing page locally: `npm install && npm run dev`
 - No API key? Choose Research, Math, or Anatomy on the welcome screen and run Demo mode.
@@ -117,7 +117,7 @@ zsh scripts/package.sh
 open dist/Aster.app
 ```
 
-The script compiles a release binary, assembles a `.app`, applies an ad-hoc signature, and updates `public/Aster-macOS.zip`.
+The script compiles a release binary, assembles a `.app`, applies an ad-hoc signature, and updates `public/Aster-macOS-v0.2.1.zip`.
 
 ## Run the landing page
 

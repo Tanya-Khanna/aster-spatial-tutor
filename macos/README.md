@@ -24,7 +24,7 @@ cd macos
 zsh scripts/package.sh
 ```
 
-The packaged application is written to `macos/dist/Aster.app` and the downloadable archive to `public/Aster-macOS.zip`.
+The packaged application is written to `macos/dist/Aster.app` and the downloadable archive to `public/Aster-macOS-v0.2.1.zip`.
 
 ## API and privacy
 
