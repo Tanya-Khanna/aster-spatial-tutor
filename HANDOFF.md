@@ -6,10 +6,10 @@ Verified against the repository on **2026-07-21**. This file distinguishes repos
 
 - Repository: <https://github.com/Tanya-Khanna/aster-spatial-tutor> (**public**, verified with GitHub CLI)
 - Branch: `main`
-- Application/source baseline inspected: `7110c69e23f9469f1a28b291d66894d1183e0a22`
-- Release: Aster✱ `0.5.1` (`CFBundleVersion` `16`), macOS 13+, Apple Silicon
+- Application/source baseline imported before release packaging: `2bde29471da3f94b0c48f035488cab5c930e1cfb`
+- Release: Aster✱ `0.5.2` (`CFBundleVersion` `17`), macOS 13+, Apple Silicon
 - Download artifact: `public/Aster-macOS.zip`
-- ZIP SHA-256: `8bdc9ce09ee44551c8c368e378dce3429e4254806f9f62a889eb16205621958c`
+- ZIP SHA-256: `e065c89d44182670cdbd3260a9f4f9a40d8c2b5a735478836b30c116a830d191`
 
 The SHA above is the immutable application baseline immediately before the HANDOFF-only commit. After cloning, use `git rev-parse HEAD` for the final handoff commit; a commit cannot contain its own SHA because adding that SHA changes the commit.
 
@@ -65,7 +65,7 @@ Required pre-submission breadth smoke: repeat with a Region around the time-depe
 
 - `app/page.tsx`, `app/globals.css`, `app/layout.tsx` — landing page and browser simulation.
 - `tests/rendered-html.test.mjs` — rendered-site and source-contract tests.
-- `public/Aster-macOS.zip` — artifact used by all landing-page download CTAs; `app/page.tsx` currently uses `?v=0.5.1`.
+- `public/Aster-macOS.zip` — artifact used by all landing-page download CTAs; `app/page.tsx` currently uses `?v=0.5.2`.
 - `macos/scripts/package.sh` — release build, app assembly, icon generation, ad-hoc signing, and ZIP refresh.
 - `.openai/hosting.json` — existing OpenAI Sites project ID. Reuse it; do not create a duplicate project.
 - `README.md`, `macos/README.md`, `docs/DEMO_SCRIPT.md`, `docs/EVALS.md`, `docs/TESTING_GUIDE.md` — product truth, demo, evaluation plan, and full QA plan.
@@ -74,7 +74,7 @@ Required pre-submission breadth smoke: repeat with a Region around the time-depe
 
 ## 4. Completed during Build Week
 
-Repository history spans July 18–21, 2026: the native prototype and landing page, diagnosis-first adaptive loop, native overlay and ✱ animation, global hotkey, four context modes, local following/capture, voice conversation, strict model contracts, learner memory, bounded Desmos/Manim actions, first-run onboarding, Keychain account lifecycle, Settings, permissions and relocation recovery, app icon, packaging, tests/evaluation docs, and Sites deployment. July 21 commits concentrate on panel behavior, scoped capture, wake/voice flow, streaming/performance, self-UI exclusion, transcript reset, and the `0.5.1` artifact.
+Repository history spans July 18–21, 2026: the native prototype and landing page, diagnosis-first adaptive loop, native overlay and ✱ animation, global hotkey, four context modes, local following/capture, voice conversation, strict model contracts, learner memory, bounded Desmos/Manim actions, first-run onboarding, Keychain account lifecycle, Settings, permissions and relocation recovery, app icon, packaging, tests/evaluation docs, and Sites deployment. July 21 commits concentrate on panel behavior, scoped capture, wake/voice flow, streaming/performance, self-UI exclusion, transcript reset, stable Point pinning, and the `0.5.2` artifact.
 
 ## 5. What GPT-5.6 does
 
@@ -141,12 +141,12 @@ GitHub CLI and Sites deployment use account authentication, not repository envir
 - GitHub: <https://github.com/Tanya-Khanna/aster-spatial-tutor>
 - Landing page: <https://aster-spatial-tutor.tanyak897.chatgpt.site>
 - OpenAI Sites project: `appgprj_6a5bcc874b888191921363cdbd2340ba`
-- Live Sites version: `39`, sourced from application commit `7110c69e23f9469f1a28b291d66894d1183e0a22`
+- Live Sites version and source commit: verify from the Sites project before each submission handoff; deployments are immutable snapshots and do not update automatically from GitHub.
 - Runtime AI service: OpenAI Responses API using the learner's own key
 - Local/platform services: CoreGraphics, Vision, Speech, AVFoundation, Keychain, WebKit
 - Optional teaching services: Desmos web API; local Manim CLI
 
-**Critical:** Sites currently reports access mode `custom`; an unauthenticated request returned HTTP 401 on 2026-07-21. The URL exists but is not yet judge-public. Do not describe it as publicly accessible until an incognito request returns 200.
+The release site is intended to be public. Verify an incognito request returns HTTP 200 before sharing it with judges.
 
 ## 10. Known limitations and unreliable paths
 
@@ -167,22 +167,22 @@ GitHub CLI and Sites deployment use account authentication, not repository envir
 
 ## 11. Last successfully tested flows
 
-Verified on 2026-07-21 for application baseline `7110c69`:
+Verified on 2026-07-21; rerun for every release commit:
 
 - `cd macos && swift test`: 21/21 Swift tests passed.
 - `cd macos && swift build -c release`: succeeded.
-- `cd macos && zsh scripts/package.sh`: succeeded; release `0.5.1` build `16` refreshed the ZIP.
+- `cd macos && zsh scripts/package.sh`: release `0.5.2` build `17` refreshes the ZIP.
 - `npm test`: production web build passed and 2/2 rendered-HTML tests passed.
-- All three rendered download CTAs pointed to `/Aster-macOS.zip?v=0.5.1`.
-- The deployed ZIP and local ZIP matched SHA-256 `8bdc9ce09ee44551c8c368e378dce3429e4254806f9f62a889eb16205621958c` during the authenticated Sites verification.
+- All three rendered download CTAs point to `/Aster-macOS.zip?v=0.5.2`.
+- For release `0.5.2`, verify the deployed ZIP matches local SHA-256 `e065c89d44182670cdbd3260a9f4f9a40d8c2b5a735478836b30c116a830d191`.
 - GitHub `main` was clean and synchronized before this HANDOFF-only change; the repository was verified public.
-- Sites version 39 was verified active and sourced from `7110c69`; anonymous access was also verified to fail with HTTP 401 because access remains `custom`.
+- The Sites deployment must be verified against the final pushed release commit, and anonymous access must return HTTP 200.
 
-Manual behavior reported working during development: app icon in Dock, relocation/permission recovery after removing the stale TCC entry, and the native onboarding/settings flow. **Not verified after the final `64c6a5f`/`7110c69` fixes:** one uninterrupted live research-paper diagnosis → lesson → independent answer → assessment → restart flow. Run that before submission; do not infer it from green unit tests.
+Manual behavior reported working during development: app icon in Dock, relocation/permission recovery after removing the stale TCC entry, and the native onboarding/settings flow. **Still required after the latest Point-pin release:** one uninterrupted live research-paper diagnosis → lesson → independent answer → assessment → restart flow. Run that before submission; do not infer it from green unit tests.
 
 ## 12. Remaining submission tasks
 
-1. Change the existing Sites project to public access from an authorized account, then verify the landing URL and ZIP in an unsigned/incognito browser.
+1. Verify the existing Sites project remains publicly accessible, then verify the landing URL and ZIP in an unsigned/incognito browser.
 2. Run the required live smoke on research paper, Schrödinger equation, and anatomy material; specifically verify Aster UI exclusion and annotation targeting.
 3. Test Option-Space over Chrome/Preview, full screen, and a second display; test text, immediate voice, follow-up voice, and “Hey Aster.”
 4. Record the sub-three-minute native-app demo using `docs/DEMO_SCRIPT.md`; keep a clean second take.
