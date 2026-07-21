@@ -96,8 +96,8 @@ Codex session ID: <add public session ID>
 ## Efficient API use
 
 - macOS Speech Recognition and `AVSpeechSynthesizer` handle voice without an additional audio-model request.
-- Only the active scope is downsampled to a maximum width of 1600 px; Region and Freehand Loop avoid sending the rest of the screen.
-- Diagnosis uses Terra with a 500-token cap; standard spatial lessons use Terra with a 1,400-token cap; answer assessment uses Luna with a 450-token cap.
+- Only the active scope is prepared for the request; ordinary diagnostic and teaching images are downsampled to roughly 1024 px on their longest side, while explicit Precision mode retains the full prepared crop. Region and Freehand Loop avoid sending the rest of the screen.
+- Diagnosis uses Terra with a 450-token cap; standard spatial lessons use Terra with a 1,200-token cap; Precision lessons retain a 1,400-token cap; answer assessment uses Luna with a 450-token cap.
 - Precision mode is explicit rather than automatic.
 - Settings shows per-session request and token usage, with direct links to OpenAI’s live usage and budget controls.
 
@@ -149,7 +149,7 @@ cd macos && swift build -c release
 | Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams while emphasizing comprehension rather than answer generation |
 | Quality of Idea | OS-native spatial tutoring, explicit point-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
 
-See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submission story and [`docs/EVALS.md`](docs/EVALS.md) for the annotation-quality evaluation plan.
+See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submission story, [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md) for complete start-to-finish testing instructions and public demo material, and [`docs/EVALS.md`](docs/EVALS.md) for the annotation-quality evaluation plan.
 
 ## Safety boundaries
 
