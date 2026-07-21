@@ -8,16 +8,19 @@ BUILD_DIR="${PROJECT_DIR}/.build/release"
 APP_DIR="${PROJECT_DIR}/dist/Aster.app"
 
 cd "$PROJECT_DIR"
+zsh scripts/generate-icon.sh
 swift build -c release
 
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp "$BUILD_DIR/Aster" "$APP_DIR/Contents/MacOS/Aster"
+cp "$PROJECT_DIR/Resources/Aster.icns" "$APP_DIR/Contents/Resources/Aster.icns"
 
 plutil -create xml1 "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleName -string "Aster✱" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleDisplayName -string "Aster✱" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleIdentifier -string "com.aster.spatial-tutor" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleExecutable -string "Aster" "$APP_DIR/Contents/Info.plist"
+plutil -insert CFBundleIconFile -string "Aster" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundlePackageType -string "APPL" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleShortVersionString -string "0.2.0" "$APP_DIR/Contents/Info.plist"
 plutil -insert CFBundleVersion -string "2" "$APP_DIR/Contents/Info.plist"
