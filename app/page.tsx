@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
-const downloadHref = "/Aster-macOS.zip?v=0.5.3";
+const downloadHref = "/Aster-macOS.zip?v=0.5.4";
 
 const scenes: Record<
   SceneKey,

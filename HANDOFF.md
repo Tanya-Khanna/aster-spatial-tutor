@@ -6,10 +6,10 @@ Verified against the repository on **2026-07-21**. This file distinguishes repos
 
 - Repository: <https://github.com/Tanya-Khanna/aster-spatial-tutor> (**public**, verified with GitHub CLI)
 - Branch: `main`
-- Application/source baseline imported before release packaging: `bd9e0bd698432f09a5ddedac730cae75357e1e28`
-- Release: Aster✱ `0.5.3` (`CFBundleVersion` `18`), macOS 13+, Apple Silicon
+- Application/source baseline imported before release packaging: `b0cf7ebcf0293ed41646926dc1b29c7d76e9e630`
+- Release: Aster✱ `0.5.4` (`CFBundleVersion` `19`), macOS 13+, Apple Silicon
 - Download artifact: `public/Aster-macOS.zip`
-- ZIP SHA-256: `caf145d6ea074d2075899b7e59d1e36fd7fb48781744db25d2d8f5c9c07e3581`
+- ZIP SHA-256: `e47a6845f67b020908d1b04d6bc1bbc899405462cc26d8fc41be38cb4cb67dbb`
 
 The SHA above is the immutable application baseline immediately before the HANDOFF-only commit. After cloning, use `git rev-parse HEAD` for the final handoff commit; a commit cannot contain its own SHA because adding that SHA changes the commit.
 
@@ -65,7 +65,7 @@ Required pre-submission breadth smoke: repeat with a Region around the time-depe
 
 - `app/page.tsx`, `app/globals.css`, `app/layout.tsx` — landing page and browser simulation.
 - `tests/rendered-html.test.mjs` — rendered-site and source-contract tests.
-- `public/Aster-macOS.zip` — artifact used by all landing-page download CTAs; `app/page.tsx` currently uses `?v=0.5.3`.
+- `public/Aster-macOS.zip` — artifact used by all landing-page download CTAs; `app/page.tsx` currently uses `?v=0.5.4`.
 - `macos/scripts/package.sh` — release build, app assembly, icon generation, ad-hoc signing, and ZIP refresh.
 - `.openai/hosting.json` — existing OpenAI Sites project ID. Reuse it; do not create a duplicate project.
 - `README.md`, `macos/README.md`, `docs/DEMO_SCRIPT.md`, `docs/EVALS.md`, `docs/TESTING_GUIDE.md` — product truth, demo, evaluation plan, and full QA plan.
@@ -74,7 +74,7 @@ Required pre-submission breadth smoke: repeat with a Region around the time-depe
 
 ## 4. Completed during Build Week
 
-Repository history spans July 18–21, 2026: the native prototype and landing page, diagnosis-first adaptive loop, native overlay and ✱ animation, global hotkey, four context modes, local following/capture, voice conversation, strict model contracts, learner memory, bounded Desmos/Manim actions, first-run onboarding, Keychain account lifecycle, Settings, permissions and relocation recovery, app icon, packaging, tests/evaluation docs, and Sites deployment. July 21 commits concentrate on panel behavior, scoped capture, wake/voice flow, streaming/performance, self-UI exclusion, transcript reset, stable Point pinning, structured-response decode reliability, and the `0.5.3` artifact.
+Repository history spans July 18–21, 2026: the native prototype and landing page, diagnosis-first adaptive loop, native overlay and ✱ animation, global hotkey, four context modes, local following/capture, voice conversation, strict model contracts, learner memory, bounded Desmos/Manim actions, first-run onboarding, Keychain account lifecycle, Settings, permissions and relocation recovery, app icon, packaging, tests/evaluation docs, and Sites deployment. July 21 commits concentrate on panel behavior, scoped capture, wake/voice flow, streaming/performance, self-UI exclusion, transcript reset, stable Point pinning, structured-response decode reliability, Desmos sandbox reliability, and the `0.5.4` artifact.
 
 ## 5. What GPT-5.6 does
 
@@ -171,10 +171,10 @@ Verified on 2026-07-21; rerun for every release commit:
 
 - `cd macos && swift test`: 21/21 Swift tests passed.
 - `cd macos && swift build -c release`: succeeded.
-- `cd macos && zsh scripts/package.sh`: release `0.5.3` build `18` refreshes the ZIP.
+- `cd macos && zsh scripts/package.sh`: release `0.5.4` build `19` refreshes the ZIP.
 - `npm test`: production web build passed and 2/2 rendered-HTML tests passed.
-- All three rendered download CTAs point to `/Aster-macOS.zip?v=0.5.3`.
-- For release `0.5.3`, verify the deployed ZIP matches local SHA-256 `caf145d6ea074d2075899b7e59d1e36fd7fb48781744db25d2d8f5c9c07e3581`.
+- All three rendered download CTAs point to `/Aster-macOS.zip?v=0.5.4`.
+- For release `0.5.4`, verify the deployed ZIP matches local SHA-256 `e47a6845f67b020908d1b04d6bc1bbc899405462cc26d8fc41be38cb4cb67dbb`.
 - GitHub `main` was clean and synchronized before this HANDOFF-only change; the repository was verified public.
 - The Sites deployment must be verified against the final pushed release commit, and anonymous access must return HTTP 200.
 
