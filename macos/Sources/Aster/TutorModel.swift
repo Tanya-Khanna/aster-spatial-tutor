@@ -86,7 +86,19 @@ final class TutorModel: ObservableObject {
         apiKey = storedKey
         apiKeyStatus = storedKey.isEmpty ? .unauthenticated : .authenticated(hint: Self.keyHint(storedKey))
         let completed = UserDefaults.standard.bool(forKey: "onboardingComplete")
-        onboardingStep = completed && !storedKey.isEmpty ? .ready : .introduction
+        let currentInstallIdentifier = Self.currentInstallIdentifier()
+        let previousInstallIdentifier = UserDefaults.standard.string(forKey: "installIdentifier")
+        let shouldRestartOnboarding = Self.shouldStartOnboarding(
+            completed: completed,
+            hasStoredKey: !storedKey.isEmpty,
+            previousInstallIdentifier: previousInstallIdentifier,
+            currentInstallIdentifier: currentInstallIdentifier
+        )
+        if previousInstallIdentifier != currentInstallIdentifier {
+            UserDefaults.standard.set(false, forKey: "onboardingComplete")
+        }
+        UserDefaults.standard.set(currentInstallIdentifier, forKey: "installIdentifier")
+        onboardingStep = shouldRestartOnboarding ? .introduction : .ready
         learnerProfile = memoryStore.load()
         voice.onText = { [weak self] text in self?.query = text }
         voice.onFinalText = { [weak self] text in
@@ -107,10 +119,29 @@ final class TutorModel: ObservableObject {
         if wakePhraseEnabled { voice.startWakeListening() }
     }
 
+    static func shouldStartOnboarding(
+        completed: Bool,
+        hasStoredKey: Bool,
+        previousInstallIdentifier: String?,
+        currentInstallIdentifier: String
+    ) -> Bool {
+        previousInstallIdentifier != currentInstallIdentifier || !completed || !hasStoredKey
+    }
+
+    private static func currentInstallIdentifier() -> String {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: Bundle.main.bundlePath)
+        let device = (attributes?[.systemNumber] as? NSNumber)?.uint64Value ?? 0
+        let inode = (attributes?[.systemFileNumber] as? NSNumber)?.uint64Value ?? 0
+        if device != 0 || inode != 0 { return "\(device):\(inode)" }
+
+        // This fallback keeps launches stable on file systems that do not expose inode metadata.
+        return Bundle.main.bundlePath
+    }
+
     var isAuthenticated: Bool { apiKeyStatus.isAuthenticated && !apiKey.isEmpty }
 
     var isOnboardingComplete: Bool {
-        UserDefaults.standard.bool(forKey: "onboardingComplete") && isAuthenticated
+        UserDefaults.standard.bool(forKey: "onboardingComplete") && isAuthenticated && onboardingStep == .ready
     }
 
     var sessionUsageLabel: String {

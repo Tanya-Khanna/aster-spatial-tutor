@@ -117,3 +117,25 @@ import Testing
     #expect(usage.outputTokens == 50)
     #expect(usage.totalTokens == 220)
 }
+
+@MainActor
+@Test func onboardingRestartsOnlyForANewInstalledBundle() {
+    #expect(TutorModel.shouldStartOnboarding(
+        completed: true,
+        hasStoredKey: true,
+        previousInstallIdentifier: "device:old-inode",
+        currentInstallIdentifier: "device:new-inode"
+    ))
+    #expect(!TutorModel.shouldStartOnboarding(
+        completed: true,
+        hasStoredKey: true,
+        previousInstallIdentifier: "device:same-inode",
+        currentInstallIdentifier: "device:same-inode"
+    ))
+    #expect(TutorModel.shouldStartOnboarding(
+        completed: true,
+        hasStoredKey: false,
+        previousInstallIdentifier: "device:same-inode",
+        currentInstallIdentifier: "device:same-inode"
+    ))
+}
