@@ -441,7 +441,7 @@ export default function Home() {
           <article className="setup-step emphasized">
             <span>02</span>
             <b>Open anyway</b>
-            <p>After the warning, open <strong>System Settings → Privacy &amp; Security</strong> and choose <strong>Open Anyway</strong>.</p>
+            <p>After the warning, open <strong>System Settings → Privacy &amp; Security</strong> and scroll down to <strong>Security</strong>. Look for a message like “Aster was blocked to protect your Mac,” then click <strong>Open Anyway</strong>.</p>
           </article>
           <article className="setup-step">
             <span>03</span>

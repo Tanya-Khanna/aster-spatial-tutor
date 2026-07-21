@@ -35,6 +35,8 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /Remembers what needs practice/);
   assert.match(html, /isn’t notarized by Apple yet/);
   assert.match(html, /Open Anyway/);
+  assert.match(html, /scroll down to <strong>Security<\/strong>/);
+  assert.match(html, /Aster was blocked to protect your Mac/);
   assert.match(html, /Set up Aster✱ in two minutes/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
