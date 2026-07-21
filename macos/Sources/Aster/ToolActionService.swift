@@ -214,7 +214,7 @@ final class ToolActionService {
         h1{margin:0;font-size:16px}p{margin:3px 0 0;color:#6e6e68;font-size:12px}.badge{margin-left:auto;padding:8px 11px;border-radius:9px;background:#ffe3da;color:#a9341d;font-size:10px;font-weight:700}
         #calculator{width:100%;height:calc(100vh - 72px)}
         </style>
-        <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=desmos"></script></head>
+        <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script></head>
         <body><header><div class="mark"><svg viewBox="0 0 32 32"><path class="cursor" d="M3 3L6.2 15.2L9 11.9L14.2 17.1L16.7 14.6L11.5 9.4L15.2 6.3Z"/><path class="ray" d="M23 13L29 7M23 23L29 28M18 24L18 30M13 19L3 19"/><circle cx="18" cy="19" r="2.8"/></svg></div><div><h1>Aster✱ demonstration sandbox</h1><p id="caption"></p></div><div class="badge">LEARNER-CONTROLLED</div></header><div id="calculator"></div>
         <script>
         document.getElementById('caption').textContent=\(caption);
