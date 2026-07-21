@@ -47,5 +47,5 @@ Keep one installed copy in `/Applications`. Because the prototype is ad-hoc sign
 - Animated flow/focus/comparison overlays and safe diagram primitives for simplified redraws.
 - Desmos plus nine fixed local Manim families with an embedded low-resolution preview. Manim requires a local CLI; model-authored Python is never executed.
 - Permission modes, reversible scratch work, safe typing previews, action history/undo, shaky-area practice, spaced review, misconception clusters, dependencies, difficulty, and analogy preferences.
-- Four-step first-run onboarding, visible authenticated/unauthenticated states, permission recovery, adaptive light/dark appearance, and destructive-action confirmations.
+- Four-step first-run onboarding, visible authenticated/unauthenticated states, permission recovery, adaptive light/dark appearance, and destructive-action confirmations. Ongoing preferences live in a compact five-pane native Settings window that remembers its last pane and opens with Command–Comma.
 - Aster✱ teaches labeled educational anatomy diagrams. It is not for radiology, diagnosis, or medical advice.

@@ -17,7 +17,12 @@ final class TutorModel: ObservableObject {
     @Published var apiKeyDraft = ""
     @Published private(set) var apiKeyStatus: APIKeyStatus
     @Published var onboardingStep: OnboardingStep
-    @Published var precisionMode = false
+    @Published var precisionMode = UserDefaults.standard.bool(forKey: "precisionMode") {
+        didSet { UserDefaults.standard.set(precisionMode, forKey: "precisionMode") }
+    }
+    @Published var settingsPane = SettingsPane(rawValue: UserDefaults.standard.string(forKey: "settingsPane") ?? "") ?? .general {
+        didSet { UserDefaults.standard.set(settingsPane.rawValue, forKey: "settingsPane") }
+    }
     @Published var narrationRate: Float = UserDefaults.standard.object(forKey: "narrationRate") as? Float ?? 0.48 {
         didSet {
             UserDefaults.standard.set(narrationRate, forKey: "narrationRate")
@@ -59,7 +64,7 @@ final class TutorModel: ObservableObject {
     var onShowPanel: (() -> Void)?
     var onHidePanel: (() -> Void)?
     var onShowWelcome: (() -> Void)?
-    var onShowSettings: (() -> Void)?
+    var onShowSettings: ((SettingsPane) -> Void)?
 
     private let capture = ScreenCaptureService()
     private let client = OpenAIClient()
@@ -265,7 +270,10 @@ final class TutorModel: ObservableObject {
         onboardingStep = .ready
     }
 
-    func showSettings() { onShowSettings?() }
+    func showSettings(_ pane: SettingsPane? = nil) {
+        if let pane { settingsPane = pane }
+        onShowSettings?(settingsPane)
+    }
 
     func resetLearnerMemory() {
         memoryStore.reset()

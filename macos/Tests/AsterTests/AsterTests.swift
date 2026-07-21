@@ -139,3 +139,9 @@ import Testing
         currentInstallIdentifier: "device:same-inode"
     ))
 }
+
+@Test func settingsExposeFiveStableNativePanes() {
+    #expect(SettingsPane.allCases.map(\.rawValue) == ["general", "voice", "permissions", "learning", "account"])
+    #expect(SettingsPane.permissions.systemImage == "lock.shield")
+    #expect(SettingsPane.account.title == "Account")
+}

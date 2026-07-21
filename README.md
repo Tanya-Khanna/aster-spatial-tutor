@@ -17,6 +17,8 @@ Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-
 
 The prototype is ad-hoc signed. On first use, macOS may ask for permission to open it and for Screen Recording, Microphone, and Speech Recognition access. Keep one copy in `/Applications`; after replacing it with a newer build, macOS may require Screen Recording approval again. If an enabled toggle is stale, remove older Aster rows, add the current app, and use Aster✱’s permission-repair restart.
 
+After onboarding, Aster✱ uses a single compact native Settings window with General, Voice, Permissions, Learning, and Account panes. It remembers the last pane, opens with **Command–Comma**, and routes permission errors directly to recovery controls.
+
 ## The problem
 
 Dense visual learning material is hard to translate into a text-chat prompt. A learner must leave the equation or diagram, capture it, upload it, describe where they are confused, mentally map a prose response back to the source, and repeat. That context switching is especially costly for notation-heavy research papers, multi-step equations, circuits, graphs, and anatomy plates.

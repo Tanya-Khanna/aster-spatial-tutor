@@ -34,6 +34,46 @@ enum PermissionState: Equatable {
     }
 }
 
+enum SettingsPane: String, CaseIterable, Identifiable {
+    case general
+    case voice
+    case permissions
+    case learning
+    case account
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .voice: return "Voice"
+        case .permissions: return "Permissions"
+        case .learning: return "Learning"
+        case .account: return "Account"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .general: return "Hotkey, reasoning, and agent behavior."
+        case .voice: return "Narration and conversational listening."
+        case .permissions: return "Screen, microphone, speech, and privacy."
+        case .learning: return "Local mastery evidence and learner memory."
+        case .account: return "OpenAI connection, usage, and budget links."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .general: return "gearshape"
+        case .voice: return "waveform"
+        case .permissions: return "lock.shield"
+        case .learning: return "brain.head.profile"
+        case .account: return "person.crop.circle"
+        }
+    }
+}
+
 struct APIUsage: Equatable {
     var inputTokens: Int = 0
     var outputTokens: Int = 0

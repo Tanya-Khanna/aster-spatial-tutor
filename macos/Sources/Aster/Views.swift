@@ -116,10 +116,6 @@ struct WelcomeView: View {
             Text("Aster✱").font(.system(size: 20, weight: .semibold, design: .rounded))
             Spacer()
             ConnectionPill(status: model.apiKeyStatus)
-            Button { model.showSettings() } label: {
-                Image(systemName: "gearshape").frame(width: 30, height: 30)
-            }
-            .buttonStyle(.plain).help("Settings")
         }
         .padding(.horizontal, 34).padding(.vertical, 20)
         .background(.ultraThinMaterial)
@@ -661,7 +657,7 @@ struct TutorPanelView: View {
     private func errorCard(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 5) { Text("Aster✱ needs attention").font(.system(size: 11, weight: .semibold)); Text(message).font(.system(size: 10)).foregroundStyle(asterSecondary); HStack { if message.localizedCaseInsensitiveContains("Screen Recording") { Button("Open Privacy Settings") { model.openScreenPermissionSettings() } } else if !model.isAuthenticated { Button("Open setup") { model.onShowWelcome?() } }; Button("Dismiss") { model.recoverFromError() } }.buttonStyle(.link) }
+            VStack(alignment: .leading, spacing: 5) { Text("Aster✱ needs attention").font(.system(size: 11, weight: .semibold)); Text(message).font(.system(size: 10)).foregroundStyle(asterSecondary); HStack { if message.localizedCaseInsensitiveContains("Screen Recording") { Button("Fix permission") { model.showSettings(.permissions) } } else if !model.isAuthenticated { Button("Open setup") { model.onShowWelcome?() } }; Button("Dismiss") { model.recoverFromError() } }.buttonStyle(.link) }
             Spacer()
         }.padding(12).background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 13)).padding(.horizontal, 14).padding(.top, 10)
     }
@@ -704,57 +700,171 @@ struct SettingsView: View {
     var body: some View {
         ZStack {
             asterCanvas.ignoresSafeArea()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    HStack { AsterMark(size: 34); VStack(alignment: .leading, spacing: 2) { Text("Aster✱ Settings").font(.system(size: 24, weight: .semibold, design: .rounded)); Text("Your account, voice, permissions, actions, and learning history.").font(.system(size: 11)).foregroundStyle(asterSecondary) }; Spacer(); ConnectionPill(status: model.apiKeyStatus) }
-                    settingsSection("ACCOUNT", "Your key belongs to you.") { APIKeyCard(model: model, allowsRemoval: true) }
-                    settingsSection("VOICE", "Make narration comfortable.") {
-                        VStack(spacing: 14) {
-                            HStack { Label("Narration speed", systemImage: "speaker.wave.2.fill"); Spacer(); Image(systemName: "tortoise"); Slider(value: $model.narrationRate, in: 0.34...0.62).frame(width: 220); Image(systemName: "hare") }
-                            Divider()
-                            Toggle(isOn: $model.conversationMode) { VStack(alignment: .leading, spacing: 2) { Text("Conversational follow-ups").font(.system(size: 12, weight: .semibold)); Text("Listen again after each understanding check.").font(.system(size: 10)).foregroundStyle(asterSecondary) } }
-                            Toggle(isOn: $model.wakePhraseEnabled) { VStack(alignment: .leading, spacing: 2) { Text("“Hey Aster” wake phrase").font(.system(size: 12, weight: .semibold)); Text("Optional continuous on-device wake listening.").font(.system(size: 10)).foregroundStyle(asterSecondary) } }
-                        }.font(.system(size: 12))
-                    }
-                    settingsSection("AGENT ACTIONS", "Bounded and permissioned.") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Picker("Permission mode", selection: $model.actionPermission) { ForEach(ActionPermission.allCases) { value in Text(value.label).tag(value) } }.pickerStyle(.radioGroup)
-                            Divider()
-                            Toggle(isOn: $model.precisionMode) { VStack(alignment: .leading, spacing: 2) { Text("High-precision reasoning").font(.system(size: 12, weight: .semibold)); Text("Use the deeper reasoning model for unusually dense pages.").font(.system(size: 10)).foregroundStyle(asterSecondary) } }
-                            Text("Aster✱ never takes over graded work. Desmos, Manim, scratch work, and typing previews remain learner-controlled and reversible where possible.").font(.system(size: 10)).foregroundStyle(asterSecondary)
-                        }
-                    }
-                    settingsSection("USAGE & BUDGET", "Live spend remains under your OpenAI account.") {
-                        VStack(spacing: 14) {
-                            HStack(spacing: 12) { usageMetric("\(model.sessionRequestCount)", "Requests this session"); usageMetric(model.sessionUsage.inputTokens.formatted(), "Input tokens"); usageMetric(model.sessionUsage.outputTokens.formatted(), "Output tokens") }
-                            HStack { Text("Aster✱ does not guess dollar cost because model pricing can change.").font(.system(size: 10)).foregroundStyle(asterSecondary); Spacer(); Button("View live spend ↗") { model.openUsageDashboard() }; Button("Manage budget ↗") { model.openBudgetSettings() } }.buttonStyle(.link)
-                        }
-                    }
-                    settingsSection("PRIVACY & MEMORY", "Local evidence, visible controls.") {
-                        VStack(spacing: 14) {
-                            PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen Recording", detail: "Required for selected-region teaching.", state: model.screenPermission, required: true) { model.screenPermission == .denied ? model.openScreenPermissionSettings() : model.requestScreenPermission() }
-                            if model.screenPermission == .denied { ScreenPermissionRecovery(model: model) }
-                            Divider()
-                            PermissionRow(icon: "waveform", title: "Microphone + Speech Recognition", detail: "Optional voice questions and wake phrase.", state: settingsVoicePermissionState, required: false) { settingsVoicePermissionState == .denied ? model.openVoicePermissionSettings() : model.requestVoicePermissions() }
-                            Divider()
-                            HStack { VStack(alignment: .leading, spacing: 3) { Text("Learner memory").font(.system(size: 12, weight: .semibold)); Text("\(model.learnerProfile.concepts.count) concepts · \(model.learnerProfile.totalChecks) understanding checks · stored locally").font(.system(size: 10)).foregroundStyle(asterSecondary) }; Spacer(); Button("Reset learner memory", role: .destructive) { confirmReset = true }.buttonStyle(.bordered) }
-                        }
-                    }
-                    Text("Aster✱ · Native spatial tutoring for macOS").font(.system(size: 9, design: .monospaced)).foregroundStyle(asterSecondary).frame(maxWidth: .infinity).padding(.top, 4)
-                }.padding(32)
+            VStack(spacing: 0) {
+                settingsHeader
+                Divider()
+                ScrollView {
+                    paneContent
+                        .frame(maxWidth: 740, alignment: .topLeading)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 28)
+                }
             }
         }
-        .frame(minWidth: 720, minHeight: 720)
+        .frame(width: 820, height: 620)
         .alert("Reset learner memory?", isPresented: $confirmReset) {
             Button("Cancel", role: .cancel) {}
             Button("Reset memory", role: .destructive) { model.resetLearnerMemory() }
         } message: { Text("This permanently deletes Aster✱’s local mastery evidence, shaky areas, review schedule, and learning preferences. Your API key is not affected.") }
     }
 
+    private var settingsHeader: some View {
+        HStack(spacing: 13) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12).fill(asterSignal.opacity(0.10)).frame(width: 46, height: 46)
+                Image(systemName: model.settingsPane.systemImage).font(.system(size: 20, weight: .semibold)).foregroundStyle(asterSignal)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(model.settingsPane.title).font(.system(size: 23, weight: .semibold, design: .rounded))
+                Text(model.settingsPane.subtitle).font(.system(size: 11)).foregroundStyle(asterSecondary)
+            }
+            Spacer()
+            if model.settingsPane == .account { ConnectionPill(status: model.apiKeyStatus) }
+        }
+        .padding(.horizontal, 32).padding(.vertical, 20)
+        .background(.ultraThinMaterial)
+    }
+
+    @ViewBuilder private var paneContent: some View {
+        switch model.settingsPane {
+        case .general:
+            VStack(alignment: .leading, spacing: 22) {
+                settingsSection("ACTIVATION", "Available anywhere on your Mac.") {
+                    VStack(spacing: 15) {
+                        HStack {
+                            Label("Ask Aster✱", systemImage: "viewfinder").font(.system(size: 12, weight: .semibold))
+                            Spacer()
+                            Text("⌥ SPACE").font(.system(size: 10, weight: .bold, design: .monospaced)).padding(.horizontal, 10).padding(.vertical, 7).background(asterSurface, in: RoundedRectangle(cornerRadius: 8))
+                        }
+                        Divider()
+                        Toggle(isOn: $model.precisionMode) {
+                            settingLabel("High-precision reasoning", "Use deeper reasoning for unusually dense pages.")
+                        }
+                    }
+                }
+                settingsSection("AGENT ACTIONS", "Bounded, visible, and permissioned.") {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Picker("Permission mode", selection: $model.actionPermission) {
+                            ForEach(ActionPermission.allCases) { value in Text(value.label).tag(value) }
+                        }
+                        .pickerStyle(.radioGroup)
+                        Divider()
+                        Label("Aster✱ never takes over graded work. Desmos, Manim, scratch work, and typing previews stay learner-controlled and reversible where possible.", systemImage: "hand.raised.fill")
+                            .font(.system(size: 10)).foregroundStyle(asterSecondary)
+                    }
+                }
+            }
+        case .voice:
+            VStack(alignment: .leading, spacing: 22) {
+                settingsSection("NARRATION", "Make every explanation comfortable.") {
+                    HStack(spacing: 12) {
+                        Label("Narration speed", systemImage: "speaker.wave.2.fill").font(.system(size: 12, weight: .semibold))
+                        Spacer()
+                        Image(systemName: "tortoise")
+                        Slider(value: $model.narrationRate, in: 0.34...0.62).frame(width: 260)
+                        Image(systemName: "hare")
+                    }
+                }
+                settingsSection("CONVERSATION", "Voice remains optional and learner-controlled.") {
+                    VStack(spacing: 16) {
+                        Toggle(isOn: $model.conversationMode) { settingLabel("Conversational follow-ups", "Listen again after each understanding check.") }
+                        Divider()
+                        Toggle(isOn: $model.wakePhraseEnabled) { settingLabel("“Hey Aster” wake phrase", "Optional continuous on-device wake listening.") }
+                    }
+                }
+            }
+        case .permissions:
+            VStack(alignment: .leading, spacing: 22) {
+                settingsSection("SCREEN", "Required only for the context you choose.") {
+                    VStack(spacing: 14) {
+                        PermissionRow(icon: "rectangle.dashed.badge.record", title: "Screen Recording", detail: "Required for selected-region teaching.", state: model.screenPermission, required: true) {
+                            model.screenPermission == .denied ? model.openScreenPermissionSettings() : model.requestScreenPermission()
+                        }
+                        if model.screenPermission == .denied { ScreenPermissionRecovery(model: model) }
+                    }
+                }
+                settingsSection("VOICE INPUT", "Optional for spoken questions and follow-ups.") {
+                    PermissionRow(icon: "waveform", title: "Microphone + Speech Recognition", detail: "Used only when you choose voice conversation.", state: settingsVoicePermissionState, required: false) {
+                        settingsVoicePermissionState == .denied ? model.openVoicePermissionSettings() : model.requestVoicePermissions()
+                    }
+                }
+                Label("Selected context stays local until you ask. Aster✱ excludes its own windows from capture.", systemImage: "lock.shield.fill")
+                    .font(.system(size: 11, weight: .medium)).foregroundStyle(asterSecondary)
+            }
+        case .learning:
+            VStack(alignment: .leading, spacing: 22) {
+                HStack(spacing: 12) {
+                    usageMetric("\(model.learnerProfile.concepts.count)", "Concepts remembered")
+                    usageMetric("\(model.learnerProfile.totalChecks)", "Understanding checks")
+                    usageMetric("\(model.learnerProfile.dueReviews.count)", "Reviews ready")
+                }
+                settingsSection("LEARNER MEMORY", "Compact evidence stored only on this Mac.") {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Label("Aster✱ remembers demonstrated strengths, shaky areas, review timing, and the next teaching strategy—not screenshots.", systemImage: "brain.head.profile")
+                            .font(.system(size: 11)).foregroundStyle(asterSecondary)
+                        Divider()
+                        HStack {
+                            settingLabel("Start learning history over", "Deletes local mastery evidence and teaching preferences.")
+                            Spacer()
+                            Button("Reset learner memory", role: .destructive) { confirmReset = true }.buttonStyle(.bordered)
+                        }
+                    }
+                }
+            }
+        case .account:
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 10) {
+                    settingsHeading("OPENAI", "Your key belongs to you.")
+                    APIKeyCard(model: model, allowsRemoval: true)
+                }
+                settingsSection("USAGE & BUDGET", "Live spend remains under your OpenAI account.") {
+                    VStack(spacing: 14) {
+                        HStack(spacing: 12) {
+                            usageMetric("\(model.sessionRequestCount)", "Requests this session")
+                            usageMetric(model.sessionUsage.inputTokens.formatted(), "Input tokens")
+                            usageMetric(model.sessionUsage.outputTokens.formatted(), "Output tokens")
+                        }
+                        HStack {
+                            Text("Aster✱ does not estimate dollar cost because model pricing can change.").font(.system(size: 10)).foregroundStyle(asterSecondary)
+                            Spacer()
+                            Button("View live spend ↗") { model.openUsageDashboard() }
+                            Button("Manage budget ↗") { model.openBudgetSettings() }
+                        }.buttonStyle(.link)
+                    }
+                }
+            }
+        }
+    }
+
+    private func settingLabel(_ title: String, _ detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(.system(size: 12, weight: .semibold))
+            Text(detail).font(.system(size: 10)).foregroundStyle(asterSecondary)
+        }
+    }
+
     private func settingsSection<Content: View>(_ kicker: String, _ subtitle: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) { Text(kicker).font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.1).foregroundStyle(asterSignal); Text(subtitle).font(.system(size: 10)).foregroundStyle(asterSecondary); Spacer() }
+            settingsHeading(kicker, subtitle)
             AsterCard { content() }
+        }
+    }
+
+    private func settingsHeading(_ kicker: String, _ subtitle: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(kicker).font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.1).foregroundStyle(asterSignal)
+            Text(subtitle).font(.system(size: 10)).foregroundStyle(asterSecondary)
+            Spacer()
         }
     }
 
