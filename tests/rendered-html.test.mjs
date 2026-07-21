@@ -44,9 +44,8 @@ test("server-renders Aster star's complete product story", async () => {
   assert.match(html, /own OpenAI API key is required/);
   assert.match(html, /macOS 13\+ · Apple silicon · Ad-hoc signed prototype/);
   assert.doesNotMatch(html, /Apple silicon &amp; Intel/);
-  assert.match(html, /Aster-macOS\.zip\?v=0\.4\.1/);
-  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.4\.1"/g) ?? []).length, 3);
-  assert.match(html, /LOCAL ONLY · NOTHING SENT/);
+  assert.match(html, /Aster-macOS\.zip\?v=0\.5\.0/);
+  assert.equal((html.match(/href="\/Aster-macOS\.zip\?v=0\.5\.0"/g) ?? []).length, 3);
   assert.match(html, /Whole Screen/);
   assert.match(html, /Point/);
   assert.match(html, /Region/);
@@ -60,7 +59,7 @@ test("server-renders Aster star's complete product story", async () => {
 });
 
 test("ships a key-required app archive, social card, and removes the starter preview", async () => {
-  const [packageJson, page, layout, css, tutorModel, nativeViews, asterApp, relocationService, screenCapture, overlay, openAIClient, readme, macReadme, demoScript] = await Promise.all([
+  const [packageJson, page, layout, css, tutorModel, nativeViews, asterApp, relocationService, screenCapture, overlay, openAIClient, contextSelector, voiceServices, companion, readme, macReadme, demoScript] = await Promise.all([
     readFile(new URL("package.json", root), "utf8"),
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("app/layout.tsx", root), "utf8"),
@@ -72,6 +71,9 @@ test("ships a key-required app archive, social card, and removes the starter pre
     readFile(new URL("macos/Sources/Aster/ScreenCaptureService.swift", root), "utf8"),
     readFile(new URL("macos/Sources/Aster/OverlayController.swift", root), "utf8"),
     readFile(new URL("macos/Sources/Aster/OpenAIClient.swift", root), "utf8"),
+    readFile(new URL("macos/Sources/Aster/ContextSelectionController.swift", root), "utf8"),
+    readFile(new URL("macos/Sources/Aster/VoiceServices.swift", root), "utf8"),
+    readFile(new URL("macos/Sources/Aster/AsterStarCompanion.swift", root), "utf8"),
     readFile(new URL("README.md", root), "utf8"),
     readFile(new URL("macos/README.md", root), "utf8"),
     readFile(new URL("docs/DEMO_SCRIPT.md", root), "utf8"),
@@ -81,9 +83,10 @@ test("ships a key-required app archive, social card, and removes the starter pre
 
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(page, /Your screen becomes the/);
-  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.4\.1"/);
+  assert.match(page, /const downloadHref = "\/Aster-macOS\.zip\?v=0\.5\.0"/);
   assert.equal((page.match(/href=\{downloadHref\}/g) ?? []).length, 3);
   assert.match(page, /scene-switcher/);
+  assert.doesNotMatch(`${page}\n${css}`, /summon-demo|summon-modes|summon-prompt/);
   assert.doesNotMatch(`${page}\n${css}`, /budget-widget|budget-bar|budget-scale/i);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /--hand:/);
@@ -94,7 +97,7 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.doesNotMatch(`${readme}\n${macReadme}\n${demoScript}`, /Demo mode|without an API key|deterministic demo/i);
   assert.match(nativeViews, /Remove API key \/ Sign out/);
   assert.match(nativeViews, /Validate and save/);
-  assert.match(nativeViews, /SummonBarView/);
+  assert.match(nativeViews, /TutorBarView/);
   assert.match(nativeViews, /ForEach\(ContextMode\.allCases\)/);
   assert.match(nativeViews, /LOCAL ONLY · NOTHING SENT/);
   assert.doesNotMatch(nativeViews, /Point \/ select|Use current window/);
@@ -105,9 +108,9 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(asterApp, /\.nonactivatingPanel/);
   assert.match(asterApp, /override var canBecomeKey: Bool \{ true \}/);
   assert.match(asterApp, /asterFocusComposer/);
-  const summonActivationBody = tutorModel.match(/func activate\(\) \{([^}]*)\}/)?.[1] ?? "";
-  assert.notEqual(summonActivationBody, "");
-  assert.doesNotMatch(summonActivationBody, /NSApp\.activate/);
+  const tutorActivationBody = tutorModel.match(/func activate\(\) \{([^}]*)\}/)?.[1] ?? "";
+  assert.notEqual(tutorActivationBody, "");
+  assert.doesNotMatch(tutorActivationBody, /NSApp\.activate/);
   assert.match(`${tutorModel}\n${nativeViews}\n${asterApp}`, /Move to Applications & Relaunch|moveToApplicationsAndRelaunch/);
   assert.match(relocationService, /AppTranslocation/);
   assert.match(relocationService, /com\.apple\.quarantine/);
@@ -118,6 +121,12 @@ test("ships a key-required app archive, social card, and removes the starter pre
   assert.match(screenCapture, /window\.sharingType = \.none/);
   assert.match(screenCapture, /target\.selectionPath/);
   assert.match(screenCapture, /mask\.addClip\(\)/);
+  assert.match(contextSelector, /Click the exact thing you mean/);
+  assert.match(contextSelector, /pointer: pointer/);
+  assert.match(voiceServices, /questionAfterWakePhrase/);
+  assert.match(voiceServices, /requiresOnDeviceRecognition = true/);
+  assert.match(voiceServices, /1\.15/);
+  assert.doesNotMatch(companion, /bookmark|AsterGlyphRenderer\.draw/);
   assert.match(openAIClient, /"store": false/);
   await assert.rejects(access(new URL("app\/_sites-preview", root)));
 });

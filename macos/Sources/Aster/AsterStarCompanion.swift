@@ -1,30 +1,46 @@
 import AppKit
 
+/// A quiet spatial pin used only after the learner explicitly chooses Point.
+/// The Aster✱ mark itself lives in the tutor bar; this overlay never becomes a
+/// second floating mascot or an idle screen decoration.
 @MainActor
 final class AsterStarCompanion {
-    enum Mode { case arriving, reading, bookmark }
-
     private var panel: NSPanel?
-    private var starView: AsterStarView?
+    private var pinView: AsterTargetPinView?
     private var timer: Timer?
     private(set) var globalPoint: CGPoint?
-    var onClick: (() -> Void)?
 
-    func landBesideCursor() {
-        show(at: NSEvent.mouseLocation, mode: .arriving)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.42) { [weak self] in
-            guard self?.panel != nil else { return }
-            self?.setReading()
+    func showPin(at point: CGPoint) {
+        hide(rememberPoint: false)
+        globalPoint = point
+        let size = NSSize(width: 34, height: 34)
+        let panel = NSPanel(
+            contentRect: NSRect(x: point.x - size.width / 2, y: point.y - size.height / 2, width: size.width, height: size.height),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        let view = AsterTargetPinView(frame: NSRect(origin: .zero, size: size))
+        panel.contentView = view
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.level = .screenSaver
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.ignoresMouseEvents = true
+        panel.sharingType = .readOnly
+        panel.orderFrontRegardless()
+        self.panel = panel
+        pinView = view
+        timer = Timer.scheduledTimer(withTimeInterval: 1 / 30, repeats: true) { [weak view] _ in
+            view?.phase += 0.055
+            view?.needsDisplay = true
         }
     }
 
     func setReading() {
-        starView?.mode = .reading
-        starView?.needsDisplay = true
-    }
-
-    func showBookmark(at point: CGPoint) {
-        show(at: point, mode: .bookmark)
+        pinView?.isReading = true
+        pinView?.needsDisplay = true
     }
 
     func hide(rememberPoint: Bool = true) {
@@ -32,86 +48,32 @@ final class AsterStarCompanion {
         timer = nil
         panel?.orderOut(nil)
         panel = nil
-        starView = nil
+        pinView = nil
         if !rememberPoint { globalPoint = nil }
-    }
-
-    private func show(at point: CGPoint, mode: Mode) {
-        hide(rememberPoint: false)
-        globalPoint = point
-        let size = NSSize(width: 46, height: 46)
-        let panel = NSPanel(
-            contentRect: NSRect(x: point.x + 10, y: point.y - 34, width: size.width, height: size.height),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        let view = AsterStarView(frame: NSRect(origin: .zero, size: size))
-        view.mode = mode
-        view.onClick = { [weak self] in self?.onClick?() }
-        panel.contentView = view
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.level = .screenSaver
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        panel.ignoresMouseEvents = mode != .bookmark
-        panel.sharingType = .readOnly
-        panel.orderFrontRegardless()
-        self.panel = panel
-        starView = view
-        timer = Timer.scheduledTimer(withTimeInterval: 1 / 30, repeats: true) { [weak view] _ in
-            view?.phase += 0.055
-            view?.needsDisplay = true
-        }
     }
 }
 
-private final class AsterStarView: NSView {
-    var mode: AsterStarCompanion.Mode = .arriving
+private final class AsterTargetPinView: NSView {
     var phase: Double = 0
-    var onClick: (() -> Void)?
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func mouseDown(with event: NSEvent) {
-        guard mode == .bookmark else { return }
-        onClick?()
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .mouseEnteredAndExited], owner: self))
-    }
+    var isReading = false
 
     override func draw(_ dirtyRect: NSRect) {
-        let pulse = mode == .reading ? 1 + 0.10 * sin(phase * 2.4) : 1
-        let landing = mode == .arriving ? min(CGFloat(phase * 2.4), 1) : 1
-        let scale = CGFloat(pulse) * (0.45 + 0.55 * landing)
         let center = NSPoint(x: bounds.midX, y: bounds.midY)
-
-        if mode == .reading {
-            AsterGlyphRenderer.signal.withAlphaComponent(0.12 + 0.08 * CGFloat((sin(phase * 2) + 1) / 2)).setStroke()
-            let readingStroke = NSBezierPath()
-            readingStroke.lineWidth = 2
-            readingStroke.lineCapStyle = .round
-            readingStroke.move(to: NSPoint(x: 7, y: 8))
-            readingStroke.curve(to: NSPoint(x: 39, y: 13), controlPoint1: NSPoint(x: 16, y: 3), controlPoint2: NSPoint(x: 31, y: 5))
-            readingStroke.stroke()
-            let glance = NSPoint(x: center.x + CGFloat(cos(phase * 1.7)) * 5, y: center.y + CGFloat(sin(phase * 2.1)) * 3)
-            AsterGlyphRenderer.signal.withAlphaComponent(0.28).setFill()
-            NSBezierPath(ovalIn: NSRect(x: glance.x - 2, y: glance.y - 2, width: 4, height: 4)).fill()
+        if isReading {
+            let pulse = CGFloat((sin(phase * 2.2) + 1) / 2)
+            AsterGlyphRenderer.signal.withAlphaComponent(0.10 + 0.10 * (1 - pulse)).setStroke()
+            let radius = 9 + pulse * 6
+            let halo = NSBezierPath(ovalIn: NSRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+            halo.lineWidth = 2
+            halo.stroke()
         }
-
-        let markSize = 30 * scale
-        AsterGlyphRenderer.draw(
-            in: NSRect(x: center.x - markSize / 2, y: center.y - markSize / 2, width: markSize, height: markSize),
-            color: AsterGlyphRenderer.signal
-        )
-
-        if mode == .bookmark {
-            AsterGlyphRenderer.signal.withAlphaComponent(0.16).setFill()
-            NSBezierPath(ovalIn: NSRect(x: bounds.maxX - 9, y: bounds.minY + 4, width: 5, height: 5)).fill()
-        }
+        AsterGlyphRenderer.signal.withAlphaComponent(0.16).setFill()
+        NSBezierPath(ovalIn: NSRect(x: center.x - 8, y: center.y - 8, width: 16, height: 16)).fill()
+        AsterGlyphRenderer.signal.setStroke()
+        let ring = NSBezierPath(ovalIn: NSRect(x: center.x - 5, y: center.y - 5, width: 10, height: 10))
+        ring.lineWidth = 2
+        ring.stroke()
+        AsterGlyphRenderer.signal.setFill()
+        NSBezierPath(ovalIn: NSRect(x: center.x - 1.8, y: center.y - 1.8, width: 3.6, height: 3.6)).fill()
     }
 }

@@ -480,7 +480,7 @@ struct WelcomeView: View {
                 Text("Aster✱ opens as a movable bar above your work, watches the view you choose locally, and teaches with synchronized voice and drawing only after you ask.")
                     .font(.system(size: isWide ? 19 : 17)).foregroundStyle(asterSecondary).lineSpacing(5).frame(maxWidth: isWide ? 580 : 480, alignment: .leading)
                 Button { model.activateFromHotKey() } label: {
-                    HStack(spacing: 11) { Image(systemName: "sparkle.magnifyingglass"); Text("Summon Aster✱"); Spacer(); Text("⌥ SPACE").font(.system(size: 10, weight: .bold, design: .monospaced)).opacity(0.72) }
+                    HStack(spacing: 11) { Image(systemName: "sparkle.magnifyingglass"); Text("Ask Aster✱"); Spacer(); Text("⌥ SPACE").font(.system(size: 10, weight: .bold, design: .monospaced)).opacity(0.72) }
                         .padding(.horizontal, 18).frame(width: 280, height: 52)
                 }
                 .buttonStyle(.borderedProminent).tint(asterSignal).controlSize(.large)
@@ -665,11 +665,11 @@ struct TutorPanelView: View {
     @ObservedObject var model: TutorModel
 
     var body: some View {
-        SummonBarView(model: model)
+        TutorBarView(model: model)
     }
 }
 
-private struct SummonBarView: View {
+private struct TutorBarView: View {
     @ObservedObject var model: TutorModel
     @State private var surface = "Transcript"
     @State private var pulse = false
@@ -763,20 +763,21 @@ private struct SummonBarView: View {
     private var composer: some View {
         HStack(spacing: 10) {
             Button { model.toggleListening() } label: {
-                Image(systemName: model.isListening ? "stop.fill" : "waveform")
+                Image(systemName: model.isListening ? "waveform" : "mic.slash")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(model.isListening ? Color.red : asterSignal)
+                    .foregroundStyle(model.isListening ? asterSignal : asterSecondary)
                     .frame(width: 36, height: 36)
-                    .background(model.isListening ? Color.red.opacity(0.12) : asterSignal.opacity(0.10), in: Circle())
+                    .background(model.isListening ? asterSignal.opacity(0.12) : asterSurface, in: Circle())
             }
+            .help(model.isListening ? "Mute voice input" : "Listen for a spoken question")
             TextField(composerPlaceholder, text: $model.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13, weight: .medium))
                 .focused($composerFocused)
                 .onSubmit { model.submit() }
-            Text(model.contextMode.guidance)
+            Text(model.isListening ? "Listening… pause briefly to send" : model.contextMode.guidance)
                 .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(asterSecondary)
+                .foregroundStyle(model.isListening ? asterSignal : asterSecondary)
                 .lineLimit(1)
             Button { model.submit() } label: {
                 Image(systemName: "arrow.up")
@@ -1030,9 +1031,25 @@ struct SettingsView: View {
                 }
                 settingsSection("CONVERSATION", "Voice remains optional and learner-controlled.") {
                     VStack(spacing: 16) {
+                        Toggle(isOn: $model.listenOnOpen) { settingLabel("Listen when Aster✱ opens", "Start listening immediately; typing always remains available.") }
+                        Divider()
+                        Toggle(isOn: $model.autoSendVoice) { settingLabel("Send after a short pause", "Aster✱ submits your spoken question after about one second of silence.") }
+                        Divider()
                         Toggle(isOn: $model.conversationMode) { settingLabel("Conversational follow-ups", "Listen again after each understanding check.") }
                         Divider()
                         Toggle(isOn: $model.wakePhraseEnabled) { settingLabel("“Hey Aster” wake phrase", "Optional continuous on-device wake listening.") }
+                        HStack(spacing: 9) {
+                            Circle()
+                                .fill(model.wakeListeningState.isListening ? Color.green : asterSecondary.opacity(0.7))
+                                .frame(width: 7, height: 7)
+                            Text(model.wakeListeningState.label)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(asterSecondary)
+                            Spacer()
+                            Button("Test “Hey Aster”") { model.testWakePhrase() }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                        }
                     }
                 }
             }

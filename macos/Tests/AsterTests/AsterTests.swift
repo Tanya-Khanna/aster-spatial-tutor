@@ -65,9 +65,21 @@ import Testing
     #expect(decoded == target)
 }
 
-@Test func summonBarExposesFourIntuitiveContextModes() {
+@Test func tutorBarExposesFourIntuitiveContextModes() {
     #expect(ContextMode.allCases.map(\.label) == ["Whole Screen", "Point", "Region", "Freehand Loop"])
     #expect(ContextMode.allCases.first == .wholeScreen)
+    #expect(ContextMode.point.guidance.contains("Click once"))
+}
+
+@MainActor
+@Test func pointModeLocksTheExplicitClickInsteadOfFollowingTheCursor() {
+    let (region, pointer) = ContextSelectionController.pointTarget(
+        at: NSPoint(x: 1_520, y: 640),
+        within: NSSize(width: 1_920, height: 1_080)
+    )
+    #expect(region.rect.contains(CGPoint(x: 1_520.0 / 1_920.0, y: 640.0 / 1_080.0)))
+    #expect(abs(pointer.x - 0.5) < 0.001)
+    #expect(abs(pointer.y - 0.5) < 0.001)
 }
 
 @MainActor
@@ -113,6 +125,8 @@ import Testing
 @MainActor
 @Test func wakePhraseRequiresExplicitAsterInvocation() {
     #expect(VoiceServices.containsWakePhrase("Hey Aster, explain this") == true)
+    #expect(VoiceServices.containsWakePhrase("Hey Esther") == true)
+    #expect(VoiceServices.questionAfterWakePhrase("Hey Aster, why does this term disappear?") == "why does this term disappear?")
     #expect(VoiceServices.containsWakePhrase("hey, Astor") == true)
     #expect(VoiceServices.containsWakePhrase("Aster is a flower") == false)
     #expect(VoiceServices.containsWakePhrase("explain this") == false)

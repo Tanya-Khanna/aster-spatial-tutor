@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type SceneKey = "paper" | "math" | "anatomy";
 
-const downloadHref = "/Aster-macOS.zip?v=0.4.1";
+const downloadHref = "/Aster-macOS.zip?v=0.5.0";
 
 const scenes: Record<
   SceneKey,
@@ -56,7 +56,7 @@ const lessons = [
   {
     n: "02",
     title: "Point",
-    copy: "Move your cursor onto a symbol, structure, control, or object, then ask about that exact thing.",
+    copy: "Click a symbol, structure, control, or object once. The pin stays fixed while you move back to Aster✱ and ask.",
     glyph: "↖",
   },
   {
@@ -124,16 +124,6 @@ function ProductStage({ scene }: { scene: SceneKey }) {
 
   return (
     <div className={`product-stage scene-${scene}`}>
-      <div className="summon-demo" aria-label="Aster star summon bar">
-        <span className="summon-handle" aria-hidden="true">⠿</span>
-        <AsterMark />
-        <span className="local-badge"><i /> LOCAL ONLY · NOTHING SENT</span>
-        <div className="summon-modes" aria-label="Ways Aster star can look">
-          <b>Whole Screen</b><span>Point</span><span>Region</span><span>Freehand Loop</span>
-        </div>
-        <span className="summon-prompt">Ask by voice or text…</span>
-        <strong>↑</strong>
-      </div>
       <div className="browser-bar">
         <span className="traffic-lights"><i /><i /><i /></span>
         <span className="document-name">{data.eyebrow}</span>
@@ -356,8 +346,8 @@ export default function Home() {
           <span className="section-kicker light">VOICE + SPATIAL EXPLANATION</span>
           <h2>It teaches the way a great tutor points.</h2>
           <p>
-            Aster✱’s voice carries the story while the overlay carries the reference. The learner never has to hold
-            “that variable over there” in working memory.
+            With voice enabled, Aster✱ listens when the bar opens and sends after a short pause—no voice-memo workflow.
+            Type instead whenever you prefer. During the lesson, Aster✱’s voice carries the story while the overlay carries the reference.
           </p>
           <div className="principle-list">
             <div><span>1</span><p><b>Diagnose</b> with one short choice before explaining.</p></div>

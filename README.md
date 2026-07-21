@@ -4,7 +4,7 @@
 
 Aster✱ is a native spatial tutor for macOS. Press **Option–Space** or say **“Hey Aster”** and a slim, movable teaching bar follows you across apps and Spaces. Ask about the whole screen, point at an exact object, box a region, or draw a freehand loop. Aster✱ watches the chosen scope locally until you submit a voice or text question; only then does it send the minimum required visual context and your question. It diagnoses before explaining, teaches through synchronized voice and on-target drawings, checks an independent answer, and remembers the resulting mastery evidence for the next lesson.
 
-The animated **✱** is Aster✱’s physical presence: it lands beside the cursor, pulses while reading, stretches into each teaching mark, then collapses beside the concept as a clickable lesson bookmark. “Hey Aster” offers the same entry point as an explicit opt-in wake mode.
+The **✱** lives in the tutor bar as Aster✱’s presence. Point mode places a quiet coral pin exactly where the learner clicks; that pin stays fixed while the cursor moves and becomes the spatial origin for teaching marks. “Hey Aster” offers the same entry point as an explicit opt-in, on-device wake mode.
 
 Built for the **OpenAI Build Week · Education Track** with **Codex** and **GPT-5.6**.
 
@@ -27,7 +27,7 @@ Aster✱ removes that translation layer. Its core unit is not an answer—it is 
 
 ## Product loop
 
-1. **Summon** the movable bar with **Option–Space** or the optional **“Hey Aster”** wake phrase.
+1. **Open** the movable bar with **Option–Space** or the optional **“Hey Aster”** wake phrase.
 2. **Scope** the question with **Whole Screen** (default), **Point**, **Region**, or **Freehand Loop**.
 3. **Follow** that scope locally across the current display; nothing is sent until the learner asks.
 4. **Diagnose** with one short choice before any explanation appears.
@@ -36,14 +36,14 @@ Aster✱ removes that translation layer. Its core unit is not an answer—it is 
 7. **Assess** the learner’s reasoning against explicit success criteria.
 8. **Remember and adapt** across launches, or offer a learner-controlled Desmos/Manim demonstration.
 
-The tutor bar is a key-capable, non-activating AppKit panel. It floats over the learner’s current app and Space—including full-screen auxiliary Spaces—without activating Aster✱ or pulling the learner back to the desktop. Welcome and Settings remain normal foreground windows.
+The tutor bar is a key-capable, non-activating AppKit panel. It floats over the learner’s current app and Space—including full-screen auxiliary Spaces—without activating Aster✱ or pulling the learner back to the desktop. Welcome and Settings remain normal foreground windows. With voice enabled, Aster✱ listens as the bar opens and sends after a short pause; typing and Return use the same question flow.
 
 ## Why it is different
 
 | Existing pattern | Aster✱ |
 | --- | --- |
 | Upload a screenshot into a separate chat | Start from the material already on screen |
-| Explain “the variable in the second line” | Use the learner’s cursor as spatial context |
+| Explain “the variable in the second line” | Pin the exact object with one click |
 | Return a wall of prose | Coordinate voice with precise visual marks |
 | Solve the whole problem | Diagnose, scaffold one step, then hand it back |
 | Let an agent act without a learning contract | Preview Desmos/Manim actions and require approval |
@@ -144,10 +144,10 @@ cd macos && swift build -c release
 
 | Criterion | Evidence in this repository |
 | --- | --- |
-| Technological Implementation | Multi-display/window capture, semantic cursor anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, explicit Keychain lifecycle, and session usage visibility |
+| Technological Implementation | Multi-display/window capture, semantic point anchoring, recent-frame video context, Retina mapping, animated native overlay, global hotkey, strict Responses API schemas, adaptive learner model, conversational voice, embedded Desmos/Manim previews, action undo, explicit Keychain lifecycle, and session usage visibility |
 | Design | One coherent Aster✱ system across macOS and responsive web; visible context/follow states; mandatory diagnostic choices; staged annotation choreography; voice, notebook, mastery, and memory states |
 | Potential Impact | Removes screenshot/upload/context-switch friction from research papers, STEM notation, and anatomy diagrams while emphasizing comprehension rather than answer generation |
-| Quality of Idea | OS-native spatial tutoring, cursor-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
+| Quality of Idea | OS-native spatial tutoring, explicit point-as-context, cross-app teaching, and a constrained “demonstrate, never take over” agent contract |
 
 See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the sub-three-minute submission story and [`docs/EVALS.md`](docs/EVALS.md) for the annotation-quality evaluation plan.
 

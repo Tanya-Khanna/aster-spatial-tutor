@@ -1,14 +1,14 @@
 # Aster✱ for macOS
 
-Aster✱ is a native spatial tutor for macOS. Press **Option–Space** or say **“Hey Aster”** to summon a slim, movable teaching bar above any app. Whole Screen is ready by default; Point, Region, and Freehand Loop narrow the visual scope. Voice and text work in every mode. Following and cursor context stay local until the learner submits a question.
+Aster✱ is a native spatial tutor for macOS. Press **Option–Space** or say **“Hey Aster”** to open a slim, movable teaching bar above any app. Whole Screen is ready by default; Point pins an explicit click, while Region and Freehand Loop narrow the visual scope. With voice enabled, Aster✱ listens immediately and sends after a short pause. Typing works in every mode. Following and visual context stay local until the learner submits a question.
 
-The ✱ cursor companion is the source of the overlay: it lands and reads beside the pointer, morphs into each annotation, and collapses into a clickable bookmark that reopens the exact lesson. The optional “Hey Aster” wake phrase is disabled by default.
+The ✱ stays inside the tutor bar rather than creating a second floating mascot. Point mode places a quiet coral pin at the learner’s explicit click and uses that stable location as the source of the overlay. The optional “Hey Aster” wake phrase is disabled by default and exposes a live status plus an end-to-end test control in Settings.
 
-The summon bar and Region/Freehand selectors are non-activating, key-capable AppKit panels. They can accept typed input over the current app, full-screen Space, or secondary display without making Aster✱ the active application or switching to its desktop Space.
+The tutor bar and Point/Region/Freehand selectors are non-activating, key-capable AppKit panels. They can accept typed input over the current app, full-screen Space, or secondary display without making Aster✱ the active application or switching to its desktop Space.
 
 ## Product loop
 
-1. Summon the persistent bar with Option–Space or the optional wake phrase.
+1. Open the persistent bar with Option–Space or the optional wake phrase.
 2. Choose Whole Screen, Point, Region, or Freehand Loop and follow that scope locally without an API request.
 3. Diagnose with one short question and concrete misconception choices.
 4. Reveal a spatial lesson step-by-step through voice, notebook, and overlays.

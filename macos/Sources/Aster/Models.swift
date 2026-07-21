@@ -34,6 +34,31 @@ enum PermissionState: Equatable {
     }
 }
 
+enum WakeListeningState: Equatable {
+    case off
+    case starting
+    case listening
+    case paused
+    case needsPermission
+    case unavailable(String)
+
+    var label: String {
+        switch self {
+        case .off: return "Wake phrase is off"
+        case .starting: return "Starting on-device listener…"
+        case .listening: return "Listening for “Hey Aster”"
+        case .paused: return "Paused while Aster✱ is open"
+        case .needsPermission: return "Microphone and Speech access required"
+        case .unavailable(let reason): return reason
+        }
+    }
+
+    var isListening: Bool {
+        if case .listening = self { return true }
+        return false
+    }
+}
+
 enum SettingsPane: String, CaseIterable, Identifiable {
     case general
     case voice
@@ -173,7 +198,7 @@ enum ContextMode: String, CaseIterable, Codable, Identifiable {
     var guidance: String {
         switch self {
         case .wholeScreen: return "Everything visible on this display"
-        case .point: return "The object at your last pointer position"
+        case .point: return "Click once to pin the exact object"
         case .region: return "Only the box you draw"
         case .freehandLoop: return "Only the area inside your loop"
         }
@@ -205,7 +230,7 @@ struct CaptureTarget: Codable, Hashable {
     /// Optional polygon normalized to the cropped region. Content outside it is
     /// removed locally before the image can be sent.
     var selectionPath: [NormalizedPoint]?
-    /// The learner's last pointer position normalized to the cropped region.
+    /// The learner's explicitly pinned point normalized to the cropped region.
     /// This remains stable while they move into Aster✱ to type a question.
     var pointer: NormalizedPoint?
 

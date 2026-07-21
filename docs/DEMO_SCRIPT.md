@@ -12,12 +12,12 @@ Show a dense research-paper equation in a normal Mac window.
 
 Launch Aster✱ and briefly show its welcome screen.
 
-> “Aster✱ is a spatial AI tutor for macOS. Option–Space summons this movable bar over any app. It can follow the whole screen, the object under my cursor, a box, or a freehand loop—locally—then teaches by voice and draws where the idea lives.”
+> “Aster✱ is a spatial AI tutor for macOS. Option–Space opens this movable bar over any app. It can follow the whole screen, an object I explicitly pin, a box, or a freehand loop—locally—then teaches by voice and draws where the idea lives.”
 
 ## 0:33–1:18 — Hero research-paper flow
 
-1. Press **⌥ Space** and show the horizontal summon bar arrive with **Whole Screen** selected.
-2. Switch to **Point**, move the cursor over the square-root term, and show **LOCAL ONLY · NOTHING SENT**.
+1. Press **⌥ Space** and show the horizontal tutor bar arrive with **Whole Screen** selected and begin listening.
+2. Switch to **Point**, click the square-root term to pin it, and show **LOCAL ONLY · NOTHING SENT**.
 3. Ask: “Why are we dividing by the square root of the key dimension?”
 4. Choose Aster✱’s diagnostic option: “Why softmax needs scaling.”
 5. Let the overlay reveal two synchronized teaching steps while Aster✱ narrates.

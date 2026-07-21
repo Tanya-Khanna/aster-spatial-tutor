@@ -34,12 +34,19 @@ final class TutorModel: ObservableObject {
     @Published var conversationMode = UserDefaults.standard.object(forKey: "conversationMode") as? Bool ?? true {
         didSet { UserDefaults.standard.set(conversationMode, forKey: "conversationMode") }
     }
+    @Published var listenOnOpen = UserDefaults.standard.object(forKey: "listenOnOpen") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(listenOnOpen, forKey: "listenOnOpen") }
+    }
+    @Published var autoSendVoice = UserDefaults.standard.object(forKey: "autoSendVoice") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(autoSendVoice, forKey: "autoSendVoice") }
+    }
     @Published var wakePhraseEnabled = UserDefaults.standard.bool(forKey: "wakePhraseEnabled") {
         didSet {
             UserDefaults.standard.set(wakePhraseEnabled, forKey: "wakePhraseEnabled")
             wakePhraseEnabled ? voice.startWakeListening() : voice.stopWakeListening()
         }
     }
+    @Published private(set) var wakeListeningState: WakeListeningState = .off
     @Published var isFollowing = false
     @Published var isVideoMode = false
     @Published var contextMode: ContextMode = .wholeScreen
@@ -125,13 +132,16 @@ final class TutorModel: ObservableObject {
             voice.onFinalText = { [weak self] text in
                 guard let self else { return }
                 self.isListening = false
-                self.query = text
-                if self.conversationMode { self.submit() }
+                self.phase = self.phaseBeforeListening
+                let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !cleaned.isEmpty else { return }
+                self.query = cleaned
+                if self.autoSendVoice { self.submit() }
             }
             voice.onFinished = { [weak self] in self?.voiceDidFinish() }
             voice.onWakeWord = { [weak self] in self?.activateFromWakePhrase() }
+            voice.onWakeStatus = { [weak self] state in self?.wakeListeningState = state }
         }
-        overlay.onBookmarkClick = { [weak self] in self?.reopenBookmarkedLesson() }
         tools.onAction = { [weak self] action in
             guard let self else { return }
             self.actionHistory.append(action)
@@ -191,7 +201,7 @@ final class TutorModel: ObservableObject {
             return
         }
         guard requireAPIKey() else { return }
-        summon(startListening: false)
+        openTutorBar(startListening: listenOnOpen)
     }
 
     private func activateFromWakePhrase() {
@@ -200,28 +210,28 @@ final class TutorModel: ObservableObject {
             return
         }
         guard requireAPIKey() else { return }
-        summon(startListening: true)
+        openTutorBar(startListening: false)
+        phaseBeforeListening = phase
+        isListening = true
+        phase = .listening
     }
 
-    private func summon(startListening: Bool) {
+    private func openTutorBar(startListening: Bool) {
         lastExternalPointer = NSEvent.mouseLocation
         if !isPanelVisible {
             sourceApplicationName = NSWorkspace.shared.frontmostApplication?.localizedName ?? ""
             contextMode = .wholeScreen
             isPanelExpanded = false
             onPanelExpansionChanged?(false)
+            configureLiveTarget()
+        } else if contextMode == .wholeScreen {
+            // Refresh a live whole-display scope, but never replace an explicit
+            // Point, Region, or Freehand Loop selection when the bar is reopened.
+            configureLiveTarget()
         }
-        configureLiveTarget()
         startFollowing()
-        overlay.arriveBesideCursor()
         activate()
-        if startListening, !isListening { toggleListening() }
-    }
-
-    private func reopenBookmarkedLesson() {
-        activate()
-        if lastLesson != nil { replayCurrentStep() }
-        else { query = "I have a follow-up: " }
+        if startListening { startQuestionListeningIfAvailable() }
     }
 
     func closePanel() {
@@ -229,7 +239,7 @@ final class TutorModel: ObservableObject {
         stopFollowing()
         overlay.clear()
         voice.stopSpeaking()
-        voice.stopListening()
+        voice.stopListening(resumeWake: true)
         isListening = false
         contextMode = .wholeScreen
         contextRegion = nil
@@ -290,6 +300,7 @@ final class TutorModel: ObservableObject {
             apiKeyStatus = .unauthenticated
             UserDefaults.standard.set(false, forKey: "onboardingComplete")
             onboardingStep = .apiKey
+            voice.stopWakeListening()
             clearLesson()
             messages = [ChatMessage(role: .aster, text: "You’re signed out. Add an OpenAI API key to start a new teaching turn.", kind: .message)]
             onShowWelcome?()
@@ -320,6 +331,7 @@ final class TutorModel: ObservableObject {
         }
         UserDefaults.standard.set(true, forKey: "onboardingComplete")
         onboardingStep = .ready
+        if wakePhraseEnabled { voice.startWakeListening() }
     }
 
     func showSettings(_ pane: SettingsPane? = nil) {
@@ -470,6 +482,10 @@ final class TutorModel: ObservableObject {
     func setContextMode(_ mode: ContextMode) {
         guard isPanelVisible else { return }
         voice.stopSpeaking()
+        if isListening {
+            voice.stopListening(resumeWake: false)
+            isListening = false
+        }
         overlay.clear()
         contextSelector.cancel()
         stopFollowing()
@@ -483,12 +499,18 @@ final class TutorModel: ObservableObject {
         lastAssessment = nil
 
         switch mode {
-        case .wholeScreen, .point:
+        case .wholeScreen:
             configureLiveTarget()
             startFollowing()
-        case .region, .freehandLoop:
+            startQuestionListeningIfAvailable()
+        case .point, .region, .freehandLoop:
             phase = .selectingContext
-            anchorStatus = mode == .region ? "Draw one box · local only" : "Draw one freehand loop · local only"
+            switch mode {
+            case .point: anchorStatus = "Click the exact thing you mean · local only"
+            case .region: anchorStatus = "Draw one box · local only"
+            case .freehandLoop: anchorStatus = "Draw one freehand loop · local only"
+            case .wholeScreen: break
+            }
             contextSelector.begin(mode: mode) { [weak self] selectedTarget in
                 guard let self else { return }
                 guard var selectedTarget else {
@@ -496,11 +518,11 @@ final class TutorModel: ObservableObject {
                     self.configureLiveTarget()
                     self.startFollowing()
                     self.activate()
+                    self.startQuestionListeningIfAvailable()
                     return
                 }
                 selectedTarget.appName = self.sourceApplicationName
                 selectedTarget.windowTitle = mode.label
-                selectedTarget.pointer = self.pointer(in: selectedTarget.region, on: selectedTarget.displayID)
                 self.lockLocalTarget(selectedTarget)
                 self.activate()
             }
@@ -517,19 +539,7 @@ final class TutorModel: ObservableObject {
               let displayID = ScreenCaptureService.displayID(for: screen) else { return }
         let normalizedX = min(max((lastExternalPointer.x - screen.frame.minX) / screen.frame.width, 0), 1)
         let normalizedY = min(max((screen.frame.maxY - lastExternalPointer.y) / screen.frame.height, 0), 1)
-        let region: ContextRegion
-        if contextMode == .point {
-            let width = min(0.44, 720 / screen.frame.width)
-            let height = min(0.42, 480 / screen.frame.height)
-            region = ContextRegion(
-                x: min(max(normalizedX - width / 2, 0), 1 - width),
-                y: min(max(normalizedY - height / 2, 0), 1 - height),
-                width: width,
-                height: height
-            )
-        } else {
-            region = .fullScreen
-        }
+        let region = ContextRegion.fullScreen
         let pointer = NormalizedPoint(
             x: (normalizedX - region.x) / region.width,
             y: (normalizedY - region.y) / region.height
@@ -545,17 +555,18 @@ final class TutorModel: ObservableObject {
             pointer: pointer
         )
         contextRegion = region
-        anchorStatus = contextMode == .point
-            ? "Point locked at your last off-bar cursor position · local only"
-            : "Watching this display locally · nothing sent"
+        anchorStatus = "Watching this display locally · nothing sent"
     }
 
-    private func pointer(in region: ContextRegion, on displayID: UInt32) -> NormalizedPoint? {
-        guard let screen = ScreenCaptureService.screen(for: CGDirectDisplayID(displayID)) else { return nil }
-        let x = (lastExternalPointer.x - screen.frame.minX) / screen.frame.width
-        let y = (screen.frame.maxY - lastExternalPointer.y) / screen.frame.height
-        guard region.rect.contains(CGPoint(x: x, y: y)) else { return nil }
-        return NormalizedPoint(x: (x - region.x) / region.width, y: (y - region.y) / region.height)
+    private func globalPoint(for target: CaptureTarget) -> CGPoint? {
+        guard let pointer = target.pointer,
+              let screen = ScreenCaptureService.screen(for: CGDirectDisplayID(target.displayID)) else { return nil }
+        let normalizedX = target.region.x + pointer.x * target.region.width
+        let normalizedY = target.region.y + pointer.y * target.region.height
+        return CGPoint(
+            x: screen.frame.minX + normalizedX * screen.frame.width,
+            y: screen.frame.maxY - normalizedY * screen.frame.height
+        )
     }
 
     private func lockLocalTarget(_ target: CaptureTarget) {
@@ -564,15 +575,21 @@ final class TutorModel: ObservableObject {
         do {
             capturedContext = try capture.capture(target: target)
             recentFrames = capturedContext.map { [$0] } ?? []
-            anchorStatus = contextMode == .freehandLoop
-                ? "Freehand loop locked · outside content removed locally"
-                : "Region locked · only this box will be sent"
+            switch contextMode {
+            case .point:
+                anchorStatus = "Point pinned · move your cursor freely"
+                if let globalPoint = globalPoint(for: target) { overlay.pinTarget(at: globalPoint) }
+            case .region: anchorStatus = "Region locked · only this box will be sent"
+            case .freehandLoop: anchorStatus = "Freehand loop locked · outside content removed locally"
+            case .wholeScreen: anchorStatus = "Watching this display locally · nothing sent"
+            }
             startFollowing()
             messages.append(ChatMessage(
                 role: .aster,
                 text: "\(contextMode.label) context locked locally. Nothing is sent until you ask.",
                 kind: .memory
             ))
+            startQuestionListeningIfAvailable()
         } catch {
             report(error)
         }
@@ -637,7 +654,7 @@ final class TutorModel: ObservableObject {
     }
 
     private func refreshContextSilently() {
-        if contextMode == .wholeScreen || contextMode == .point {
+        if contextMode == .wholeScreen {
             configureLiveTarget()
         }
         guard let target = contextTarget else { return }
@@ -662,7 +679,19 @@ final class TutorModel: ObservableObject {
                     anchorStatus = "Anchor temporarily hidden · keeping last position"
                 }
             }
+            if contextMode == .point, let resolved = recoveredTarget.anchor {
+                recoveredTarget.pointer = NormalizedPoint(
+                    x: resolved.bounds.rect.midX,
+                    y: resolved.bounds.rect.midY
+                )
+            }
             contextTarget = recoveredTarget
+            if contextMode == .point, let globalPoint = globalPoint(for: recoveredTarget) {
+                switch phase {
+                case .ready, .following, .listening: overlay.pinTarget(at: globalPoint)
+                default: break
+                }
+            }
             if let previous = recentFrames.last {
                 if previous.jpegData != updated.jpegData {
                     consecutiveFrameChanges += 1
@@ -683,16 +712,28 @@ final class TutorModel: ObservableObject {
 
     func toggleListening() {
         if isListening {
-            voice.stopListening()
+            voice.stopListening(resumeWake: false)
             isListening = false
             phase = phaseBeforeListening
         } else {
-            voice.stopSpeaking() // natural barge-in
-            phaseBeforeListening = phase
-            isListening = true
-            phase = .listening
-            voice.startListening()
+            startQuestionListeningIfAvailable(force: true)
         }
+    }
+
+    private func startQuestionListeningIfAvailable(force: Bool = false) {
+        guard !isListening else { return }
+        guard force || listenOnOpen else { return }
+        guard force || (microphonePermission == .granted && speechPermission == .granted) else { return }
+        voice.stopSpeaking()
+        phaseBeforeListening = phase
+        isListening = true
+        phase = .listening
+        voice.startListening()
+    }
+
+    func testWakePhrase() {
+        if wakePhraseEnabled { voice.startWakeListening() }
+        else { wakePhraseEnabled = true }
     }
 
     func submit() {
@@ -844,7 +885,7 @@ final class TutorModel: ObservableObject {
 
     private func beginDiagnosis(for question: String) async {
         guard requireAPIKey() else { return }
-        if contextMode == .wholeScreen || contextMode == .point {
+        if contextMode == .wholeScreen {
             configureLiveTarget()
         }
         pendingQuestion = question

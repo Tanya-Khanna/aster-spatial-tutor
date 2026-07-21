@@ -7,13 +7,9 @@ final class OverlayController {
     private var revealTimer: Timer?
     private var animationTimer: Timer?
     private let companion = AsterStarCompanion()
-    var onBookmarkClick: (() -> Void)? {
-        didSet { companion.onClick = onBookmarkClick }
-    }
 
-    func arriveBesideCursor() {
-        clearAnnotationPanel()
-        companion.landBesideCursor()
+    func pinTarget(at point: CGPoint) {
+        companion.showPin(at: point)
     }
 
     func showReadingState() { companion.setReading() }
@@ -67,7 +63,6 @@ final class OverlayController {
             context.duration = 0.65
             canvas.animator().alphaValue = 0.22
         }
-        companion.showBookmark(at: bookmarkPoint())
     }
 
     func clear() {
@@ -86,14 +81,6 @@ final class OverlayController {
         canvas.primitives = []
     }
 
-    private func bookmarkPoint() -> CGPoint {
-        guard let panel else { return companion.globalPoint ?? NSEvent.mouseLocation }
-        if let annotation = canvas.annotations.last {
-            let point = AnnotationGeometry.normalizedPoint(x: annotation.endX, y: annotation.endY, within: canvas.contextRegion)
-            return CGPoint(x: panel.frame.minX + point.x * panel.frame.width, y: panel.frame.maxY - point.y * panel.frame.height)
-        }
-        return companion.globalPoint ?? NSEvent.mouseLocation
-    }
 }
 
 final class AnnotationCanvas: NSView {
